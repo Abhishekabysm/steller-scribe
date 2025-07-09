@@ -34,8 +34,8 @@ A modern, AI-powered note-taking application built with React and TypeScript. Fe
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
-   cd stellar-scribe
+   git clone https://github.com/Abhishekabysm/steller-scribe.git
+   cd steller-scribe
    ```
 
 2. **Install dependencies:**

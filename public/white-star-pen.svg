@@ -1,0 +1,29 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circular background -->
+  <circle cx="50" cy="50" r="50" fill="#0ea5e9"/>
+  
+  <!-- Quill pen body -->
+  <path d="M25 75 L35 65 L55 45 L65 35 L55 45 L35 65 L25 75 Z" fill="#ffffff" stroke="#ffffff" stroke-width="1"/>
+  
+  <!-- Quill feather details -->
+  <path d="M35 65 L45 55 L55 45 L50 50 L40 60 L35 65 Z" fill="#e2e8f0" opacity="0.6"/>
+  
+  <!-- Pen tip -->
+  <path d="M25 75 L30 70 L35 65 L25 75 Z" fill="#cbd5e1"/>
+  
+  <!-- Stars around -->
+  <circle cx="20" cy="20" r="3" fill="#ffffff"/>
+  <circle cx="80" cy="80" r="3" fill="#ffffff"/>
+  <circle cx="85" cy="25" r="2.5" fill="#ffffff"/>
+  <circle cx="15" cy="85" r="2.5" fill="#ffffff"/>
+  
+  <!-- Sparkles -->
+  <g fill="#ffffff" opacity="0.9">
+    <path d="M15 15 L17 20 L22 22 L17 24 L15 29 L13 24 L8 22 L13 20 Z"/>
+    <path d="M85 15 L86.5 18 L89 19.5 L86.5 21 L85 24 L83.5 21 L81 19.5 L83.5 18 Z"/>
+  </g>
+  
+  <!-- Additional decorative stars -->
+  <circle cx="40" cy="15" r="2" fill="#ffffff" opacity="0.8"/>
+  <circle cx="85" cy="60" r="2" fill="#ffffff" opacity="0.8"/>
+</svg>

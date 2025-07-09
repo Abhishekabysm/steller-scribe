@@ -1,0 +1,5 @@
+{
+  "name": "Stellar Scribe",
+  "description": "An AI-powered note-taking app to capture your ideas. Create, edit, and organize notes with a Markdown toolbar, pinning, and advanced sorting. Leverage AI to summarize content and suggest tags.",
+  "requestFramePermissions": []
+}

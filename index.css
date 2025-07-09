@@ -1,0 +1,29 @@
+/* Hide scrollbars globally */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: none;
+}
+
+/* For Internet Explorer and Edge */
+* {
+  -ms-overflow-style: none;
+}
+
+/* Ensure no scrollbars appear on containers */
+.split-pane-container {
+  overflow: hidden !important;
+}
+
+/* Hide scrollbars specifically on split pane dividers */
+.split-pane-divider {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.split-pane-divider::-webkit-scrollbar {
+  display: none;
+}

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stellar Scribe</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)" disabled>
+    <style>
+      /* Toggle highlight.js theme with dark mode */
+      .dark link[href*="github.min.css"] {
+        display: none;
+      }
+      .dark link[href*="github-dark.min.css"] {
+        display: inline !important;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        darkMode: 'class', // Enable class-based dark mode
+        theme: {
+          extend: {
+            colors: {
+              // Base Colors (Light Mode)
+              'bg-primary': '#f8fafc',      // slate-50
+              'bg-secondary': '#f1f5f9',    // slate-100
+              'surface': '#ffffff',         // white
+              'text-primary': '#0f172a',    // slate-900
+              'text-secondary': '#475569',  // slate-600
+              'text-muted': '#64748b',      // slate-500
+              'border-color': '#e2e8f0',    // slate-200
+              'accent': '#0ea5e9',          // sky-500
+              'accent-hover': '#0284c7',    // sky-600
+
+              // Dark Mode Colors
+              'dark-bg-primary': '#171717',
+              'dark-bg-secondary': '#1C1C1C',
+              'dark-surface': '#262626',
+              'dark-text-primary': '#f5f5f5',
+              'dark-text-secondary': '#a3a3a3',
+              'dark-text-muted': '#737373',
+              'dark-border-color': '#404040',
+              'dark-accent': '#38bdf8',
+              'dark-accent-hover': '#7dd3fc',
+            },
+            animation: {
+              'spin-slow': 'spin 3s linear infinite',
+              'fade-in': 'fadeIn 0.3s ease-in-out',
+              'slide-in': 'slideIn 0.3s ease-in-out',
+              'toast-in': 'toastIn 0.5s forwards',
+              'toast-out': 'toastOut 0.5s forwards',
+              'flash-glow': 'glow 0.6s ease-in-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: 0 },
+                '100%': { opacity: 1 },
+              },
+              slideIn: {
+                '0%': { transform: 'translateY(10px)', opacity: 0 },
+                '100%': { transform: 'translateY(0)', opacity: 1 },
+              },
+              toastIn: {
+                'from': { transform: 'translateX(100%)', opacity: '0' },
+                'to': { transform: 'translateX(0)', opacity: '1' },
+              },
+              toastOut: {
+                'from': { transform: 'translateX(0)', opacity: '1' },
+                'to': { transform: 'translateX(100%)', opacity: '0' },
+              },
+              glow: {
+                '0%, 100%': { boxShadow: '0 0 0px transparent' },
+                '50%': { boxShadow: '0 0 10px 3px rgba(56, 189, 248, 0.4)' },
+              }
+            },
+            typography: ({ theme }) => ({
+              DEFAULT: {
+                css: {
+                  '--tw-prose-body': theme('colors.text-secondary'),
+                  '--tw-prose-headings': theme('colors.text-primary'),
+                  '--tw-prose-lead': theme('colors.text-muted'),
+                  '--tw-prose-links': theme('colors.accent'),
+                  '--tw-prose-bold': theme('colors.text-primary'),
+                  '--tw-prose-counters': theme('colors.text-muted'),
+                  '--tw-prose-bullets': theme('colors.text-muted'),
+                  '--tw-prose-hr': theme('colors.border-color'),
+                  '--tw-prose-quotes': theme('colors.text-secondary'),
+                  '--tw-prose-quote-borders': theme('colors.border-color'),
+                  '--tw-prose-captions': theme('colors.text-muted'),
+                  '--tw-prose-code': theme('colors.accent'),
+                  '--tw-prose-pre-code': 'inherit',
+                  '--tw-prose-pre-bg': theme('colors.bg-secondary'),
+                  '--tw-prose-th-borders': theme('colors.border-color'),
+                  '--tw-prose-td-borders': theme('colors.border-color'),
+                  // Dark mode styles for prose
+                  '--tw-prose-invert-body': theme('colors.dark-text-secondary'),
+                  '--tw-prose-invert-headings': theme('colors.dark-text-primary'),
+                  '--tw-prose-invert-lead': theme('colors.dark-text-muted'),
+                  '--tw-prose-invert-links': theme('colors.dark-accent'),
+                  '--tw-prose-invert-bold': theme('colors.dark-text-primary'),
+                  '--tw-prose-invert-counters': theme('colors.dark-text-muted'),
+                  '--tw-prose-invert-bullets': theme('colors.dark-text-muted'),
+                  '--tw-prose-invert-hr': theme('colors.dark-border-color'),
+                  '--tw-prose-invert-quotes': theme('colors.dark-text-secondary'),
+                  '--tw-prose-invert-quote-borders': theme('colors.dark-border-color'),
+                  '--tw-prose-invert-captions': theme('colors.dark-text-muted'),
+                  '--tw-prose-invert-code': theme('colors.dark-accent'),
+                  '--tw-prose-invert-pre-code': 'inherit',
+                  '--tw-prose-invert-pre-bg': theme('colors.dark-bg-secondary'),
+                  '--tw-prose-invert-th-borders': theme('colors.dark-border-color'),
+                  '--tw-prose-invert-td-borders': theme('colors.dark-border-color'),
+                  'pre': {
+                      'border': `1px solid ${theme('colors.border-color')}`,
+                  },
+                  'pre[class*="language-"]': {
+                      'color': 'inherit',
+                  },
+                  '.dark pre': {
+                      'border': `1px solid ${theme('colors.dark-border-color')}`,
+                  }
+                },
+              },
+            }),
+          }
+        }
+      }
+    </script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.8.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-bg-primary text-text-primary dark:bg-dark-bg-primary dark:text-dark-text-primary">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

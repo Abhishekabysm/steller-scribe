@@ -6,7 +6,6 @@ import { useTheme } from './hooks/useTheme';
 import { ToastProvider, useToasts } from './hooks/useToasts';
 import NoteList from './components/NoteList';
 import NoteEditor from './components/NoteEditor';
-import PlusIcon from './components/icons/PlusIcon';
 import LogoIcon from './components/icons/LogoIcon';
 import MenuIcon from './components/icons/MenuIcon';
 import SunIcon from './components/icons/SunIcon';
@@ -116,7 +115,7 @@ const AppContent: React.FC = () => {
           <LogoIcon className="w-7 h-7 text-accent dark:text-dark-accent" />
           <h1 className="text-xl font-bold text-text-primary dark:text-dark-text-primary hidden sm:block">Stellar Scribe</h1>
         </div>
-        <div className="flex items-center space-x-2 sm:space-x-4 flex-grow max-w-md sm:max-w-none sm:flex-grow-0">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <div className="relative flex-grow sm:flex-grow-0">
             <input
               type="search"
@@ -128,13 +127,6 @@ const AppContent: React.FC = () => {
           </div>
           <button onClick={toggleTheme} className="p-2 rounded-md hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary transition-colors flex-shrink-0" title="Toggle Theme">
             {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
-          </button>
-          <button
-            onClick={addNote}
-            className="flex items-center space-x-2 px-3 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover dark:bg-dark-accent dark:hover:bg-dark-accent-hover transition-colors font-semibold flex-shrink-0 shadow-sm"
-          >
-            <PlusIcon className="w-5 h-5" />
-            <span className="hidden sm:inline">New Note</span>
           </button>
         </div>
       </header>

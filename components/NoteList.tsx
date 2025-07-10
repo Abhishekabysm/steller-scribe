@@ -134,6 +134,15 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
           )}
         </div>
       </div>
+      <div className="p-3 border-b border-border-color dark:border-dark-border-color">
+        <button
+          onClick={onAddNote}
+          className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-accent text-white rounded-lg hover:bg-accent-hover dark:bg-dark-accent dark:hover:bg-dark-accent-hover transition-colors font-semibold shadow-sm"
+        >
+          <PlusIcon className="w-5 h-5" />
+          <span>New Note</span>
+        </button>
+      </div>
       <div className="flex-grow overflow-y-auto">
       {sortedAndFilteredNotes.length > 0 ? (
         <>

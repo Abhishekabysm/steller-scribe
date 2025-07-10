@@ -722,11 +722,32 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   
   const previewPane = (
       <div className="flex flex-col h-full bg-bg-primary dark:bg-dark-bg-primary relative">
-          <div 
-            className="prose prose-sm md:prose-base dark:prose-invert max-w-none flex-grow overflow-y-auto p-6 select-text preview-pane" 
-            dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
-            style={{ userSelect: 'text', cursor: 'text' }}
-          />
+          <div className="flex-grow overflow-y-auto p-6 select-text preview-pane">
+            {/* Title Section */}
+            <div className="mb-6 pb-4 border-b border-border-color dark:border-dark-border-color">
+              <h1 className="text-3xl md:text-4xl font-bold text-text-primary dark:text-dark-text-primary mb-2 break-words">
+                {activeNote.title || 'Untitled Note'}
+              </h1>
+              {activeNote.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {activeNote.tags.map(tag => (
+                    <span 
+                      key={tag} 
+                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent dark:bg-dark-accent/20 dark:text-dark-accent-hover"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Content Section */}
+            <div 
+              className="prose prose-sm md:prose-base dark:prose-invert max-w-none" 
+              dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
+              style={{ userSelect: 'text', cursor: 'text' }}
+            />
+          </div>
 
           <div className="flex-shrink-0 p-2 sm:p-3 border-t border-border-color dark:border-dark-border-color">
             {suggestedTags.length > 0 && (

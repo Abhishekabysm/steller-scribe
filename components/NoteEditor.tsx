@@ -29,6 +29,7 @@ interface NoteEditorProps {
   activeNote: Note | undefined;
   onUpdateNote: (note: Partial<Note>) => void;
   onDeleteNote: (id: string) => void;
+  viewMode?: 'split' | 'editor' | 'preview';
 }
 
 const LoadingSpinner: React.FC = () => (
@@ -44,7 +45,7 @@ const Tag: React.FC<{ tag: string; onRemove: (tag: string) => void }> = ({ tag, 
   </div>
 );
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDeleteNote }) => {
+const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDeleteNote, viewMode = 'split' }) => {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -721,8 +722,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     <>
       <div className="w-full h-full bg-bg-primary dark:bg-dark-bg-primary">
           {isDesktop ? (
-              <SplitPane left={editorPane} right={previewPane} />
+              // Desktop view modes
+              viewMode === 'split' ? (
+                <SplitPane left={editorPane} right={previewPane} />
+              ) : viewMode === 'editor' ? (
+                editorPane
+              ) : (
+                previewPane
+              )
           ) : (
+              // Mobile view with toggle
               <div className="h-full flex flex-col">
                   <div className="flex-shrink-0 flex p-1 bg-bg-secondary dark:bg-dark-bg-secondary border-b border-border-color dark:border-dark-border-color">
                       <button onClick={() => setMobileView('editor')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'editor' ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent' : 'text-text-muted dark:text-dark-text-muted'}`}><EditIcon className="w-5 h-5 mx-auto"/></button>

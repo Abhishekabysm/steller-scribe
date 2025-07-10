@@ -19,6 +19,7 @@ const AppContent: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [theme, toggleTheme] = useTheme();
   const [sortOption, setSortOption] = useState<SortOption>('updatedAt');
+  const [viewMode, setViewMode] = useState<'split' | 'editor' | 'preview'>('split');
   const { addToast } = useToasts();
   
   // Effect to set the initial active note
@@ -177,6 +178,46 @@ const AppContent: React.FC = () => {
               className="w-full pl-10 pr-4 py-2.5 bg-bg-secondary dark:bg-dark-bg-secondary rounded-lg text-sm text-text-primary dark:text-dark-text-primary placeholder-text-muted dark:placeholder-dark-text-muted focus:outline-none focus:ring-2 focus:ring-accent dark:focus:ring-dark-accent focus:bg-surface dark:focus:bg-dark-surface transition-all duration-200 border border-transparent focus:border-accent dark:focus:border-dark-accent"
             />
           </div>
+          
+          {/* View Mode Controls - Only show on desktop when note is active */}
+          {window.innerWidth > 768 && activeNote && (
+            <div className="hidden lg:flex items-center bg-bg-secondary dark:bg-dark-bg-secondary rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('editor')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                  viewMode === 'editor'
+                    ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent shadow-sm'
+                    : 'text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary'
+                }`}
+                title="Editor only"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setViewMode('split')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                  viewMode === 'split'
+                    ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent shadow-sm'
+                    : 'text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary'
+                }`}
+                title="Split view"
+              >
+                Split
+              </button>
+              <button
+                onClick={() => setViewMode('preview')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                  viewMode === 'preview'
+                    ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent shadow-sm'
+                    : 'text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary'
+                }`}
+                title="Preview only"
+              >
+                Preview
+              </button>
+            </div>
+          )}
+          
           <button 
             onClick={toggleTheme} 
             className="p-2.5 rounded-lg hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-all duration-200 flex-shrink-0" 
@@ -222,6 +263,7 @@ const AppContent: React.FC = () => {
             activeNote={activeNote}
             onUpdateNote={updateNote}
             onDeleteNote={deleteNote}
+            viewMode={viewMode}
           />
         </section>
       </main>

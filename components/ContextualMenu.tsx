@@ -90,7 +90,7 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
   return (
     <div
       style={{ top, left }}
-      className="contextual-menu-container absolute z-40 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-lg shadow-xl p-1 flex items-center space-x-1 animate-fade-in transform -translate-x-1/2 touch-manipulation"
+      className="contextual-menu-container absolute z-50 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-lg shadow-2xl p-1.5 sm:p-1 flex items-center gap-1.5 sm:gap-1 animate-fade-in transform -translate-x-1/2 touch-manipulation min-h-[44px] sm:min-h-auto"
       onClick={(e) => e.stopPropagation()} // Prevent closing the menu when clicking on it
       onTouchStart={(e) => e.stopPropagation()} // Prevent closing the menu when touching it
     >
@@ -100,7 +100,7 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
           title={title}
           onClick={() => handleActionClick(action)}
           disabled={isLoading}
-          className="p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2.5 sm:p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] sm:min-w-auto sm:min-h-auto flex items-center justify-center"
         >
           {isLoading && activeAction === action ? (
             <div className="w-5 h-5 border-2 border-text-muted/50 border-t-accent dark:border-dark-text-muted/50 dark:border-t-dark-accent rounded-full animate-spin"></div>
@@ -119,7 +119,7 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
           title="Translate text"
           disabled={isLoading}
           onClick={() => setTranslateMenuOpen(!isTranslateMenuOpen)}
-          className="p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2.5 sm:p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] sm:min-w-auto sm:min-h-auto flex items-center justify-center"
         >
             {isLoading && activeAction === 'translate' ? (
                 <div className="w-5 h-5 border-2 border-text-muted/50 border-t-accent dark:border-dark-text-muted/50 dark:border-t-dark-accent rounded-full animate-spin"></div>
@@ -159,7 +159,7 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
           title="Get word meaning"
           disabled={isLoading || isDictionaryLoading}
           onClick={() => setDictionaryMenuOpen(!isDictionaryMenuOpen)}
-          className="p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2.5 sm:p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] sm:min-w-auto sm:min-h-auto flex items-center justify-center"
         >
             {isDictionaryLoading ? (
                 <div className="w-5 h-5 border-2 border-text-muted/50 border-t-accent dark:border-dark-text-muted/50 dark:border-t-dark-accent rounded-full animate-spin"></div>

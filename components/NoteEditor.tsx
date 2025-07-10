@@ -200,7 +200,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   
   const handleTextSelection = (e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget;
-    // Use a longer timeout to allow the browser to update selection state
+    
+    // Use different timeouts for mouse vs touch
+    const isTouch = 'touches' in e || 'changedTouches' in e;
+    const timeout = isTouch ? 300 : 100; // Longer timeout for touch events
+    
     setTimeout(() => {
         try {
             // Force refresh the selection state
@@ -217,20 +221,29 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                         clientX = e.clientX;
                         clientY = e.clientY;
                     } else {
-                        // Touch event - use the first touch point
+                        // Touch event - use the last touch point for better accuracy
                         const touch = e.changedTouches[0] || e.touches[0];
                         clientX = touch.clientX;
                         clientY = touch.clientY;
                     }
                     
-                    // Position menu above the cursor/touch, relative to its container.
-                    let top = clientY - containerRect.top - 55; // 55px offset for menu height + spacing
+                    // For mobile, account for virtual keyboard and use different positioning
+                    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+                    const keyboardOpen = isTouch && viewportHeight < window.innerHeight * 0.8;
+                    
+                    // Position menu relative to viewport for better mobile experience
+                    let top = clientY - containerRect.top - 60; // Increased offset for mobile
                     let left = clientX - containerRect.left;
                     
-                    // Ensure the menu doesn't go too far left (behind sidebar) or right
-                    const menuWidth = 280; // Approximate width of contextual menu (increased for mobile)
-                    const minLeft = 10; // Minimum distance from left edge
-                    const maxLeft = containerRect.width - menuWidth - 10; // Maximum distance from right edge
+                    // If keyboard is open and we're at bottom, show menu above selection
+                    if (keyboardOpen && top > viewportHeight - 150) {
+                        top = clientY - containerRect.top - 120; // Show above selection
+                    }
+                    
+                    // Ensure the menu doesn't go too far left or right
+                    const menuWidth = isTouch ? 320 : 280; // Wider menu for touch devices
+                    const minLeft = 10;
+                    const maxLeft = containerRect.width - menuWidth - 10;
                     
                     left = Math.max(minLeft, Math.min(left, maxLeft));
                     
@@ -251,8 +264,47 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             setContextualMenu(null);
             document.body.classList.remove('contextual-menu-active');
         }
-    }, 150); // Slightly longer timeout for touch events
+    }, timeout);
   };
+
+  // Add selection change handler for better mobile support
+  const handleSelectionChange = () => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+    
+    setTimeout(() => {
+        try {
+            const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+            
+            if (selectedText.length > 0 && document.activeElement === textarea) {
+                const containerRect = editorContainerRef.current?.getBoundingClientRect();
+                if (containerRect && editorContainerRef.current) {
+                    // For selection change, position menu at center of selection
+                    const rect = textarea.getBoundingClientRect();
+                    const left = rect.left + rect.width / 2 - containerRect.left;
+                    const top = rect.top - containerRect.top - 60;
+                    
+                    setContextualMenu({ 
+                        top: Math.max(10, top), 
+                        left: Math.max(10, Math.min(left, containerRect.width - 320)) 
+                    });
+                    document.body.classList.add('contextual-menu-active');
+                }
+            }
+        } catch (error) {
+            // Ignore errors in selection change
+        }
+    }, 200);
+  };
+
+  // Add effect to listen for selection changes
+  React.useEffect(() => {
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+        document.removeEventListener('selectionchange', handleSelectionChange);
+        document.body.classList.remove('contextual-menu-active');
+    };
+  }, []);
 
 
 
@@ -354,6 +406,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                       setContextualMenu(null);
                       document.body.classList.remove('contextual-menu-active');
                     }
+                  }}
+                  onFocus={() => {
+                    // When textarea gets focus, set up selection monitoring for mobile
+                    setTimeout(() => {
+                      if ('ontouchstart' in window) {
+                        handleSelectionChange();
+                      }
+                    }, 500);
                   }}
 
                   style={{

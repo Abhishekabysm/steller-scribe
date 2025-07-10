@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useCallback, useRef, KeyboardEvent, useEffect } from 'react';
 import { Note, AITextAction } from '../types';
-import { summarizeText, suggestTagsForText, generateNoteContent, performTextAction } from '../services/geminiService';
+import { summarizeText, suggestTagsForText, generateNoteContent, performTextAction, generateTitle } from '../services/geminiService';
 import { getWordMeaning } from '../services/dictionaryService';
 import { useToasts } from '../hooks/useToasts';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -52,6 +52,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [contextualMenu, setContextualMenu] = useState<{ top: number; left: number } | null>(null);
   const [isAiActionLoading, setIsAiActionLoading] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
@@ -246,6 +247,30 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         setIsGeneratingNote(false);
     }
   };
+
+  /** Handler to auto-generate the title from content **/
+  const handleGenerateTitle = useCallback(async () => {
+    if (!activeNote) return;
+    // avoid spamming on very short content
+    if (activeNote.content.trim().length < 20) {
+      addToast("Please write more content before generating a title.", "info");
+      return;
+    }
+
+    setIsGeneratingTitle(true);
+    try {
+      const newTitle = await generateTitle(activeNote.content);
+      onUpdateNote({ title: newTitle });
+      addToast("Title auto-generated!", "success");
+    } catch (error) {
+      addToast(
+        error instanceof Error ? error.message : "Failed to generate title.",
+        "error"
+      );
+    } finally {
+      setIsGeneratingTitle(false);
+    }
+  }, [activeNote, onUpdateNote, addToast]);
   
   const handleTextSelection = (e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget;
@@ -587,13 +612,26 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const editorPane = (
       <div className="flex flex-col h-full bg-surface dark:bg-dark-surface relative" ref={editorContainerRef}>
           <div className="p-4 border-b border-border-color dark:border-dark-border-color">
-              <input
-                  type="text"
-                  value={activeNote.title}
-                  onChange={handleTitleChange}
-                  className="w-full text-2xl font-bold bg-transparent text-text-primary dark:text-dark-text-primary focus:outline-none placeholder:text-text-muted"
-                  placeholder="Untitled Note"
-              />
+              <div className="flex items-center">
+                  <input
+                      type="text"
+                      value={activeNote.title}
+                      onChange={handleTitleChange}
+                      placeholder="Untitled Note"
+                      className="flex-1 text-2xl font-bold bg-transparent text-text-primary dark:text-dark-text-primary focus:outline-none placeholder:text-text-muted"
+                  />
+                  <button
+                      onClick={handleGenerateTitle}
+                      disabled={isGeneratingTitle}
+                      title="Generate title from content"
+                      className="ml-2 p-1.5 text-text-secondary dark:text-dark-text-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-md hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary"
+                  >
+                      {isGeneratingTitle
+                          ? <LoadingSpinner />
+                          : <SparklesIcon className="w-5 h-5" />
+                      }
+                  </button>
+              </div>
               <div className="flex items-center flex-wrap gap-2 mt-3">
                   {activeNote.tags.map(tag => <Tag key={tag} tag={tag} onRemove={removeTag} />)}
                   <input 

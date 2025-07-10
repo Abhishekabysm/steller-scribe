@@ -159,3 +159,33 @@ export const performTextAction = async (text: string, action: AITextAction, lang
         throw new Error("An unknown error occurred while performing the AI action.");
     }
 };
+
+/**
+ * Generate a concise title (5 words or less) for given note content.
+ * Returns 'Untitled Note' if the content is too short or on error.
+ */
+export const generateTitle = async (text: string): Promise<string> => {
+    if (!text || text.trim().length < 20) {
+        // too little context → fallback
+        return "Untitled Note";
+    }
+    
+    try {
+        const client = getAiClient();
+        const prompt = `Provide a concise and descriptive title (5 words or less) for the following note content. Only output the title without any extra punctuation or quotes:\n\n${text}`;
+        
+        const response = await client.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                thinkingConfig: { thinkingBudget: 0 }
+            }
+        });
+        
+        const title = response.text?.trim();
+        return title && title.length > 0 ? title : "Untitled Note";
+    } catch (error) {
+        console.error("Error generating title with Gemini:", error);
+        return "Untitled Note";
+    }
+};

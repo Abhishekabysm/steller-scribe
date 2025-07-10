@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import { AITextAction } from '../types';
 import WandSparklesIcon from './icons/WandSparklesIcon';
 import CheckBadgeIcon from './icons/CheckBadgeIcon';
@@ -31,16 +31,6 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
   const [isDictionaryMenuOpen, setDictionaryMenuOpen] = useState(false);
   const [dictionaryResult, setDictionaryResult] = useState<{word: string, meaning: string} | null>(null);
   const [isDictionaryLoading, setIsDictionaryLoading] = useState(false);
-  const [translateTimer, setTranslateTimer] = useState<NodeJS.Timeout | null>(null);
-  const [dictionaryTimer, setDictionaryTimer] = useState<NodeJS.Timeout | null>(null);
-
-  // Cleanup timers on unmount
-  useEffect(() => {
-    return () => {
-      if (translateTimer) clearTimeout(translateTimer);
-      if (dictionaryTimer) clearTimeout(dictionaryTimer);
-    };
-  }, [translateTimer, dictionaryTimer]);
 
   const handleActionClick = (action: AITextAction, language?: string) => {
     if (isLoading) return;
@@ -48,26 +38,6 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
     onAction(action, language);
     setTranslateMenuOpen(false);
     setDictionaryMenuOpen(false);
-  };
-
-  const handleTranslateMouseEnter = () => {
-    if (translateTimer) clearTimeout(translateTimer);
-    setTranslateMenuOpen(true);
-  };
-
-  const handleTranslateMouseLeave = () => {
-    const timer = setTimeout(() => setTranslateMenuOpen(false), 200);
-    setTranslateTimer(timer);
-  };
-
-  const handleDictionaryMouseEnter = () => {
-    if (dictionaryTimer) clearTimeout(dictionaryTimer);
-    setDictionaryMenuOpen(true);
-  };
-
-  const handleDictionaryMouseLeave = () => {
-    const timer = setTimeout(() => setDictionaryMenuOpen(false), 200);
-    setDictionaryTimer(timer);
   };
 
   const handleDictionaryClick = async (language: string) => {
@@ -148,14 +118,14 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
       ))}
 
       {/* Translate Button with Sub-menu */}
-      <div className="relative" 
-           onMouseEnter={handleTranslateMouseEnter} 
-           onMouseLeave={handleTranslateMouseLeave}
-           onTouchStart={handleTranslateMouseEnter}>
+      <div className="relative">
         <button
           title="Translate text"
           disabled={isLoading}
-          onClick={() => setTranslateMenuOpen(!isTranslateMenuOpen)}
+          onClick={() => {
+            setDictionaryMenuOpen(false);
+            setTranslateMenuOpen(!isTranslateMenuOpen);
+          }}
           className="p-2.5 sm:p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] sm:min-w-auto sm:min-h-auto flex items-center justify-center"
         >
             {isLoading && activeAction === 'translate' ? (
@@ -172,8 +142,6 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
                   ? 'right-0' // Align to right edge on mobile to prevent cutoff
                   : 'left-1/2 -translate-x-1/2'
               }`}
-              onMouseEnter={handleTranslateMouseEnter}
-              onMouseLeave={handleTranslateMouseLeave}
             >
                 <ul className="py-1">
                     {languages.map(lang => (
@@ -192,14 +160,14 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
       </div>
 
       {/* Dictionary Button with Sub-menu */}
-      <div className="relative" 
-           onMouseEnter={handleDictionaryMouseEnter} 
-           onMouseLeave={handleDictionaryMouseLeave}
-           onTouchStart={handleDictionaryMouseEnter}>
+      <div className="relative">
         <button
           title="Get word meaning"
           disabled={isLoading || isDictionaryLoading}
-          onClick={() => setDictionaryMenuOpen(!isDictionaryMenuOpen)}
+          onClick={() => {
+            setTranslateMenuOpen(false);
+            setDictionaryMenuOpen(!isDictionaryMenuOpen);
+          }}
           className="p-2.5 sm:p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[44px] min-h-[44px] sm:min-w-auto sm:min-h-auto flex items-center justify-center"
         >
             {isDictionaryLoading ? (
@@ -216,8 +184,6 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
                   ? 'right-0' // Align to right edge on mobile to prevent cutoff
                   : 'left-1/2 -translate-x-1/2'
               }`}
-              onMouseEnter={handleDictionaryMouseEnter}
-              onMouseLeave={handleDictionaryMouseLeave}
             >
                 <ul className="py-1">
                     {dictionaryLanguages.map(lang => (
@@ -236,24 +202,29 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
 
         {/* Dictionary Result */}
         {dictionaryResult && (
-            <div className={`absolute top-full mt-2 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-md shadow-lg animate-fade-in z-50 p-3 ${
-              isMobile 
-                ? 'right-0 w-72 max-w-[calc(100vw-20px)]' // Align to right edge on mobile
-                : 'left-1/2 -translate-x-1/2 w-64'
-            }`}>
+            <div 
+              className={`absolute top-full mt-2 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-md shadow-lg animate-fade-in z-50 p-3 ${
+                isMobile 
+                  ? 'right-0 w-auto min-w-[200px] max-w-[calc(100vw-40px)]' // Align to right edge on mobile
+                  : 'left-1/2 -translate-x-1/2 w-auto min-w-[280px] max-w-[400px]'
+              }`}
+            >
                 <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium text-text-primary dark:text-dark-text-primary text-sm">Dictionary</h4>
                     <button
                         onClick={() => setDictionaryResult(null)}
-                        className="text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary"
+                        className="text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary text-lg leading-none ml-2 flex-shrink-0"
                     >
                         ✕
                     </button>
                 </div>
-                <div className="text-sm">
-                    <span className="font-medium text-accent dark:text-dark-accent">"{dictionaryResult.word}"</span>
-                    <span className="text-text-muted dark:text-dark-text-muted mx-2">→</span>
-                    <span className="text-text-secondary dark:text-dark-text-secondary">{dictionaryResult.meaning}</span>
+                <div className="text-sm break-words">
+                    <div className="mb-1">
+                        <span className="font-medium text-accent dark:text-dark-accent">"{dictionaryResult.word}"</span>
+                    </div>
+                    <div className="text-text-secondary dark:text-dark-text-secondary leading-relaxed">
+                        {dictionaryResult.meaning}
+                    </div>
                 </div>
             </div>
         )}

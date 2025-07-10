@@ -618,13 +618,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                       value={activeNote.title}
                       onChange={handleTitleChange}
                       placeholder="Untitled Note"
-                      className="flex-1 text-2xl font-bold bg-transparent text-text-primary dark:text-dark-text-primary focus:outline-none placeholder:text-text-muted"
+                      className="flex-1 min-w-0 text-2xl font-bold bg-transparent text-text-primary dark:text-dark-text-primary focus:outline-none placeholder:text-text-muted"
                   />
                   <button
                       onClick={handleGenerateTitle}
                       disabled={isGeneratingTitle}
                       title="Generate title from content"
-                      className="ml-2 p-1.5 text-text-secondary dark:text-dark-text-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-md hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary"
+                      className="flex-shrink-0 ml-2 p-1.5 text-text-secondary dark:text-dark-text-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-md hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary"
                   >
                       {isGeneratingTitle
                           ? <LoadingSpinner />

@@ -85,19 +85,30 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       return dirty;
     }
     return '';
-  }, [activeNote]);
+  }, [activeNote?.content]); // Only depend on content, not entire note object
+
+  const [debouncedContent, setDebouncedContent] = useState(activeNote?.content || '');
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedContent(activeNote?.content || '');
+    }, 300); // 300ms debounce delay
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [activeNote?.content]);
 
   useEffect(() => {
-    // Re-run syntax highlighting when the note changes, and ensure hljs is loaded.
-    if (activeNote && typeof hljs !== 'undefined') {
-        setTimeout(() => {
-            // Check again inside timeout in case component unmounted
-            if (typeof hljs !== 'undefined') {
-                hljs.highlightAll();
-            }
-        }, 0);
+    // Only run syntax highlighting when content actually changes (after debounce)
+    if (typeof hljs !== 'undefined' && debouncedContent) {
+      const timer = setTimeout(() => {
+        hljs.highlightAll();
+      }, 50); // Small delay to allow DOM update
+        
+      return () => clearTimeout(timer);
     }
-  }, [renderedMarkdown, activeNote]);
+  }, [debouncedContent]);
 
   // Reset suggestions when activeNote changes
   useEffect(() => {
@@ -158,7 +169,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onUpdateNote({ content: e.target.value });
+    const newValue = e.target.value;
+    onUpdateNote({ content: newValue });
     // Hide menu when user starts typing
     if (contextualMenu) setContextualMenu(null);
   };
@@ -464,8 +476,63 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     }
   };
 
-
-
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!activeNote || !editorRef.current) return;
+    
+    const textarea = editorRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    // Only proceed if there's selected text
+    if (!selectedText || start === end) return;
+    
+    let wrappedText = '';
+    let shouldWrap = false;
+    
+    // Check which key was pressed and determine wrapping
+    switch (e.key) {
+      case '"':
+        wrappedText = `"${selectedText}"`;
+        shouldWrap = true;
+        break;
+      case "'":
+        wrappedText = `'${selectedText}'`;
+        shouldWrap = true;
+        break;
+      case '`':
+        wrappedText = `\`${selectedText}\``;
+        shouldWrap = true;
+        break;
+      case '(':
+        wrappedText = `(${selectedText})`;
+        shouldWrap = true;
+        break;
+      case '[':
+        wrappedText = `[${selectedText}]`;
+        shouldWrap = true;
+        break;
+      case '{':
+        wrappedText = `{${selectedText}}`;
+        shouldWrap = true;
+        break;
+    }
+    
+    if (shouldWrap) {
+      // Prevent the default key press behavior
+      e.preventDefault();
+      
+      // Replace the selected text with the wrapped text
+      const newValue = textarea.value.substring(0, start) + wrappedText + textarea.value.substring(end);
+      onUpdateNote({ ...activeNote, content: newValue });
+      
+      // Update cursor position to after the wrapped text
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + wrappedText.length, start + wrappedText.length);
+      }, 0);
+    }
+  };
 
   if (!activeNote) {
     return (
@@ -503,6 +570,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                   ref={editorRef}
                   value={activeNote.content}
                   onChange={handleContentChange}
+                  onKeyDown={handleKeyDown}
                   onMouseUp={handleTextSelection}
                   onTouchEnd={handleTextSelection}
                   onContextMenu={(e) => {

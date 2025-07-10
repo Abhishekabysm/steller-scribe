@@ -34,6 +34,8 @@ const AppContent: React.FC = () => {
     const handleResize = () => {
       if (window.innerWidth > 768) {
         setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
       }
     };
     window.addEventListener('resize', handleResize);

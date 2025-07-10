@@ -18,6 +18,9 @@ import EditIcon from './icons/EditIcon';
 import ViewIcon from './icons/ViewIcon';
 import TagIcon from './icons/TagIcon';
 import ContextualMenu from './ContextualMenu';
+import DownloadIcon from './icons/DownloadIcon';
+import DownloadModal from './DownloadModal';
+import SummaryModal from './SummaryModal';
 
 declare const marked: any;
 declare const hljs: any;
@@ -50,6 +53,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
   const [contextualMenu, setContextualMenu] = useState<{ top: number; left: number } | null>(null);
   const [isAiActionLoading, setIsAiActionLoading] = useState(false);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [summaryContent, setSummaryContent] = useState('');
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
@@ -176,18 +182,26 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const handleSummarize = useCallback(async () => {
     if (!activeNote) return;
     setIsSummarizing(true);
-    addToast('Generating summary...', 'info');
+    setIsSummaryModalOpen(true);
+    setSummaryContent('');
+    
     try {
       const summary = await summarizeText(activeNote.content);
-      const summaryContent = `\n\n---\n\n**AI Summary:**\n*${summary}*`;
-      onUpdateNote({ content: activeNote.content + summaryContent });
-      addToast('Summary added to note!', 'success');
+      setSummaryContent(summary);
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Failed to get summary.', 'error');
+      setIsSummaryModalOpen(false);
     } finally {
       setIsSummarizing(false);
     }
-  }, [activeNote, onUpdateNote, addToast]);
+  }, [activeNote, addToast]);
+
+  const handleAddSummaryToNote = useCallback(() => {
+    if (!activeNote || !summaryContent) return;
+    const summarySection = `\n\n---\n\n**AI Summary:**\n*${summaryContent}*`;
+    onUpdateNote({ content: activeNote.content + summarySection });
+    addToast('Summary added to note!', 'success');
+  }, [activeNote, summaryContent, onUpdateNote, addToast]);
 
   const handleSuggestTags = useCallback(async () => {
     if (!activeNote) return;
@@ -516,19 +530,23 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                 </div>
             )}
             <div className="flex justify-end items-center gap-2">
-              <button onClick={handleSuggestTags} disabled={isSuggestingTags} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
-                  {isSuggestingTags ? <LoadingSpinner/> : <TagIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
-                  <span className="hidden sm:inline">Suggest Tags</span>
-                  <span className="sm:hidden">Tags</span>
-              </button>
-              <button onClick={handleSummarize} disabled={isSummarizing} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
-                  {isSummarizing ? <LoadingSpinner/> : <SparklesIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
-                  <span className="hidden md:inline">Summarize</span>
-                  <span className="md:hidden">Summary</span>
+            <button onClick={handleSuggestTags} disabled={isSuggestingTags} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
+            {isSuggestingTags ? <LoadingSpinner/> : <TagIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
+            <span className="hidden sm:inline">Suggest Tags</span>
+            <span className="sm:hidden">Tags</span>
+            </button>
+            <button onClick={handleSummarize} disabled={isSummarizing} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
+            {isSummarizing ? <LoadingSpinner/> : <SparklesIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
+            <span className="hidden md:inline">Summarize</span>
+            <span className="md:hidden">Summary</span>
+            </button>
+            <button onClick={() => setIsDownloadModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">
+            <DownloadIcon className="w-4 h-4 text-accent dark:text-dark-accent" />
+               <span className="hidden lg:inline">Download</span>
               </button>
                <button onClick={() => setIsDeleteModalOpen(true)} className="p-2 rounded-md hover:bg-red-500/10 text-red-500 transition-colors">
                   <TrashIcon className="w-5 h-5" />
-              </button>
+               </button>
             </div>
           </div>
       </div>
@@ -571,6 +589,21 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         isGenerating={isGeneratingNote}
         onClose={() => setIsAIGenerateModalOpen(false)}
         onGenerate={handleGenerateNote}
+      />
+
+      <DownloadModal
+        isOpen={isDownloadModalOpen}
+        onClose={() => setIsDownloadModalOpen(false)}
+        note={activeNote}
+      />
+
+      <SummaryModal
+        isOpen={isSummaryModalOpen}
+        onClose={() => setIsSummaryModalOpen(false)}
+        summary={summaryContent}
+        isLoading={isSummarizing}
+        onAddToNote={handleAddSummaryToNote}
+        noteTitle={activeNote?.title || ''}
       />
     </>
   );

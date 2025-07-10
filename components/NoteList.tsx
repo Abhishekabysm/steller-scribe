@@ -116,22 +116,24 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
   return (
     <div className="h-full bg-bg-secondary dark:bg-dark-bg-secondary flex flex-col">
       <div className="p-2 border-b border-border-color dark:border-dark-border-color flex items-center justify-between">
-        <h2 className="text-lg font-bold text-text-primary dark:text-dark-text-primary ml-2">Notes</h2>
+        <div className="flex items-center space-x-2">
+          {onCloseSidebar && (
+            <button
+              onClick={onCloseSidebar}
+              className="hidden md:block p-1 rounded-full hover:bg-bg-primary dark:hover:bg-dark-bg-primary text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
+              title="Close sidebar"
+            >
+              <XIcon className="w-5 h-5" />
+            </button>
+          )}
+          <h2 className="text-lg font-bold text-text-primary dark:text-dark-text-primary">Notes</h2>
+        </div>
         <div className="flex items-center space-x-2">
           <Dropdown 
               options={sortOptions}
               value={sortOption}
               onChange={(value) => onSortChange(value as SortOption)}
           />
-          {onCloseSidebar && (
-            <button
-              onClick={onCloseSidebar}
-              className="p-1 rounded-full hover:bg-bg-primary dark:hover:bg-dark-bg-primary text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
-              title="Close sidebar"
-            >
-              <XIcon className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
       <div className="p-3 border-b border-border-color dark:border-dark-border-color">

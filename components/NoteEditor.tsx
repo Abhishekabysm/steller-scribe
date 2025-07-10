@@ -452,8 +452,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             addToast(`"${selectedText}" → ${meaning}`, 'info');
         } else {
             const modifiedText = await performTextAction(selectedText, action, language);
-            const newContent = `${activeNote.content.substring(0, start)}${modifiedText}${activeNote.content.substring(end)}`;
-            onUpdateNote({ content: newContent });
+            
+            // Use execCommand for undo-friendly text replacement
+            textarea.focus();
+            textarea.setSelectionRange(start, end);
+            document.execCommand('insertText', false, modifiedText);
+            
+            // Manually trigger content update after execCommand
+            onUpdateNote({ content: textarea.value });
             
             const editorWrapper = document.querySelector('.editor-textarea-wrapper');
             if (editorWrapper) {

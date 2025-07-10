@@ -137,10 +137,10 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
       <div className="p-3 border-b border-border-color dark:border-dark-border-color">
         <button
           onClick={onAddNote}
-          className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-accent text-white rounded-lg hover:bg-accent-hover dark:bg-dark-accent dark:hover:bg-dark-accent-hover transition-colors font-semibold shadow-sm"
+          className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
         >
-          <PlusIcon className="w-5 h-5" />
-          <span>New Note</span>
+          <PlusIcon className="w-4 h-4 flex-shrink-0 stroke-current" />
+          <span className="text-sm font-medium leading-4">New Note</span>
         </button>
       </div>
       <div className="flex-grow overflow-y-auto">

@@ -10,6 +10,7 @@ import LogoIcon from './components/icons/LogoIcon';
 import MenuIcon from './components/icons/MenuIcon';
 import SunIcon from './components/icons/SunIcon';
 import MoonIcon from './components/icons/MoonIcon';
+import SearchIcon from './components/icons/SearchIcon';
 
 const AppContent: React.FC = () => {
   const [notes, setNotes] = useLocalStorage<Note[]>('stellar-scribe-notes-v2', []);
@@ -107,25 +108,41 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col font-sans antialiased">
-      <header className="flex-shrink-0 bg-surface dark:bg-dark-surface border-b border-border-color dark:border-dark-border-color p-3 flex items-center justify-between z-30 gap-3">
-        <div className="flex items-center space-x-3 flex-shrink-0">
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`p-1 text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors ${isSidebarOpen ? 'md:hidden' : ''}`}>
-            <MenuIcon className="w-6 h-6"/>
+      <header className="flex-shrink-0 bg-surface dark:bg-dark-surface border-b border-border-color dark:border-dark-border-color px-4 py-3 flex items-center justify-between z-30 shadow-sm">
+        <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            className={`p-2 rounded-lg text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary transition-all duration-200 ${isSidebarOpen ? 'md:hidden' : ''}`}
+            title="Toggle sidebar"
+          >
+            <MenuIcon className="w-5 h-5"/>
           </button>
-          <LogoIcon className="w-7 h-7 text-accent dark:text-dark-accent" />
-          <h1 className="text-xl font-bold text-text-primary dark:text-dark-text-primary hidden sm:block">Stellar Scribe</h1>
+          <div className="flex items-center space-x-2 min-w-0">
+            <LogoIcon className="w-8 h-8 text-accent dark:text-dark-accent flex-shrink-0" />
+            <h1 className="text-xl font-bold text-text-primary dark:text-dark-text-primary hidden sm:block truncate">
+              Stellar Scribe
+            </h1>
+          </div>
         </div>
-        <div className="flex items-center space-x-2 sm:space-x-4">
-          <div className="relative flex-grow sm:flex-grow-0">
+        
+        <div className="flex items-center space-x-3 flex-grow max-w-md ml-4">
+          <div className="relative flex-grow">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <SearchIcon className="w-4 h-4 text-text-muted dark:text-dark-text-muted" />
+            </div>
             <input
               type="search"
               placeholder="Search notes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary rounded-lg text-sm text-text-primary dark:text-dark-text-primary placeholder-text-muted dark:placeholder-dark-text-muted focus:outline-none focus:ring-2 focus:ring-accent dark:focus:ring-dark-accent focus:bg-surface dark:focus:bg-dark-surface transition-all duration-200 border border-transparent focus:border-accent dark:focus:border-dark-accent"
+              className="w-full pl-10 pr-4 py-2.5 bg-bg-secondary dark:bg-dark-bg-secondary rounded-lg text-sm text-text-primary dark:text-dark-text-primary placeholder-text-muted dark:placeholder-dark-text-muted focus:outline-none focus:ring-2 focus:ring-accent dark:focus:ring-dark-accent focus:bg-surface dark:focus:bg-dark-surface transition-all duration-200 border border-transparent focus:border-accent dark:focus:border-dark-accent"
             />
           </div>
-          <button onClick={toggleTheme} className="p-2 rounded-md hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary transition-colors flex-shrink-0" title="Toggle Theme">
+          <button 
+            onClick={toggleTheme} 
+            className="p-2.5 rounded-lg hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-all duration-200 flex-shrink-0" 
+            title="Toggle theme"
+          >
             {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
           </button>
         </div>

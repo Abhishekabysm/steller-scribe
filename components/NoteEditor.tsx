@@ -238,14 +238,18 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                     top = Math.max(10, top);
                     
                     setContextualMenu({ top, left });
+                    // Add class to body to suppress default selection behavior
+                    document.body.classList.add('contextual-menu-active');
                 }
             } else {
                  // Clicks/touches inside the textarea without selection should hide the menu.
                  setContextualMenu(null);
+                 document.body.classList.remove('contextual-menu-active');
             }
         } catch (error) {
             // If any error occurs, clear the menu
             setContextualMenu(null);
+            document.body.classList.remove('contextual-menu-active');
         }
     }, 150); // Slightly longer timeout for touch events
   };
@@ -333,19 +337,31 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                   onChange={handleContentChange}
                   onMouseUp={handleTextSelection}
                   onTouchEnd={handleTextSelection}
+                  onContextMenu={(e) => {
+                    // Prevent default browser context menu on text selection
+                    e.preventDefault();
+                  }}
                   onMouseDown={(e) => {
                     // Don't clear menu if clicking on the contextual menu
                     if (!(e.target as HTMLElement).closest('.contextual-menu-container')) {
                       setContextualMenu(null);
+                      document.body.classList.remove('contextual-menu-active');
                     }
                   }}
                   onTouchStart={(e) => {
                     // Don't clear menu if touching the contextual menu
                     if (!(e.target as HTMLElement).closest('.contextual-menu-container')) {
                       setContextualMenu(null);
+                      document.body.classList.remove('contextual-menu-active');
                     }
                   }}
-                  className="w-full h-full bg-transparent text-text-secondary dark:text-dark-text-secondary focus:outline-none resize-none leading-relaxed font-mono"
+
+                  style={{
+                    WebkitUserSelect: 'text',
+                    WebkitTouchCallout: 'none', // Disable iOS callout menu
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                  className="w-full h-full bg-transparent text-text-secondary dark:text-dark-text-secondary focus:outline-none resize-none leading-relaxed font-mono editor-textarea"
                   placeholder="Start writing..."
               />
           </div>

@@ -7,6 +7,13 @@ export interface Note {
   updatedAt: number;
   tags: string[];
   isPinned: boolean;
+  lastTransaction?: {
+    from: number;
+    to: number;
+    text: string;
+    removed: string;
+    origin: string;
+  };
 }
 
 export type SortOption = 'updatedAt' | 'createdAt' | 'title';

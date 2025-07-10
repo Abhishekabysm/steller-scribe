@@ -81,34 +81,32 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
 
   const renderedMarkdown = useMemo(() => {
     if (activeNote && typeof marked !== 'undefined') {
-      const dirty = marked.parse(activeNote.content);
-      return dirty;
+      try {
+        const dirty = marked.parse(activeNote.content);
+        return dirty;
+      } catch (e) {
+        console.error('Markdown parsing error:', e);
+        return activeNote.content; // Fallback to raw content
+      }
     }
     return '';
-  }, [activeNote?.content]); // Only depend on content, not entire note object
-
-  const [debouncedContent, setDebouncedContent] = useState(activeNote?.content || '');
-  
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedContent(activeNote?.content || '');
-    }, 300); // 300ms debounce delay
-    
-    return () => {
-      clearTimeout(handler);
-    };
   }, [activeNote?.content]);
 
   useEffect(() => {
-    // Only run syntax highlighting when content actually changes (after debounce)
-    if (typeof hljs !== 'undefined' && debouncedContent) {
+    if (typeof hljs !== 'undefined') {
       const timer = setTimeout(() => {
-        hljs.highlightAll();
-      }, 50); // Small delay to allow DOM update
-        
+        const blocks = document.querySelectorAll('pre code');
+        blocks.forEach((block) => {
+          // Only highlight if not already highlighted
+          if (!block.classList.contains('hljs')) {
+            hljs.highlightElement(block);
+          }
+        });
+      }, 200); // Increased delay to batch updates
+      
       return () => clearTimeout(timer);
     }
-  }, [debouncedContent]);
+  }, [renderedMarkdown]); // Only run when rendered markdown changes
 
   // Reset suggestions when activeNote changes
   useEffect(() => {
@@ -490,45 +488,75 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     let wrappedText = '';
     let shouldWrap = false;
     
-    // Check which key was pressed and determine wrapping
-    switch (e.key) {
-      case '"':
-        wrappedText = `"${selectedText}"`;
-        shouldWrap = true;
-        break;
-      case "'":
-        wrappedText = `'${selectedText}'`;
-        shouldWrap = true;
-        break;
-      case '`':
-        wrappedText = `\`${selectedText}\``;
-        shouldWrap = true;
-        break;
-      case '(':
-        wrappedText = `(${selectedText})`;
-        shouldWrap = true;
-        break;
-      case '[':
-        wrappedText = `[${selectedText}]`;
-        shouldWrap = true;
-        break;
-      case '{':
-        wrappedText = `{${selectedText}}`;
-        shouldWrap = true;
-        break;
+    // Check for Ctrl/Cmd key combinations first
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key.toLowerCase()) {
+        case 'b':
+          wrappedText = `**${selectedText}**`;
+          shouldWrap = true;
+          e.preventDefault();
+          break;
+        case 'i':
+          wrappedText = `_${selectedText}_`;
+          shouldWrap = true;
+          e.preventDefault();
+          break;
+        case 'k':
+          wrappedText = `[${selectedText}](url)`;
+          shouldWrap = true;
+          e.preventDefault();
+          break;
+        case 'l':
+          wrappedText = `1. ${selectedText.replace(/\n/g, '\n1. ')}`;
+          shouldWrap = true;
+          e.preventDefault();
+          break;
+        case 'm':
+          wrappedText = `- [ ] ${selectedText.replace(/\n/g, '\n- [ ] ')}`;
+          shouldWrap = true;
+          e.preventDefault();
+          break;
+      }
+    } else {
+      // Check for regular key presses
+      switch (e.key) {
+        case '"':
+          wrappedText = `"${selectedText}"`;
+          shouldWrap = true;
+          break;
+        case "'":
+          wrappedText = `'${selectedText}'`;
+          shouldWrap = true;
+          break;
+        case '`':
+          wrappedText = `\`${selectedText}\``;
+          shouldWrap = true;
+          break;
+        case '(':
+          wrappedText = `(${selectedText})`;
+          shouldWrap = true;
+          break;
+        case '[':
+          wrappedText = `[${selectedText}]`;
+          shouldWrap = true;
+          break;
+        case '{':
+          wrappedText = `{${selectedText}}`;
+          shouldWrap = true;
+          break;
+      }
     }
     
     if (shouldWrap) {
       // Prevent the default key press behavior
       e.preventDefault();
       
-      // Replace the selected text with the wrapped text
-      const newValue = textarea.value.substring(0, start) + wrappedText + textarea.value.substring(end);
-      onUpdateNote({ ...activeNote, content: newValue });
+      // Execute the command through the textarea's execCommand for proper undo support
+      textarea.focus();
+      document.execCommand('insertText', false, wrappedText);
       
       // Update cursor position to after the wrapped text
       setTimeout(() => {
-        textarea.focus();
         textarea.setSelectionRange(start + wrappedText.length, start + wrappedText.length);
       }, 0);
     }

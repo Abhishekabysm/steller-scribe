@@ -43,10 +43,24 @@ const SplitPane: React.FC<SplitPaneProps> = ({ left, right }) => {
       </div>
       <div 
         onMouseDown={onMouseDown} 
-        className="w-2 h-full cursor-col-resize flex-shrink-0 bg-border-color/50 dark:bg-dark-border-color/50 hover:bg-accent/30 dark:hover:bg-dark-accent/30 transition-colors duration-200 split-pane-divider"
+        className="w-4 h-full cursor-col-resize flex-shrink-0 bg-gradient-to-r from-transparent via-border-color/10 to-transparent dark:via-dark-border-color/10 hover:via-accent/20 dark:hover:via-dark-accent/20 transition-all duration-300 split-pane-divider relative group flex items-center justify-center"
         title="Drag to resize"
-      />
-      <div style={{ width: `calc(100% - ${dividerPosition}% - 8px)` }} className="h-full overflow-hidden">
+      >
+        {/* Subtle border lines */}
+        <div className="absolute left-0 top-0 w-px h-full bg-border-color/20 dark:bg-dark-border-color/20"></div>
+        <div className="absolute right-0 top-0 w-px h-full bg-border-color/20 dark:bg-dark-border-color/20"></div>
+        
+        {/* Central grip indicator */}
+        <div className="flex flex-col items-center justify-center space-y-1 opacity-30 group-hover:opacity-70 transition-all duration-300 group-hover:scale-110">
+          <div className="w-1 h-1 bg-text-muted dark:bg-dark-text-muted rounded-full shadow-sm"></div>
+          <div className="w-1 h-1 bg-text-muted dark:bg-dark-text-muted rounded-full shadow-sm"></div>
+          <div className="w-1 h-1 bg-text-muted dark:bg-dark-text-muted rounded-full shadow-sm"></div>
+        </div>
+        
+        {/* Hover glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/5 to-transparent dark:via-dark-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-sm"></div>
+      </div>
+      <div style={{ width: `calc(100% - ${dividerPosition}% - 16px)` }} className="h-full overflow-hidden">
         {right}
       </div>
     </div>

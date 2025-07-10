@@ -127,7 +127,7 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
   return (
     <div
       style={{ top: finalTop, left: finalLeft }}
-      className={`contextual-menu-container absolute z-50 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-lg shadow-2xl p-1.5 sm:p-1 flex items-center gap-1.5 sm:gap-1 animate-fade-in touch-manipulation min-h-[44px] sm:min-h-auto ${isMobile ? 'flex-wrap justify-center max-w-[calc(100vw-20px)]' : 'transform -translate-x-1/2'}`}
+      className={`contextual-menu-container absolute z-50 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-lg shadow-2xl p-1.5 sm:p-1 flex items-center gap-1.5 sm:gap-1 animate-fade-in touch-manipulation min-h-[44px] sm:min-h-auto ${isMobile ? 'flex-wrap justify-center max-w-[calc(100vw-20px)]' : ''}`}
       onClick={(e) => e.stopPropagation()} // Prevent closing the menu when clicking on it
       onTouchStart={(e) => e.stopPropagation()} // Prevent closing the menu when touching it
     >

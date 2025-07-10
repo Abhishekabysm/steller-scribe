@@ -235,28 +235,42 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     
     // Use different timeouts for mouse vs touch
     const isTouch = 'touches' in e || 'changedTouches' in e;
-    const timeout = isTouch ? 300 : 100; // Longer timeout for touch events
+    const timeout = isTouch ? 350 : 200; // Longer timeout for aggressive selections
     
     setTimeout(() => {
         try {
             // Force refresh the selection state
-            const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
             
-            if (selectedText.length > 0) {
+            // Only show menu if we have a valid selection and textarea is focused
+            if (selectedText.length > 0 && start !== end && document.activeElement === textarea) {
                 const containerRect = editorContainerRef.current?.getBoundingClientRect();
                 if (containerRect && editorContainerRef.current) {
-                    // Get position from either mouse or touch event
+                    // Get position - use simple fallback approach for reliability
                     let clientX: number, clientY: number;
                     
-                    if ('clientX' in e) {
-                        // Mouse event
+                    const textareaRect = textarea.getBoundingClientRect();
+                    
+                    // Try event coordinates first
+                    if ('clientX' in e && e.clientX > 0 && e.clientY > 0) {
                         clientX = e.clientX;
                         clientY = e.clientY;
-                    } else {
-                        // Touch event - use the last touch point for better accuracy
+                    } else if ('changedTouches' in e) {
                         const touch = e.changedTouches[0] || e.touches[0];
-                        clientX = touch.clientX;
-                        clientY = touch.clientY;
+                        if (touch && touch.clientX > 0 && touch.clientY > 0) {
+                            clientX = touch.clientX;
+                            clientY = touch.clientY;
+                        } else {
+                            // Fallback to center of textarea
+                            clientX = textareaRect.left + textareaRect.width / 2;
+                            clientY = textareaRect.top + textareaRect.height / 2;
+                        }
+                    } else {
+                        // Fallback to center of textarea for aggressive selections
+                        clientX = textareaRect.left + textareaRect.width / 2;
+                        clientY = textareaRect.top + textareaRect.height / 2;
                     }
                     
                     // For mobile, account for virtual keyboard and use different positioning
@@ -296,13 +310,39 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                     
                     // Ensure the menu doesn't go too far left or right
                     const menuWidth = isTouch ? 320 : 280; // Wider menu for touch devices
-                    const minLeft = 10;
-                    const maxLeft = containerRect.width - menuWidth - 10;
+                    const currentViewportWidth = window.innerWidth;
+                    const currentViewportHeight = window.visualViewport?.height || window.innerHeight;
                     
-                    left = Math.max(minLeft, Math.min(left, maxLeft));
+                    // Calculate bounds relative to viewport, not just container
+                    const containerOffsetX = containerRect.left;
+                    const containerOffsetY = containerRect.top;
                     
-                    // Ensure the menu doesn't go above the container
-                    top = Math.max(10, top);
+                    // Calculate absolute position in viewport
+                    const absoluteLeft = containerOffsetX + left;
+                    const absoluteTop = containerOffsetY + top;
+                    
+                    // Ensure menu stays within viewport bounds
+                    let adjustedAbsoluteLeft = Math.max(10, Math.min(absoluteLeft, currentViewportWidth - menuWidth - 10));
+                    let adjustedAbsoluteTop = Math.max(10, Math.min(absoluteTop, currentViewportHeight - 80));
+                    
+                    // Convert back to container-relative coordinates
+                    left = adjustedAbsoluteLeft - containerOffsetX;
+                    top = adjustedAbsoluteTop - containerOffsetY;
+                    
+                    // Final safety check to ensure it's within container bounds
+                    left = Math.max(10, Math.min(left, containerRect.width - menuWidth - 10));
+                    top = Math.max(10, Math.min(top, containerRect.height - 80));
+                    
+                    // For aggressive selections, ensure we have valid coordinates
+                    if (isNaN(left) || isNaN(top) || left < 0 || top < 0) {
+                        // Ultimate fallback - position at center of textarea
+                        const textareaRect = textarea.getBoundingClientRect();
+                        left = textareaRect.width / 2 - menuWidth / 2;
+                        top = textareaRect.height / 2 - 40;
+                        // Ensure it's within bounds
+                        left = Math.max(10, Math.min(left, containerRect.width - menuWidth - 10));
+                        top = Math.max(10, Math.min(top, containerRect.height - 80));
+                    }
                     
                     setContextualMenu({ top, left });
                     // Add class to body to suppress default selection behavior
@@ -321,42 +361,50 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     }, timeout);
   };
 
-  // Add selection change handler for mobile support only
+  // Add selection change handler for mobile support only - but only when selection is stable
   const handleSelectionChange = () => {
-    // Only handle selection changes on mobile/touch devices
-    if (!('ontouchstart' in window) || !isDesktop === false) return;
+    // Only handle selection changes on mobile/touch devices and when no touch is active
+    if (!('ontouchstart' in window) || isDesktop) return;
     
     const textarea = editorRef.current;
     if (!textarea) return;
+    
+    // Only trigger if no active touch (selection is complete)
+    if (document.body.classList.contains('contextual-menu-active')) return;
     
     setTimeout(() => {
         try {
             const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
             
+            // Only show if selection is stable and textarea is focused
             if (selectedText.length > 0 && document.activeElement === textarea) {
-                const containerRect = editorContainerRef.current?.getBoundingClientRect();
-                if (containerRect && editorContainerRef.current) {
-                    // For mobile selection change, position menu above selection
-                    const rect = textarea.getBoundingClientRect();
-                    const left = rect.left + rect.width / 2 - containerRect.left;
-                    let top = rect.top - containerRect.top - 70; // Position above selection for mobile
-                    
-                    // If not enough space above, show below
-                    if (top < 20) {
-                        top = rect.top - containerRect.top + 30;
+                // Double check selection is still there after timeout (selection is stable)
+                const currentSelection = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+                if (currentSelection === selectedText && currentSelection.length > 0) {
+                    const containerRect = editorContainerRef.current?.getBoundingClientRect();
+                    if (containerRect && editorContainerRef.current) {
+                        // For mobile selection change, position menu above selection
+                        const rect = textarea.getBoundingClientRect();
+                        const left = rect.left + rect.width / 2 - containerRect.left;
+                        let top = rect.top - containerRect.top - 70; // Position above selection for mobile
+                        
+                        // If not enough space above, show below
+                        if (top < 20) {
+                            top = rect.top - containerRect.top + 30;
+                        }
+                        
+                        setContextualMenu({ 
+                            top: Math.max(10, top), 
+                            left: Math.max(10, Math.min(left, containerRect.width - 320)) 
+                        });
+                        document.body.classList.add('contextual-menu-active');
                     }
-                    
-                    setContextualMenu({ 
-                        top: Math.max(10, top), 
-                        left: Math.max(10, Math.min(left, containerRect.width - 320)) 
-                    });
-                    document.body.classList.add('contextual-menu-active');
                 }
             }
         } catch (error) {
             // Ignore errors in selection change
         }
-    }, 200);
+    }, 300); // Longer timeout to ensure selection is complete
   };
 
   // Add effect to listen for selection changes
@@ -458,15 +506,29 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                   onMouseDown={(e) => {
                     // Don't clear menu if clicking on the contextual menu
                     if (!(e.target as HTMLElement).closest('.contextual-menu-container')) {
-                      setContextualMenu(null);
-                      document.body.classList.remove('contextual-menu-active');
+                      // Only clear menu if we're not starting a new selection
+                      setTimeout(() => {
+                        if (!editorRef.current) return;
+                        const hasSelection = editorRef.current.selectionStart !== editorRef.current.selectionEnd;
+                        if (!hasSelection) {
+                          setContextualMenu(null);
+                          document.body.classList.remove('contextual-menu-active');
+                        }
+                      }, 10);
                     }
                   }}
                   onTouchStart={(e) => {
                     // Don't clear menu if touching the contextual menu
                     if (!(e.target as HTMLElement).closest('.contextual-menu-container')) {
-                      setContextualMenu(null);
-                      document.body.classList.remove('contextual-menu-active');
+                      // Only clear menu if we're not starting a new selection
+                      setTimeout(() => {
+                        if (!editorRef.current) return;
+                        const hasSelection = editorRef.current.selectionStart !== editorRef.current.selectionEnd;
+                        if (!hasSelection) {
+                          setContextualMenu(null);
+                          document.body.classList.remove('contextual-menu-active');
+                        }
+                      }, 10);
                     }
                   }}
                   onFocus={() => {

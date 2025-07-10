@@ -147,7 +147,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
       </div>
       <div className="flex-grow overflow-y-auto">
       {sortedAndFilteredNotes.length > 0 ? (
-        <>
+        <div className="pb-16 sm:pb-12">
           {pinnedNotes.length > 0 && (
               <section>
                 <SectionHeader>Pinned</SectionHeader>
@@ -180,7 +180,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
                 </ul>
             </section>
           )}
-        </>
+        </div>
       ) : (
         <div className="p-6 text-center text-text-muted dark:text-dark-text-muted flex flex-col items-center justify-center h-full">
             <DocumentPlusIcon className="w-16 h-16 mb-4 text-text-muted/50 dark:text-dark-text-muted/50" />

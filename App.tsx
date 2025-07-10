@@ -42,6 +42,45 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Effect to prevent body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (isSidebarOpen && window.innerWidth <= 768) {
+      // Store current scroll position
+      const scrollY = window.scrollY;
+      
+      // Prevent body scroll and lock position
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      // Store scroll position
+      document.body.dataset.scrollY = scrollY.toString();
+    } else {
+      // Restore body scroll
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      
+      // Restore scroll position
+      const scrollY = document.body.dataset.scrollY;
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY));
+        delete document.body.dataset.scrollY;
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      delete document.body.dataset.scrollY;
+    };
+  }, [isSidebarOpen]);
+
   const selectNote = useCallback((id: string) => {
     setActiveNoteId(id);
     if (window.innerWidth <= 768) {
@@ -148,14 +187,22 @@ const AppContent: React.FC = () => {
         </div>
       </header>
       <main className="flex-grow flex overflow-hidden relative">
-        {isSidebarOpen && <div onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            setIsSidebarOpen(false);
-          }
-        }} className="fixed inset-0 bg-black/50 z-10 md:hidden animate-fade-in" />}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-10 md:hidden animate-fade-in"
+            onClick={(e) => {
+              // Only close if clicking directly on the overlay
+              if (e.target === e.currentTarget) {
+                setIsSidebarOpen(false);
+              }
+            }}
+          />
+        )}
         
         {isSidebarOpen && (
-          <aside className={`absolute md:relative z-20 h-full flex-shrink-0 border-r border-border-color dark:border-dark-border-color w-full max-w-xs transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+          <aside 
+            className={`absolute md:relative z-20 h-full flex-shrink-0 border-r border-border-color dark:border-dark-border-color w-full max-w-xs transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+          >
             <NoteList 
               notes={notes} 
               activeNoteId={activeNoteId} 

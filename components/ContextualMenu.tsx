@@ -90,8 +90,9 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
   return (
     <div
       style={{ top, left }}
-      className="contextual-menu-container absolute z-40 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-lg shadow-xl p-1 flex items-center space-x-1 animate-fade-in transform -translate-x-1/2"
+      className="contextual-menu-container absolute z-40 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-lg shadow-xl p-1 flex items-center space-x-1 animate-fade-in transform -translate-x-1/2 touch-manipulation"
       onClick={(e) => e.stopPropagation()} // Prevent closing the menu when clicking on it
+      onTouchStart={(e) => e.stopPropagation()} // Prevent closing the menu when touching it
     >
       {actionButtons.map(({ action, icon: Icon, title }) => (
         <button
@@ -110,10 +111,14 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
       ))}
 
       {/* Translate Button with Sub-menu */}
-      <div className="relative" onMouseEnter={handleTranslateMouseEnter} onMouseLeave={handleTranslateMouseLeave}>
+      <div className="relative" 
+           onMouseEnter={handleTranslateMouseEnter} 
+           onMouseLeave={handleTranslateMouseLeave}
+           onTouchStart={handleTranslateMouseEnter}>
         <button
           title="Translate text"
           disabled={isLoading}
+          onClick={() => setTranslateMenuOpen(!isTranslateMenuOpen)}
           className="p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
             {isLoading && activeAction === 'translate' ? (
@@ -146,10 +151,14 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
       </div>
 
       {/* Dictionary Button with Sub-menu */}
-      <div className="relative" onMouseEnter={handleDictionaryMouseEnter} onMouseLeave={handleDictionaryMouseLeave}>
+      <div className="relative" 
+           onMouseEnter={handleDictionaryMouseEnter} 
+           onMouseLeave={handleDictionaryMouseLeave}
+           onTouchStart={handleDictionaryMouseEnter}>
         <button
           title="Get word meaning"
           disabled={isLoading || isDictionaryLoading}
+          onClick={() => setDictionaryMenuOpen(!isDictionaryMenuOpen)}
           className="p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
             {isDictionaryLoading ? (

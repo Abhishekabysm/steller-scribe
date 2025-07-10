@@ -198,7 +198,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     }
   };
   
-  const handleTextareaMouseUp = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+  const handleTextSelection = (e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget;
     // Use a longer timeout to allow the browser to update selection state
     setTimeout(() => {
@@ -209,14 +209,28 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             if (selectedText.length > 0) {
                 const containerRect = editorContainerRef.current?.getBoundingClientRect();
                 if (containerRect && editorContainerRef.current) {
-                    // Position menu above the mouse cursor, relative to its container.
-                    let top = e.clientY - containerRect.top - 55; // 55px offset for menu height + spacing
-                    let left = e.clientX - containerRect.left;
+                    // Get position from either mouse or touch event
+                    let clientX: number, clientY: number;
+                    
+                    if ('clientX' in e) {
+                        // Mouse event
+                        clientX = e.clientX;
+                        clientY = e.clientY;
+                    } else {
+                        // Touch event - use the first touch point
+                        const touch = e.changedTouches[0] || e.touches[0];
+                        clientX = touch.clientX;
+                        clientY = touch.clientY;
+                    }
+                    
+                    // Position menu above the cursor/touch, relative to its container.
+                    let top = clientY - containerRect.top - 55; // 55px offset for menu height + spacing
+                    let left = clientX - containerRect.left;
                     
                     // Ensure the menu doesn't go too far left (behind sidebar) or right
-                    const menuWidth = 200; // Approximate width of contextual menu
-                    const minLeft = 20; // Minimum distance from left edge
-                    const maxLeft = containerRect.width - menuWidth - 20; // Maximum distance from right edge
+                    const menuWidth = 280; // Approximate width of contextual menu (increased for mobile)
+                    const minLeft = 10; // Minimum distance from left edge
+                    const maxLeft = containerRect.width - menuWidth - 10; // Maximum distance from right edge
                     
                     left = Math.max(minLeft, Math.min(left, maxLeft));
                     
@@ -226,14 +240,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                     setContextualMenu({ top, left });
                 }
             } else {
-                 // Clicks inside the textarea without selection should hide the menu.
+                 // Clicks/touches inside the textarea without selection should hide the menu.
                  setContextualMenu(null);
             }
         } catch (error) {
             // If any error occurs, clear the menu
             setContextualMenu(null);
         }
-    }, 100);
+    }, 150); // Slightly longer timeout for touch events
   };
 
 
@@ -317,9 +331,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                   ref={editorRef}
                   value={activeNote.content}
                   onChange={handleContentChange}
-                  onMouseUp={handleTextareaMouseUp}
+                  onMouseUp={handleTextSelection}
+                  onTouchEnd={handleTextSelection}
                   onMouseDown={(e) => {
                     // Don't clear menu if clicking on the contextual menu
+                    if (!(e.target as HTMLElement).closest('.contextual-menu-container')) {
+                      setContextualMenu(null);
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    // Don't clear menu if touching the contextual menu
                     if (!(e.target as HTMLElement).closest('.contextual-menu-container')) {
                       setContextualMenu(null);
                     }
@@ -355,28 +376,36 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             style={{ userSelect: 'text', cursor: 'text' }}
           />
 
-          <div className="flex-shrink-0 p-3 border-t border-border-color dark:border-dark-border-color flex justify-end items-center space-x-2">
+          <div className="flex-shrink-0 p-2 sm:p-3 border-t border-border-color dark:border-dark-border-color">
             {suggestedTags.length > 0 && (
-                <div className="flex-grow flex items-center gap-2 overflow-x-auto">
-                    <span className="text-sm font-semibold text-text-muted dark:text-dark-text-muted">Suggestions:</span>
-                    {suggestedTags.map(tag => (
-                        <button key={tag} onClick={() => addSuggestedTag(tag)} className="text-sm font-medium px-2 py-1 rounded-full bg-accent/10 text-accent dark:bg-dark-accent/20 dark:text-dark-accent-hover hover:bg-accent/20 dark:hover:bg-dark-accent/30 whitespace-nowrap">
-                            + {tag}
-                        </button>
-                    ))}
+                <div className="mb-3">
+                    <div className="text-xs sm:text-sm font-semibold text-text-muted dark:text-dark-text-muted mb-2">
+                        Suggestions:
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        {suggestedTags.map(tag => (
+                            <button key={tag} onClick={() => addSuggestedTag(tag)} className="text-xs sm:text-sm font-medium px-2.5 py-1.5 rounded-full bg-accent/10 text-accent dark:bg-dark-accent/20 dark:text-dark-accent-hover hover:bg-accent/20 dark:hover:bg-dark-accent/30 transition-colors whitespace-nowrap">
+                                + {tag}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
-            <button onClick={handleSuggestTags} disabled={isSuggestingTags} className="flex items-center space-x-2 px-3 py-1.5 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
-                {isSuggestingTags ? <LoadingSpinner/> : <TagIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
-                <span>Suggest Tags</span>
-            </button>
-            <button onClick={handleSummarize} disabled={isSummarizing} className="flex items-center space-x-2 px-3 py-1.5 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
-                {isSummarizing ? <LoadingSpinner/> : <SparklesIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
-                <span>Summarize</span>
-            </button>
-             <button onClick={() => setIsDeleteModalOpen(true)} className="p-2 rounded-md hover:bg-red-500/10 text-red-500 transition-colors">
-                <TrashIcon className="w-5 h-5" />
-            </button>
+            <div className="flex justify-end items-center gap-2">
+              <button onClick={handleSuggestTags} disabled={isSuggestingTags} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
+                  {isSuggestingTags ? <LoadingSpinner/> : <TagIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
+                  <span className="hidden sm:inline">Suggest Tags</span>
+                  <span className="sm:hidden">Tags</span>
+              </button>
+              <button onClick={handleSummarize} disabled={isSummarizing} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
+                  {isSummarizing ? <LoadingSpinner/> : <SparklesIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
+                  <span className="hidden md:inline">Summarize</span>
+                  <span className="md:hidden">Summary</span>
+              </button>
+               <button onClick={() => setIsDeleteModalOpen(true)} className="p-2 rounded-md hover:bg-red-500/10 text-red-500 transition-colors">
+                  <TrashIcon className="w-5 h-5" />
+              </button>
+            </div>
           </div>
       </div>
   );

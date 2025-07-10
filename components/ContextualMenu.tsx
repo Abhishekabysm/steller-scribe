@@ -87,10 +87,47 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
     }
   };
 
+  // Get viewport dimensions for better mobile positioning
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.visualViewport?.height || window.innerHeight;
+  const isMobile = viewportWidth < 768;
+  
+  // Calculate responsive positioning
+  const getResponsivePosition = () => {
+    if (isMobile) {
+      // For mobile, center the menu horizontally and position it carefully vertically
+      const menuWidth = 320; // Approximate menu width on mobile
+      const menuHeight = 60; // Approximate menu height
+      
+      // Center horizontally in viewport
+      const centeredLeft = Math.max(10, Math.min(viewportWidth - menuWidth - 10, left));
+      
+      // Position vertically with better spacing
+      let adjustedTop = top;
+      
+      // If menu would be too close to bottom of screen, move it up
+      if (top + menuHeight > viewportHeight - 20) {
+        adjustedTop = Math.max(10, viewportHeight - menuHeight - 20);
+      }
+      
+      // If menu would be too close to top, move it down
+      if (adjustedTop < 10) {
+        adjustedTop = 10;
+      }
+      
+      return { top: adjustedTop, left: centeredLeft };
+    }
+    
+    // Desktop positioning (existing logic)
+    return { top, left };
+  };
+  
+  const { top: finalTop, left: finalLeft } = getResponsivePosition();
+
   return (
     <div
-      style={{ top, left }}
-      className="contextual-menu-container absolute z-50 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-lg shadow-2xl p-1.5 sm:p-1 flex items-center gap-1.5 sm:gap-1 animate-fade-in transform -translate-x-1/2 touch-manipulation min-h-[44px] sm:min-h-auto"
+      style={{ top: finalTop, left: finalLeft }}
+      className={`contextual-menu-container absolute z-50 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-lg shadow-2xl p-1.5 sm:p-1 flex items-center gap-1.5 sm:gap-1 animate-fade-in touch-manipulation min-h-[44px] sm:min-h-auto ${isMobile ? 'flex-wrap justify-center max-w-[calc(100vw-20px)]' : 'transform -translate-x-1/2'}`}
       onClick={(e) => e.stopPropagation()} // Prevent closing the menu when clicking on it
       onTouchStart={(e) => e.stopPropagation()} // Prevent closing the menu when touching it
     >
@@ -130,7 +167,11 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
 
         {isTranslateMenuOpen && !isLoading && (
             <div 
-              className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-32 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-md shadow-lg animate-fade-in"
+              className={`absolute top-full mt-1 w-32 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-md shadow-lg animate-fade-in z-50 ${
+                isMobile 
+                  ? 'right-0' // Align to right edge on mobile to prevent cutoff
+                  : 'left-1/2 -translate-x-1/2'
+              }`}
               onMouseEnter={handleTranslateMouseEnter}
               onMouseLeave={handleTranslateMouseLeave}
             >
@@ -170,7 +211,11 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
 
         {isDictionaryMenuOpen && !isLoading && !isDictionaryLoading && (
             <div 
-              className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-32 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-md shadow-lg animate-fade-in z-50"
+              className={`absolute top-full mt-1 w-32 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-md shadow-lg animate-fade-in z-50 ${
+                isMobile 
+                  ? 'right-0' // Align to right edge on mobile to prevent cutoff
+                  : 'left-1/2 -translate-x-1/2'
+              }`}
               onMouseEnter={handleDictionaryMouseEnter}
               onMouseLeave={handleDictionaryMouseLeave}
             >
@@ -191,7 +236,11 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
 
         {/* Dictionary Result */}
         {dictionaryResult && (
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-md shadow-lg animate-fade-in z-50 p-3">
+            <div className={`absolute top-full mt-2 bg-surface dark:bg-dark-surface border border-border-color dark:border-dark-border-color rounded-md shadow-lg animate-fade-in z-50 p-3 ${
+              isMobile 
+                ? 'right-0 w-72 max-w-[calc(100vw-20px)]' // Align to right edge on mobile
+                : 'left-1/2 -translate-x-1/2 w-64'
+            }`}>
                 <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium text-text-primary dark:text-dark-text-primary text-sm">Dictionary</h4>
                     <button

@@ -96,22 +96,40 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   // Bug fix: Close contextual menu on any click outside of it.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Check if the click is outside the menu container
-      const menu = document.querySelector('.contextual-menu-container');
-      if (menu && !menu.contains(event.target as Node)) {
+      try {
+        // Safely check if the click is outside the menu container
+        const target = event.target;
+        if (!target || !(target instanceof Node)) return;
+        
+        const menu = document.querySelector('.contextual-menu-container');
+        if (menu && !menu.contains(target)) {
+          setContextualMenu(null);
+          document.body.classList.remove('contextual-menu-active');
+        }
+      } catch (error) {
+        // Silently handle any errors and just close the menu
         setContextualMenu(null);
+        document.body.classList.remove('contextual-menu-active');
       }
     };
     
-    const handleKeyDown = (event: any) => {
-      if (event.key === 'Escape') {
+    const handleKeyDown = (event: Event) => {
+      try {
+        const keyEvent = event as unknown as KeyboardEvent;
+        if (keyEvent.key === 'Escape') {
+          setContextualMenu(null);
+          document.body.classList.remove('contextual-menu-active');
+        }
+      } catch (error) {
+        // Silently handle any errors and just close the menu
         setContextualMenu(null);
+        document.body.classList.remove('contextual-menu-active');
       }
     };
     
     if (contextualMenu) {
-        document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('mousedown', handleClickOutside, { passive: true });
+        document.addEventListener('keydown', handleKeyDown, { passive: true });
     }
     
     return () => {
@@ -231,13 +249,35 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                     const viewportHeight = window.visualViewport?.height || window.innerHeight;
                     const keyboardOpen = isTouch && viewportHeight < window.innerHeight * 0.8;
                     
-                    // Position menu relative to viewport for better mobile experience
-                    let top = clientY - containerRect.top - 60; // Increased offset for mobile
-                    let left = clientX - containerRect.left;
+                    // Position menu relative to selection point
+                    let top, left;
                     
-                    // If keyboard is open and we're at bottom, show menu above selection
-                    if (keyboardOpen && top > viewportHeight - 150) {
-                        top = clientY - containerRect.top - 120; // Show above selection
+                    if (isTouch) {
+                        // Mobile positioning - show above selection by default
+                        top = clientY - containerRect.top - 80; // Position above selection
+                        left = clientX - containerRect.left;
+                        
+                        // If near top of screen or not enough space above, show below
+                        if (top < 20) {
+                            top = clientY - containerRect.top + 25; // Show below selection
+                        }
+                        
+                        // If keyboard is open and we're at bottom, ensure it's above
+                        if (keyboardOpen && clientY > viewportHeight - 150) {
+                            top = Math.max(20, clientY - containerRect.top - 80);
+                        }
+                    } else {
+                        // Desktop positioning - show above selected text by default
+                        top = clientY - containerRect.top - 70; // Position above cursor/selection
+                        left = clientX - containerRect.left;
+                        
+                        // If menu would go above visible area, show it below
+                        if (top < 20) {
+                            top = clientY - containerRect.top + 15; // Show below selection
+                        }
+                        
+                        // Ensure menu stays within container bounds
+                        top = Math.max(10, Math.min(top, containerRect.height - 80));
                     }
                     
                     // Ensure the menu doesn't go too far left or right
@@ -267,8 +307,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     }, timeout);
   };
 
-  // Add selection change handler for better mobile support
+  // Add selection change handler for mobile support only
   const handleSelectionChange = () => {
+    // Only handle selection changes on mobile/touch devices
+    if (!('ontouchstart' in window) || !isDesktop === false) return;
+    
     const textarea = editorRef.current;
     if (!textarea) return;
     
@@ -279,10 +322,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             if (selectedText.length > 0 && document.activeElement === textarea) {
                 const containerRect = editorContainerRef.current?.getBoundingClientRect();
                 if (containerRect && editorContainerRef.current) {
-                    // For selection change, position menu at center of selection
+                    // For mobile selection change, position menu above selection
                     const rect = textarea.getBoundingClientRect();
                     const left = rect.left + rect.width / 2 - containerRect.left;
-                    const top = rect.top - containerRect.top - 60;
+                    let top = rect.top - containerRect.top - 70; // Position above selection for mobile
+                    
+                    // If not enough space above, show below
+                    if (top < 20) {
+                        top = rect.top - containerRect.top + 30;
+                    }
                     
                     setContextualMenu({ 
                         top: Math.max(10, top), 

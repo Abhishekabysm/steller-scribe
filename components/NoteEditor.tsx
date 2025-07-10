@@ -99,6 +99,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     }
   }, [renderedMarkdown, activeNote]);
 
+  // Reset suggestions when activeNote changes
+  useEffect(() => {
+    setSuggestedTags([]);
+    setIsSuggestingTags(false);
+  }, [activeNote?.id]);
+
   // Bug fix: Close contextual menu on any click outside of it.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AIGenerateModalProps {
   isOpen: boolean;
@@ -16,6 +16,14 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
 }) => {
   const [topic, setTopic] = useState('');
   const [language, setLanguage] = useState('English');
+
+  // Reset form fields when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setTopic('');
+      setLanguage('English');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

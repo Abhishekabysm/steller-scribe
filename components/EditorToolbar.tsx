@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import BoldLetterIcon from './icons/BoldLetterIcon';
 import ItalicLetterIcon from './icons/ItalicLetterIcon';
+import UnderlineIcon from './icons/UnderlineIcon';
 import LinkIcon from './icons/LinkIcon';
 import CodeIcon from './icons/CodeIcon';
 import ListIcon from './icons/ListIcon';
@@ -34,7 +35,7 @@ const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, onGenerateClick }) => {
   const [showAllTools, setShowAllTools] = useState(false);
   
-  const applyFormat = (syntax: 'bold' | 'italic' | 'code' | 'link' | 'list' | 'h1' | 'h2' | 'h3' | 'strikethrough' | 'quote' | 'tasklist' | 'hr') => {
+  const applyFormat = (syntax: 'bold' | 'italic' | 'underline' | 'code' | 'link' | 'list' | 'h1' | 'h2' | 'h3' | 'strikethrough' | 'quote' | 'tasklist' | 'hr') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -52,6 +53,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
       case 'italic':
         newText = `*${selectedText}*`;
         cursorOffset = 1;
+        break;
+      case 'underline':
+        newText = `<u>${selectedText}</u>`;
+        cursorOffset = 3;
         break;
       case 'code':
         newText = `\`${selectedText}\``;
@@ -133,6 +138,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('italic')} title="Italic (Ctrl+I)">
         <ItalicLetterIcon className="w-5 h-5" />
+      </ToolbarButton>
+      <ToolbarButton onClick={() => applyFormat('underline')} title="Underline (Ctrl+U)">
+        <UnderlineIcon className="w-5 h-5" />
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('h1')} title="Heading 1">
         <HeadingIcon className="w-5 h-5" level={1} />

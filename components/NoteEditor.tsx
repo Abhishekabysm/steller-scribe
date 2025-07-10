@@ -502,6 +502,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
           shouldWrap = true;
           e.preventDefault();
           break;
+        case 'u':
+          wrappedText = `<u>${selectedText}</u>`;
+          shouldWrap = true;
+          e.preventDefault();
+          break;
         case 'k':
           wrappedText = `[${selectedText}](url)`;
           shouldWrap = true;

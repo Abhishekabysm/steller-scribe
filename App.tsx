@@ -31,12 +31,21 @@ const AppContent: React.FC = () => {
   
   // Effect to check for shared notes on app load
   useEffect(() => {
-    const shared = getSharedNoteFromUrl();
-    if (shared) {
-      setSharedNote(shared);
-      setIsImportModalOpen(true);
+    const importNote = async () => {
+      const shared = await getSharedNoteFromUrl();
+      if (shared) {
+        setSharedNote(shared);
+        setIsImportModalOpen(true);
+      } else if (window.location.hash.startsWith('#share_id=')) {
+        addToast('The shared link is invalid, expired, or corrupted.', 'error');
+        clearShareFromUrl();
+      }
+    };
+
+    if (window.location.hash.startsWith('#share_id=')) {
+      importNote();
     }
-  }, []);
+  }, [addToast]);
 
   // Effect to set the initial active note
   useEffect(() => {

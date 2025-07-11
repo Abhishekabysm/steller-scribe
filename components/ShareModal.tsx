@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Note } from '../types';
 import { generateShareableUrl } from '../utils/shareUtils';
-import { MdClose, MdContentCopy, MdCheck, MdShare } from 'react-icons/md';
+import { MdClose, MdContentCopy, MdCheck, MdShare, MdDescription, MdLink } from 'react-icons/md';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -98,9 +98,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, note, onToast 
           <div className="bg-bg-secondary dark:bg-dark-bg-secondary rounded-lg p-4 border border-border-color dark:border-dark-border-color">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-accent/10 dark:bg-dark-accent/10 rounded-lg flex-shrink-0 mt-0.5">
-                <svg className="w-4 h-4 text-accent dark:text-dark-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                <MdDescription className="w-4 h-4 text-accent dark:text-dark-accent" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base sm:text-lg font-medium text-text-primary dark:text-dark-text-primary mb-2 truncate">
@@ -129,9 +127,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, note, onToast 
                   className="w-full px-4 py-3 bg-bg-secondary dark:bg-dark-bg-secondary border border-border-color dark:border-dark-border-color rounded-lg text-sm text-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent dark:focus:ring-dark-accent focus:border-transparent transition-all duration-200 pr-12"
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <svg className="w-4 h-4 text-text-muted dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
+                  <MdLink className="w-4 h-4 text-text-muted dark:text-dark-text-muted" />
                 </div>
               </div>
               <button
@@ -166,9 +162,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, note, onToast 
                   className="w-full px-4 py-3 bg-bg-secondary dark:bg-dark-bg-secondary border border-border-color dark:border-dark-border-color rounded-lg text-sm text-text-primary dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-accent dark:focus:ring-dark-accent focus:border-transparent transition-all duration-200 pr-12"
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <svg className="w-4 h-4 text-text-muted dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
+                  <MdLink className="w-4 h-4 text-text-muted dark:text-dark-text-muted" />
                 </div>
               </div>
               <button

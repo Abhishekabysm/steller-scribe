@@ -5,6 +5,7 @@ import PlusIcon from './icons/PlusIcon';
 import PinIcon from './icons/PinIcon';
 import XIcon from './icons/XIcon';
 import Dropdown from './Dropdown';
+import { MdCloudDownload } from 'react-icons/md';
 
 interface NoteListProps {
   notes: Note[];
@@ -61,7 +62,15 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
       >
         <PinIcon className="w-4 h-4" isFilled={note.isPinned} />
       </button>
-      <h3 className="font-bold text-text-primary dark:text-dark-text-primary truncate pr-8">{note.title || 'Untitled Note'}</h3>
+      <h3 className="font-bold text-text-primary dark:text-dark-text-primary truncate pr-8 flex items-center gap-2">
+        <span className="truncate">{note.title || 'Untitled Note'}</span>
+        {note.isImported && (
+          <MdCloudDownload 
+            className="w-4 h-4 text-blue-500 dark:text-blue-400 flex-shrink-0" 
+            title="Imported note"
+          />
+        )}
+      </h3>
       <div className="flex items-center mt-1.5">
         <p className="text-sm text-text-muted dark:text-dark-text-muted truncate">
           <span className="mr-2">{date}</span>

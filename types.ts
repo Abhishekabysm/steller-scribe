@@ -7,6 +7,8 @@ export interface Note {
   updatedAt: number;
   tags: string[];
   isPinned: boolean;
+  isImported?: boolean; // Optional flag to indicate if note was imported from a shared link
+  importedAt?: number; // Optional timestamp when the note was imported
   lastTransaction?: {
     from: number;
     to: number;

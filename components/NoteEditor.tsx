@@ -23,6 +23,7 @@ import { MdShare } from 'react-icons/md';
 import DownloadModal from './DownloadModal';
 import SummaryModal from './SummaryModal';
 import ShareModal from './ShareModal';
+import { MdCloudDownload } from 'react-icons/md';
 
 declare const marked: any;
 declare const hljs: any;
@@ -623,6 +624,17 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                       placeholder="Untitled Note"
                       className="flex-1 min-w-0 text-2xl font-bold bg-transparent text-text-primary dark:text-dark-text-primary focus:outline-none placeholder:text-text-muted"
                   />
+                  {activeNote.isImported && (
+                    <div className="flex items-center gap-2 ml-2">
+                      <MdCloudDownload 
+                        className="w-5 h-5 text-blue-500 dark:text-blue-400" 
+                        title="This note was imported from a shared link"
+                      />
+                      <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                        Imported
+                      </span>
+                    </div>
+                  )}
                   <button
                       onClick={handleGenerateTitle}
                       disabled={isGeneratingTitle}
@@ -728,9 +740,27 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
           <div className="flex-grow overflow-y-auto p-6 select-text preview-pane">
             {/* Title Section */}
             <div className="mb-6 pb-4 border-b border-border-color dark:border-dark-border-color">
-              <h1 className="text-3xl md:text-4xl font-bold text-text-primary dark:text-dark-text-primary mb-2 break-words">
-                {activeNote.title || 'Untitled Note'}
-              </h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl md:text-4xl font-bold text-text-primary dark:text-dark-text-primary break-words">
+                  {activeNote.title || 'Untitled Note'}
+                </h1>
+                {activeNote.isImported && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-800">
+                    <MdCloudDownload 
+                      className="w-5 h-5 text-blue-500 dark:text-blue-400" 
+                      title="This note was imported from a shared link"
+                    />
+                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      Imported
+                      {activeNote.importedAt && (
+                        <span className="ml-1 text-xs opacity-75">
+                          on {new Date(activeNote.importedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
               {activeNote.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {activeNote.tags.map(tag => (

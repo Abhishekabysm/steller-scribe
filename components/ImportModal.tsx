@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShareableNote } from '../utils/shareUtils';
 import XIcon from './icons/XIcon';
-import DocumentPlusIcon from './icons/DocumentPlusIcon';
+import { MdCloudDownload, MdAdd } from 'react-icons/md';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -42,13 +42,28 @@ const ImportModal: React.FC<ImportModalProps> = ({
         <div className="p-6">
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <DocumentPlusIcon className="w-8 h-8 text-accent dark:text-dark-accent" />
+              <div className="p-3 bg-gradient-to-br from-accent/20 to-accent/10 dark:from-dark-accent/20 dark:to-dark-accent/10 rounded-xl">
+                <MdCloudDownload className="w-8 h-8 text-accent dark:text-dark-accent" />
+              </div>
               <div>
                 <h3 className="text-lg font-medium text-text-primary dark:text-dark-text-primary">
                   "{sharedNote.title}"
                 </h3>
                 <p className="text-sm text-text-muted dark:text-dark-text-muted">
                   Someone shared this note with you
+                </p>
+              </div>
+            </div>
+            
+            {/* Import Badge */}
+            <div className="mb-4 flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <MdCloudDownload className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+              <div>
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  Imported Note
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  This note will be marked as imported for easy identification
                 </p>
               </div>
             </div>
@@ -93,7 +108,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
               onClick={onImport}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-accent dark:bg-dark-accent text-white rounded-lg hover:bg-accent-hover dark:hover:bg-dark-accent-hover transition-colors"
             >
-              <DocumentPlusIcon className="w-4 h-4" />
+              <MdAdd className="w-4 h-4" />
               Import Note
             </button>
             <button

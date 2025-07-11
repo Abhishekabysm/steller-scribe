@@ -160,14 +160,17 @@ const AppContent: React.FC = () => {
   const handleImportSharedNote = useCallback(() => {
     if (!sharedNote) return;
     
+    const now = Date.now();
     const newNote: Note = {
       id: crypto.randomUUID(),
       title: sharedNote.title,
       content: sharedNote.content,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: now,
+      updatedAt: now,
       tags: sharedNote.tags,
       isPinned: false,
+      isImported: true, // Mark as imported note
+      importedAt: now, // Store import timestamp
     };
     
     setNotes(prevNotes => [newNote, ...prevNotes]);

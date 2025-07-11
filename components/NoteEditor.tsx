@@ -625,13 +625,19 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                       className="flex-1 min-w-0 text-2xl font-bold bg-transparent text-text-primary dark:text-dark-text-primary focus:outline-none placeholder:text-text-muted"
                   />
                   {activeNote.isImported && (
-                    <div className="flex items-center gap-2 ml-2">
+                    <div className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-800 flex-shrink-0">
                       <MdCloudDownload 
-                        className="w-5 h-5 text-blue-500 dark:text-blue-400" 
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 dark:text-blue-400" 
                         title="This note was imported from a shared link"
                       />
-                      <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                        Imported
+                      <span className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium">
+                        <span className="hidden sm:inline">Imported</span>
+                        <span className="sm:hidden">Imported</span>
+                        {activeNote.importedAt && (
+                          <span className="ml-1 text-xs opacity-75 hidden sm:inline">
+                            on {new Date(activeNote.importedAt).toLocaleDateString()}
+                          </span>
+                        )}
                       </span>
                     </div>
                   )}
@@ -745,15 +751,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                   {activeNote.title || 'Untitled Note'}
                 </h1>
                 {activeNote.isImported && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-800 flex-shrink-0">
                     <MdCloudDownload 
-                      className="w-5 h-5 text-blue-500 dark:text-blue-400" 
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 dark:text-blue-400" 
                       title="This note was imported from a shared link"
                     />
-                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                      Imported
+                    <span className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      <span className="hidden sm:inline">Imported</span>
+                      <span className="sm:hidden">Imported</span>
                       {activeNote.importedAt && (
-                        <span className="ml-1 text-xs opacity-75">
+                        <span className="ml-1 text-xs opacity-75 hidden sm:inline">
                           on {new Date(activeNote.importedAt).toLocaleDateString()}
                         </span>
                       )}

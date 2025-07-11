@@ -66,18 +66,18 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
     >
       <div className="absolute top-2 right-2 flex items-center gap-1">
         <button 
-          onClick={handleDeleteClick} 
-          className="opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1.5 rounded-full text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 shadow-sm"
-          title="Delete note"
-        >
-          <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
-        <button 
           onClick={handlePinClick} 
-          className={`p-1.5 rounded-full text-text-muted/60 hover:text-accent dark:text-dark-text-muted/60 dark:hover:text-dark-accent transition-colors ${note.isPinned ? 'opacity-100' : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'}`}
+          className={`p-1.5 rounded-full text-text-muted/60 hover:text-accent dark:text-dark-text-muted/60 dark:hover:text-dark-accent transition-colors ${note.isPinned ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
           title={note.isPinned ? 'Unpin note' : 'Pin note'}
         >
           <PinIcon className="w-4 h-4 sm:w-5 sm:h-5" isFilled={note.isPinned} />
+        </button>
+        <button 
+          onClick={handleDeleteClick} 
+          className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 shadow-sm"
+          title="Delete note"
+        >
+          <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
       <h3 className="font-bold text-text-primary dark:text-dark-text-primary truncate pr-16 flex items-center gap-2">

@@ -8,6 +8,7 @@ import { getSharedNoteFromUrl, clearShareFromUrl } from './utils/shareUtils';
 import NoteList from './components/NoteList';
 import NoteEditor from './components/NoteEditor';
 import ImportModal from './components/ImportModal';
+import ConfirmationModal from './components/ConfirmationModal';
 import LogoIcon from './components/icons/LogoIcon';
 import MenuIcon from './components/icons/MenuIcon';
 import SunIcon from './components/icons/SunIcon';
@@ -24,6 +25,8 @@ const AppContent: React.FC = () => {
   const [viewMode, setViewMode] = useState<'split' | 'editor' | 'preview'>('split');
   const [sharedNote, setSharedNote] = useState<any>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const { addToast } = useToasts();
   
   // Effect to check for shared notes on app load
@@ -187,6 +190,24 @@ const AppContent: React.FC = () => {
     clearShareFromUrl();
   }, []);
 
+  const handleDeletePinnedNote = useCallback((note: Note) => {
+    setNoteToDelete(note);
+    setIsDeleteModalOpen(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (noteToDelete) {
+      deleteNote(noteToDelete.id);
+      setNoteToDelete(null);
+      setIsDeleteModalOpen(false);
+    }
+  }, [noteToDelete, deleteNote]);
+
+  const handleCancelDelete = useCallback(() => {
+    setNoteToDelete(null);
+    setIsDeleteModalOpen(false);
+  }, []);
+
   const activeNote = useMemo(() => notes.find(note => note.id === activeNoteId), [notes, activeNoteId]);
 
   return (
@@ -293,6 +314,8 @@ const AppContent: React.FC = () => {
               onSelectNote={selectNote}
               onAddNote={addNote}
               onTogglePin={togglePinNote}
+              onDeleteNote={deleteNote}
+              onDeletePinnedNote={handleDeletePinnedNote}
               searchTerm={searchTerm}
               sortOption={sortOption}
               onSortChange={setSortOption}
@@ -320,6 +343,24 @@ const AppContent: React.FC = () => {
           onCancel={handleCancelImport}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Pinned Note"
+        message={
+          <>
+            Are you sure you want to delete the pinned note "<strong>{noteToDelete?.title}</strong>"? 
+            <br />
+            <br />
+            This action cannot be undone.
+          </>
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+      />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import DocumentPlusIcon from './icons/DocumentPlusIcon';
 import PlusIcon from './icons/PlusIcon';
 import PinIcon from './icons/PinIcon';
 import XIcon from './icons/XIcon';
+import TrashIcon from './icons/TrashIcon';
 import Dropdown from './Dropdown';
 import { MdCloudDownload } from 'react-icons/md';
 
@@ -14,6 +15,8 @@ interface NoteListProps {
   onSelectNote: (id: string) => void;
   onAddNote: () => void;
   onTogglePin: (id: string) => void;
+  onDeleteNote: (id: string) => void;
+  onDeletePinnedNote: (note: Note) => void;
   onSortChange: (option: SortOption) => void;
   searchTerm: string;
   onCloseSidebar?: () => void;
@@ -25,14 +28,14 @@ const Tag: React.FC<{ tag: string }> = ({ tag }) => (
   </span>
 );
 
-const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => void; onTogglePin: (e: React.MouseEvent) => void }> = ({ note, isActive, onClick, onTogglePin }) => {
+const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => void; onTogglePin: (e: React.MouseEvent) => void; onDelete: (note: Note) => void }> = ({ note, isActive, onClick, onTogglePin, onDelete }) => {
   const date = new Date(note.updatedAt).toLocaleDateString("en-US", {
     month: 'short',
     day: 'numeric',
   });
 
   const handleClick = (e: React.MouseEvent) => {
-    // Don't select note if clicking on pin button
+    // Don't select note if clicking on pin button or delete button
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
@@ -45,6 +48,12 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
     onTogglePin(e);
   };
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onDelete(note);
+  };
+
   return (
     <li
       onClick={handleClick}
@@ -55,14 +64,23 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
       }`}
       aria-current={isActive}
     >
-      <button 
-        onClick={handlePinClick} 
-        className={`absolute top-2 right-2 p-1 rounded-full text-text-muted/60 hover:text-accent dark:text-dark-text-muted/60 dark:hover:text-dark-accent transition-colors ${note.isPinned ? 'opacity-100' : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'}`}
-        title={note.isPinned ? 'Unpin note' : 'Pin note'}
-      >
-        <PinIcon className="w-4 h-4" isFilled={note.isPinned} />
-      </button>
-      <h3 className="font-bold text-text-primary dark:text-dark-text-primary truncate pr-8 flex items-center gap-2">
+      <div className="absolute top-2 right-2 flex items-center gap-1">
+        <button 
+          onClick={handleDeleteClick} 
+          className="opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1.5 rounded-full text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 shadow-sm"
+          title="Delete note"
+        >
+          <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+        <button 
+          onClick={handlePinClick} 
+          className={`p-1.5 rounded-full text-text-muted/60 hover:text-accent dark:text-dark-text-muted/60 dark:hover:text-dark-accent transition-colors ${note.isPinned ? 'opacity-100' : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'}`}
+          title={note.isPinned ? 'Unpin note' : 'Pin note'}
+        >
+          <PinIcon className="w-4 h-4 sm:w-5 sm:h-5" isFilled={note.isPinned} />
+        </button>
+      </div>
+      <h3 className="font-bold text-text-primary dark:text-dark-text-primary truncate pr-16 flex items-center gap-2">
         <span className="truncate">{note.title || 'Untitled Note'}</span>
         {note.isImported && (
           <MdCloudDownload 
@@ -91,7 +109,14 @@ const SectionHeader: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 );
 
 
-const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, onAddNote, onTogglePin, searchTerm, sortOption, onSortChange, onCloseSidebar }) => {
+const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, onAddNote, onTogglePin, onDeleteNote, onDeletePinnedNote, searchTerm, sortOption, onSortChange, onCloseSidebar }) => {
+    const handleDeleteClick = (note: Note) => {
+        if (note.isPinned) {
+            onDeletePinnedNote(note);
+        } else {
+            onDeleteNote(note.id);
+        }
+    };
     const sortedAndFilteredNotes = React.useMemo(() => {
         const filtered = notes.filter(note => {
             if (!searchTerm) return true;
@@ -168,6 +193,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
                       isActive={note.id === activeNoteId}
                       onClick={() => onSelectNote(note.id)}
                       onTogglePin={() => onTogglePin(note.id)}
+                      onDelete={handleDeleteClick}
                     />
                   ))}
                 </ul>
@@ -184,6 +210,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
                       isActive={note.id === activeNoteId}
                       onClick={() => onSelectNote(note.id)}
                       onTogglePin={() => onTogglePin(note.id)}
+                      onDelete={handleDeleteClick}
                     />
                   ))}
                 </ul>

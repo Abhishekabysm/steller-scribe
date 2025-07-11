@@ -19,8 +19,10 @@ import ViewIcon from './icons/ViewIcon';
 import TagIcon from './icons/TagIcon';
 import ContextualMenu from './ContextualMenu';
 import DownloadIcon from './icons/DownloadIcon';
+import ShareIcon from './icons/ShareIcon';
 import DownloadModal from './DownloadModal';
 import SummaryModal from './SummaryModal';
+import ShareModal from './ShareModal';
 
 declare const marked: any;
 declare const hljs: any;
@@ -58,6 +60,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [summaryContent, setSummaryContent] = useState('');
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
@@ -775,6 +778,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             <span className="hidden md:inline">Summarize</span>
             <span className="md:hidden">Summary</span>
             </button>
+            <button onClick={() => setIsShareModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">
+            <ShareIcon className="w-4 h-4 text-accent dark:text-dark-accent" />
+               <span className="hidden lg:inline">Share</span>
+              </button>
             <button onClick={() => setIsDownloadModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">
             <DownloadIcon className="w-4 h-4 text-accent dark:text-dark-accent" />
                <span className="hidden lg:inline">Download</span>
@@ -847,6 +854,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         isLoading={isSummarizing}
         onAddToNote={handleAddSummaryToNote}
         noteTitle={activeNote?.title || ''}
+      />
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        note={activeNote}
+        onToast={addToast}
       />
     </>
   );

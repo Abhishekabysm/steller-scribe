@@ -4,8 +4,10 @@ import { Note, SortOption } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTheme } from './hooks/useTheme';
 import { ToastProvider, useToasts } from './hooks/useToasts';
+import { getSharedNoteFromUrl, clearShareFromUrl } from './utils/shareUtils';
 import NoteList from './components/NoteList';
 import NoteEditor from './components/NoteEditor';
+import ImportModal from './components/ImportModal';
 import LogoIcon from './components/icons/LogoIcon';
 import MenuIcon from './components/icons/MenuIcon';
 import SunIcon from './components/icons/SunIcon';
@@ -20,8 +22,19 @@ const AppContent: React.FC = () => {
   const [theme, toggleTheme] = useTheme();
   const [sortOption, setSortOption] = useState<SortOption>('updatedAt');
   const [viewMode, setViewMode] = useState<'split' | 'editor' | 'preview'>('split');
+  const [sharedNote, setSharedNote] = useState<any>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const { addToast } = useToasts();
   
+  // Effect to check for shared notes on app load
+  useEffect(() => {
+    const shared = getSharedNoteFromUrl();
+    if (shared) {
+      setSharedNote(shared);
+      setIsImportModalOpen(true);
+    }
+  }, []);
+
   // Effect to set the initial active note
   useEffect(() => {
     const sortedNotes = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -143,6 +156,33 @@ const AppContent: React.FC = () => {
           )
       });
   }, [setNotes, addToast]);
+
+  const handleImportSharedNote = useCallback(() => {
+    if (!sharedNote) return;
+    
+    const newNote: Note = {
+      id: crypto.randomUUID(),
+      title: sharedNote.title,
+      content: sharedNote.content,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      tags: sharedNote.tags,
+      isPinned: false,
+    };
+    
+    setNotes(prevNotes => [newNote, ...prevNotes]);
+    selectNote(newNote.id);
+    setIsImportModalOpen(false);
+    setSharedNote(null);
+    clearShareFromUrl();
+    addToast(`Imported note: "${newNote.title}"`, 'success');
+  }, [sharedNote, setNotes, selectNote, addToast]);
+
+  const handleCancelImport = useCallback(() => {
+    setIsImportModalOpen(false);
+    setSharedNote(null);
+    clearShareFromUrl();
+  }, []);
 
   const activeNote = useMemo(() => notes.find(note => note.id === activeNoteId), [notes, activeNoteId]);
 
@@ -267,6 +307,16 @@ const AppContent: React.FC = () => {
           />
         </section>
       </main>
+
+      {sharedNote && (
+        <ImportModal
+          isOpen={isImportModalOpen}
+          onClose={handleCancelImport}
+          sharedNote={sharedNote}
+          onImport={handleImportSharedNote}
+          onCancel={handleCancelImport}
+        />
+      )}
     </div>
   );
 };

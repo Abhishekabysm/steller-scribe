@@ -7,12 +7,12 @@ export interface ShareableNote {
 }
 
 /**
- * Simple but effective compression using RLE (Run Length Encoding) + basic dictionary
+ * Enhanced compression using multiple techniques
  */
 function compressString(str: string): string {
-  // First pass: Replace common patterns
+  // First pass: Replace common patterns with shorter symbols
   const commonPatterns = [
-    ['  ', '§2§'], // double space
+    // Common words and phrases
     ['the ', '§t§'],
     ['and ', '§a§'],
     ['that ', '§h§'],
@@ -51,6 +51,51 @@ function compressString(str: string): string {
     ['would ', '§D§'],
     ['could ', '§X§'],
     ['should ', '§Y§'],
+    
+    // Common markdown patterns
+    ['## ', '§h2§'],
+    ['### ', '§h3§'],
+    ['#### ', '§h4§'],
+    ['##### ', '§h5§'],
+    ['###### ', '§h6§'],
+    ['- ', '§li§'],
+    ['* ', '§ul§'],
+    ['1. ', '§ol§'],
+    ['**', '§b§'],
+    ['__', '§u§'],
+    ['~~', '§s§'],
+    ['```', '§cb§'],
+    ['`', '§c§'],
+    ['> ', '§q§'],
+    ['---', '§hr§'],
+    ['***', '§hr2§'],
+    
+    // Common programming patterns
+    ['function ', '§fn§'],
+    ['const ', '§ct§'],
+    ['let ', '§lt§'],
+    ['var ', '§vr§'],
+    ['return ', '§rt§'],
+    ['if ', '§if§'],
+    ['else ', '§el§'],
+    ['for ', '§fr§'],
+    ['while ', '§wh§'],
+    ['class ', '§cl§'],
+    ['import ', '§im§'],
+    ['export ', '§ex§'],
+    ['async ', '§as§'],
+    ['await ', '§aw§'],
+    ['throw ', '§th§'],
+    ['catch ', '§ca§'],
+    ['finally ', '§fi§'],
+    
+    // Multiple spaces and newlines
+    ['    ', '§4§'], // 4 spaces
+    ['   ', '§3§'], // 3 spaces  
+    ['  ', '§2§'], // 2 spaces
+    ['\n\n\n', '§n3§'], // 3 newlines
+    ['\n\n', '§n2§'], // 2 newlines
+    ['\r\n', '§rn§'], // windows newlines
   ];
   
   let compressed = str;
@@ -58,16 +103,25 @@ function compressString(str: string): string {
     compressed = compressed.split(pattern).join(replacement);
   }
   
+  // Second pass: Simple Run Length Encoding for repeated characters
+  compressed = compressed.replace(/(.)\1{2,}/g, (match, char) => {
+    return `§r${char}${match.length}§`;
+  });
+  
   return compressed;
 }
 
 /**
- * Decompress string by reversing the compression
+ * Enhanced decompression to reverse the compression
  */
 function decompressString(compressed: string): string {
-  // Reverse the pattern replacement
+  // First pass: Reverse Run Length Encoding
+  let decompressed = compressed.replace(/§r(.)(\d+)§/g, (_, char, count) => {
+    return char.repeat(parseInt(count));
+  });
+  
+  // Second pass: Reverse pattern replacement
   const commonPatterns = [
-    ['§2§', '  '],
     ['§t§', 'the '],
     ['§a§', 'and '],
     ['§h§', 'that '],
@@ -106,9 +160,53 @@ function decompressString(compressed: string): string {
     ['§D§', 'would '],
     ['§X§', 'could '],
     ['§Y§', 'should '],
+    
+    // Markdown patterns
+    ['§h2§', '## '],
+    ['§h3§', '### '],
+    ['§h4§', '#### '],
+    ['§h5§', '##### '],
+    ['§h6§', '###### '],
+    ['§li§', '- '],
+    ['§ul§', '* '],
+    ['§ol§', '1. '],
+    ['§b§', '**'],
+    ['§u§', '__'],
+    ['§s§', '~~'],
+    ['§cb§', '```'],
+    ['§c§', '`'],
+    ['§q§', '> '],
+    ['§hr§', '---'],
+    ['§hr2§', '***'],
+    
+    // Programming patterns
+    ['§fn§', 'function '],
+    ['§ct§', 'const '],
+    ['§lt§', 'let '],
+    ['§vr§', 'var '],
+    ['§rt§', 'return '],
+    ['§if§', 'if '],
+    ['§el§', 'else '],
+    ['§fr§', 'for '],
+    ['§wh§', 'while '],
+    ['§cl§', 'class '],
+    ['§im§', 'import '],
+    ['§ex§', 'export '],
+    ['§as§', 'async '],
+    ['§aw§', 'await '],
+    ['§th§', 'throw '],
+    ['§ca§', 'catch '],
+    ['§fi§', 'finally '],
+    
+    // Spaces and newlines
+    ['§4§', '    '], // 4 spaces
+    ['§3§', '   '], // 3 spaces  
+    ['§2§', '  '], // 2 spaces
+    ['§n3§', '\n\n\n'], // 3 newlines
+    ['§n2§', '\n\n'], // 2 newlines
+    ['§rn§', '\r\n'], // windows newlines
   ];
   
-  let decompressed = compressed;
   for (const [replacement, pattern] of commonPatterns) {
     decompressed = decompressed.split(replacement).join(pattern);
   }
@@ -117,63 +215,7 @@ function decompressString(compressed: string): string {
 }
 
 /**
- * Generate a short hash for large content
- */
-function generateShortHash(content: string): string {
-  let hash = 0;
-  for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash).toString(36).substring(0, 8);
-}
-
-/**
- * Store note in localStorage with a short hash
- */
-function storeNoteWithHash(note: ShareableNote): string {
-  const hash = generateShortHash(JSON.stringify(note));
-  const key = `share_${hash}`;
-  
-  try {
-    localStorage.setItem(key, JSON.stringify(note));
-    localStorage.setItem(`${key}_timestamp`, Date.now().toString());
-    
-    // Clean up old notes periodically
-    if (Math.random() < 0.1) { // 10% chance to run cleanup
-      cleanupOldSharedNotes();
-    }
-    
-    return hash;
-  } catch (error) {
-    console.error('Failed to store note in localStorage:', error);
-    throw error;
-  }
-}
-
-/**
- * Retrieve note from localStorage using hash
- */
-function retrieveNoteFromHash(hash: string): ShareableNote | null {
-  const key = `share_${hash}`;
-  
-  try {
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      // Update timestamp to mark as recently accessed
-      localStorage.setItem(`${key}_timestamp`, Date.now().toString());
-      return JSON.parse(stored);
-    }
-    return null;
-  } catch (error) {
-    console.error('Failed to retrieve note from localStorage:', error);
-    return null;
-  }
-}
-
-/**
- * Encodes note data into a URL-safe string (compressed or hash-based)
+ * Encodes note data into a URL-safe string with enhanced compression
  */
 export function encodeNoteForSharing(note: Note): string {
   const shareableNote: ShareableNote = {
@@ -189,36 +231,56 @@ export function encodeNoteForSharing(note: Note): string {
     const compressed = compressString(jsonString);
     const base64 = btoa(unescape(encodeURIComponent(compressed)));
     
-    // If the compressed version is still too long (>500 chars), use hash-based storage
-    if (base64.length > 500) {
-      const hash = storeNoteWithHash(shareableNote);
-      return `h:${hash}`; // Prefix with 'h:' to indicate hash-based
+    // Use a higher threshold for modern browsers (1500 characters instead of 500)
+    // Most browsers can handle URLs up to 2048 characters
+    if (base64.length <= 1500) {
+      return `c:${base64}`; // Prefix with 'c:' to indicate compressed
     }
     
-    return `c:${base64}`; // Prefix with 'c:' to indicate compressed
+    // For very large notes, we'll just use the compressed version anyway
+    // and let the user know it might not work in some older browsers
+    return `c:${base64}`;
   } catch (error) {
-    console.error('Compression failed, falling back to hash storage:', error);
-    const hash = storeNoteWithHash(shareableNote);
-    return `h:${hash}`;
+    console.error('Compression failed:', error);
+    // Fallback to uncompressed base64
+    try {
+      const base64 = btoa(unescape(encodeURIComponent(jsonString)));
+      return `u:${base64}`; // Prefix with 'u:' to indicate uncompressed
+    } catch (fallbackError) {
+      console.error('Base64 encoding failed:', fallbackError);
+      throw new Error('Failed to encode note for sharing');
+    }
   }
 }
 
 /**
- * Decodes a shared note from a URL-safe string (compressed or hash-based)
+ * Decodes a shared note from a URL-safe string with enhanced decompression
  */
 export function decodeSharedNote(encodedData: string): ShareableNote | null {
   try {
-    // Check if it's hash-based (starts with 'h:')
-    if (encodedData.startsWith('h:')) {
-      const hash = encodedData.substring(2);
-      return retrieveNoteFromHash(hash);
-    }
-    
     // Check if it's compressed (starts with 'c:')
     if (encodedData.startsWith('c:')) {
       const base64 = encodedData.substring(2);
       const compressed = decodeURIComponent(escape(atob(base64)));
       const jsonString = decompressString(compressed);
+      const shareableNote = JSON.parse(jsonString) as ShareableNote;
+      
+      // Validate the structure
+      if (
+        typeof shareableNote.title === 'string' &&
+        typeof shareableNote.content === 'string' &&
+        Array.isArray(shareableNote.tags)
+      ) {
+        return shareableNote;
+      }
+      
+      return null;
+    }
+    
+    // Check if it's uncompressed (starts with 'u:')
+    if (encodedData.startsWith('u:')) {
+      const base64 = encodedData.substring(2);
+      const jsonString = decodeURIComponent(escape(atob(base64)));
       const shareableNote = JSON.parse(jsonString) as ShareableNote;
       
       // Validate the structure
@@ -283,34 +345,4 @@ export function clearShareFromUrl(): void {
   const url = new URL(window.location.href);
   url.searchParams.delete('share');
   window.history.replaceState({}, '', url.toString());
-}
-
-/**
- * Clean up old shared notes from localStorage to prevent it from growing too large
- */
-export function cleanupOldSharedNotes(): void {
-  try {
-    const keys = Object.keys(localStorage);
-    const shareKeys = keys.filter(key => key.startsWith('share_'));
-    
-    // Keep only the most recent 50 shared notes
-    const maxSharedNotes = 50;
-    
-    if (shareKeys.length > maxSharedNotes) {
-      // Sort by last access time (we'll add timestamps to stored notes)
-      const sortedKeys = shareKeys.sort((a, b) => {
-        const aTime = localStorage.getItem(`${a}_timestamp`) || '0';
-        const bTime = localStorage.getItem(`${b}_timestamp`) || '0';
-        return parseInt(bTime) - parseInt(aTime);
-      });
-      
-      // Remove the oldest ones
-      for (let i = maxSharedNotes; i < sortedKeys.length; i++) {
-        localStorage.removeItem(sortedKeys[i]);
-        localStorage.removeItem(`${sortedKeys[i]}_timestamp`);
-      }
-    }
-  } catch (error) {
-    console.error('Failed to cleanup old shared notes:', error);
-  }
 }

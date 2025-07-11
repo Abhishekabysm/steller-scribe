@@ -13,12 +13,15 @@ interface ShareModalProps {
 const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, note, onToast }) => {
   const [shareUrl, setShareUrl] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [isUrlLong, setIsUrlLong] = useState(false);
 
   useEffect(() => {
     if (isOpen && note) {
       const url = generateShareableUrl(note);
       setShareUrl(url);
       setIsCopied(false);
+      // Check if URL is very long (might not work on all devices)
+      setIsUrlLong(url.length > 2000);
     }
   }, [isOpen, note]);
 
@@ -116,6 +119,21 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, note, onToast 
             <label className="block text-sm font-medium text-text-secondary dark:text-dark-text-secondary">
               Share Link
             </label>
+            
+            {/* URL Length Warning */}
+            {isUrlLong && (
+              <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <div className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5">
+                    ⚠️
+                  </div>
+                  <p className="text-sm text-orange-700 dark:text-orange-300">
+                    This note creates a very long link. While it should work on most modern devices, 
+                    some older browsers or messaging apps might have trouble with it.
+                  </p>
+                </div>
+              </div>
+            )}
             
             {/* Desktop Layout */}
             <div className="hidden sm:flex items-center gap-3">

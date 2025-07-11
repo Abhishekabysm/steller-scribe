@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Note } from '../types';
 import { generateShareableUrl } from '../utils/shareUtils';
-import XIcon from './icons/XIcon';
-import DocumentPlusIcon from './icons/DocumentPlusIcon';
-import CheckBadgeIcon from './icons/CheckBadgeIcon';
-import LinkIcon from './icons/LinkIcon';
+import { MdClose, MdContentCopy, MdCheck, MdShare } from 'react-icons/md';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -85,7 +82,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, note, onToast 
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
           >
-            <XIcon className="w-5 h-5" />
+            <MdClose className="w-5 h-5" />
           </button>
         </div>
 
@@ -116,12 +113,12 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, note, onToast 
               >
                 {isCopied ? (
                   <>
-                    <CheckBadgeIcon className="w-4 h-4" />
+                    <MdCheck className="w-4 h-4" />
                     <span className="hidden sm:inline">Copied!</span>
                   </>
                 ) : (
                   <>
-                    <DocumentPlusIcon className="w-4 h-4" />
+                    <MdContentCopy className="w-4 h-4" />
                     <span className="hidden sm:inline">Copy</span>
                   </>
                 )}
@@ -135,7 +132,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, note, onToast 
                 onClick={handleNativeShare}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-text-primary dark:text-dark-text-primary rounded-lg hover:bg-border-color dark:hover:bg-dark-border-color transition-colors"
               >
-                <LinkIcon className="w-4 h-4" />
+                <MdShare className="w-4 h-4" />
                 Share
               </button>
             )}

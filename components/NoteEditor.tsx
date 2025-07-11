@@ -19,7 +19,7 @@ import ViewIcon from './icons/ViewIcon';
 import TagIcon from './icons/TagIcon';
 import ContextualMenu from './ContextualMenu';
 import DownloadIcon from './icons/DownloadIcon';
-import ShareIcon from './icons/ShareIcon';
+import { MdShare } from 'react-icons/md';
 import DownloadModal from './DownloadModal';
 import SummaryModal from './SummaryModal';
 import ShareModal from './ShareModal';
@@ -779,7 +779,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             <span className="md:hidden">Summary</span>
             </button>
             <button onClick={() => setIsShareModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">
-            <ShareIcon className="w-4 h-4 text-accent dark:text-dark-accent" />
+            <MdShare className="w-4 h-4 text-accent dark:text-dark-accent" />
                <span className="hidden lg:inline">Share</span>
               </button>
             <button onClick={() => setIsDownloadModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">

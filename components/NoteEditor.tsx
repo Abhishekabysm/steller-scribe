@@ -19,7 +19,7 @@ import ViewIcon from './icons/ViewIcon';
 import TagIcon from './icons/TagIcon';
 import ContextualMenu from './ContextualMenu';
 import DownloadIcon from './icons/DownloadIcon';
-import { MdShare } from 'react-icons/md';
+import { MdShare,} from 'react-icons/md';
 import DownloadModal from './DownloadModal';
 import SelectionNavigator from './SelectionNavigator';
 import SummaryModal from './SummaryModal';
@@ -122,6 +122,80 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       return () => clearTimeout(timer);
     }
   }, [renderedMarkdown]); // Only run when rendered markdown changes
+
+  // Function to add copy buttons to code blocks
+  const addCopyButtonsToCodeBlocks = useCallback(() => {
+    const codeBlocks = document.querySelectorAll('.preview-pane pre');
+    codeBlocks.forEach((preBlock) => {
+      // Check if a copy button already exists for this block
+      if (preBlock.querySelector('.copy-button-container')) {
+        return;
+      }
+
+      const codeElement = preBlock.querySelector('code');
+      if (!codeElement) {
+        return;
+      }
+
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'copy-button-container absolute top-2 right-2'; // Tailwind classes for positioning
+
+     const copyButton = document.createElement('button');
+     copyButton.className = 'p-1.5 rounded-md bg-bg-secondary dark:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors flex items-center justify-center gap-1';
+     
+     const copyIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>`;
+     const checkIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path></svg>`;
+
+     copyButton.innerHTML = copyIconSVG;
+     copyButton.title = 'Copy code';
+     copyButton.onclick = () => {
+       const codeToCopy = codeElement.innerText;
+       navigator.clipboard.writeText(codeToCopy).then(() => {
+         // Change icon to tick and add text (icon to the right)
+         copyButton.innerHTML = `<span class="text-green-500 dark:text-green-400">Copied!</span> ${checkIconSVG}`;
+         copyButton.title = 'Copied!';
+         
+         // Adjust class for green color
+         copyButton.classList.remove('text-text-secondary', 'dark:text-dark-text-secondary');
+         copyButton.classList.add('text-green-500', 'dark:text-green-400');
+         
+         // Revert to copy icon after a delay
+         setTimeout(() => {
+           copyButton.innerHTML = copyIconSVG;
+           copyButton.title = 'Copy code';
+           copyButton.classList.remove('text-green-500', 'dark:text-green-400');
+           copyButton.classList.add('text-text-secondary', 'dark:text-dark-text-secondary');
+         }, 1500); // 1.5 seconds
+       }).catch(err => {
+         addToast('Failed to copy code: ' + err, 'error');
+         console.error('Failed to copy code: ', err);
+       });
+     };
+
+      buttonContainer.appendChild(copyButton);
+      (preBlock as HTMLElement).style.position = 'relative'; // Ensure relative positioning for absolute button
+      preBlock.appendChild(buttonContainer);
+    });
+  }, [addToast]);
+
+  useEffect(() => {
+    if (typeof hljs !== 'undefined') {
+      // Use a small delay to ensure DOM is ready after dangerouslySetInnerHTML updates
+      const timer = setTimeout(() => {
+        const blocks = document.querySelectorAll('pre code');
+        blocks.forEach((block) => {
+          if (!block.classList.contains('hljs')) {
+            hljs.highlightElement(block);
+          }
+        });
+        // Always attempt to add copy buttons after highlighting,
+        // addCopyButtonsToCodeBlocks will handle existing buttons.
+        addCopyButtonsToCodeBlocks();
+      }, 100); // Reduced delay for quicker button appearance
+      
+      return () => clearTimeout(timer);
+    }
+  }, [renderedMarkdown, addCopyButtonsToCodeBlocks, viewMode, mobileView]); // Dependencies for re-running effect
 
   // Reset suggestions when activeNote changes
   useEffect(() => {

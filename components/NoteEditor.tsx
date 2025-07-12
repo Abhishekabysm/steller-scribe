@@ -21,6 +21,7 @@ import ContextualMenu from './ContextualMenu';
 import DownloadIcon from './icons/DownloadIcon';
 import { MdShare } from 'react-icons/md';
 import DownloadModal from './DownloadModal';
+import SelectionNavigator from './SelectionNavigator';
 import SummaryModal from './SummaryModal';
 import ShareModal from './ShareModal';
 import { MdCloudDownload } from 'react-icons/md';
@@ -62,6 +63,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [summaryContent, setSummaryContent] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  
+  // State for selection navigation
+  const [selectionNavigator, setSelectionNavigator] = useState<{
+    top: number;
+    left: number;
+    matches: { start: number; end: number }[];
+    currentIndex: number;
+  } | null>(null);
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
@@ -466,34 +475,119 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
 
   const handlePreviewSelection = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
+    if (!selection || selection.rangeCount === 0) {
+      setSelectionNavigator(null);
+      return;
+    }
 
     const range = selection.getRangeAt(0);
     const selectedText = range.toString();
 
-    if (selectedText.length > 0 && activeNote) {
-      const markdownContent = activeNote.content;
-      const editorTextarea = editorRef.current;
+    // Enhanced normalization to handle typographic characters
+    const normalizedSelectedText = selectedText
+      .replace(/\s+/g, ' ')
+      .replace(/[’‘]/g, "'")      // Normalize apostrophes/single quotes
+      .replace(/[“”]/g, '"')      // Normalize double quotes
+      .trim();
 
-      if (!editorTextarea) return;
-
-      // Try to find the selected text directly in the markdown content
-      const startIndex = markdownContent.indexOf(selectedText);
-
-      if (startIndex !== -1) {
-        const endIndex = startIndex + selectedText.length;
-        editorTextarea.focus();
-        editorTextarea.setSelectionRange(startIndex, endIndex);
-        
-        // Scroll to the selected text in the editor
-        const scrollPosition = (startIndex / markdownContent.length) * editorTextarea.scrollHeight - (editorTextarea.clientHeight / 2);
-        editorTextarea.scrollTop = scrollPosition;
-
-      } else {
-        console.warn("Could not find selected text in Markdown content:", selectedText);
-      }
+    if (normalizedSelectedText.length === 0 || !activeNote) {
+      setSelectionNavigator(null);
+      return;
     }
-  }, [activeNote, editorRef]);
+
+    const editorTextarea = editorRef.current;
+    if (!editorTextarea) return;
+
+    const originalContent = activeNote.content;
+    const words = normalizedSelectedText.split(/\s+/);
+    let searchPattern;
+
+    // Use a more robust regex strategy
+    if (words.length > 8) {
+      // Sparse regex for long selections using non-greedy match
+      const firstWords = words.slice(0, 4).map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\W*');
+      const lastWords = words.slice(-4).map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\W*');
+      searchPattern = `${firstWords}.*?${lastWords}`;
+    } else {
+      // Full regex for shorter selections
+      searchPattern = words.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\W*');
+    }
+
+    try {
+      const searchRegex = new RegExp(searchPattern, 'gi');
+      const matches = [];
+      let match;
+      while ((match = searchRegex.exec(originalContent)) !== null) {
+        if (match[0].trim().length > 0) {
+            matches.push({ start: match.index, end: match.index + match[0].length });
+        }
+      }
+
+      if (matches.length > 1) {
+        const containerRect = e.currentTarget.getBoundingClientRect();
+        const rangeRect = range.getBoundingClientRect();
+        
+        const navigatorWidth = 160; // Estimated width of the navigator
+        const navigatorHeight = 44; // Estimated height
+
+        // Center based on the cursor's X position for better accuracy on multi-line selections
+        let left = e.clientX - containerRect.left - (navigatorWidth / 2);
+        let top = rangeRect.top - containerRect.top - navigatorHeight;
+
+        // Boundary checks to keep it on screen
+        if (top < 10) { // Not enough space above
+          top = rangeRect.bottom - containerRect.top + 10; // Position below
+        }
+        left = Math.max(10, Math.min(left, containerRect.width - navigatorWidth - 10));
+  
+        setSelectionNavigator({
+          matches,
+          currentIndex: 0,
+          top,
+          left,
+        });
+  
+        const firstMatch = matches[0];
+        editorTextarea.focus();
+        editorTextarea.setSelectionRange(firstMatch.start, firstMatch.end);
+        const scrollPosition = (firstMatch.start / originalContent.length) * editorTextarea.scrollHeight - (editorTextarea.clientHeight / 2);
+        editorTextarea.scrollTop = Math.max(0, scrollPosition);
+
+      } else if (matches.length === 1) {
+        setSelectionNavigator(null);
+        editorTextarea.focus();
+        editorTextarea.setSelectionRange(matches[0].start, matches[0].end);
+        const scrollPosition = (matches[0].start / originalContent.length) * editorTextarea.scrollHeight - (editorTextarea.clientHeight / 2);
+        editorTextarea.scrollTop = Math.max(0, scrollPosition);
+      } else {
+        setSelectionNavigator(null);
+      }
+    } catch (error) {
+        console.error("Error creating or executing regex:", error);
+        setSelectionNavigator(null);
+    }
+  }, [activeNote]);
+
+  const navigateMatches = (direction: 'next' | 'prev') => {
+    if (!selectionNavigator) return;
+
+    const { matches, currentIndex } = selectionNavigator;
+    const nextIndex = direction === 'next'
+      ? (currentIndex + 1) % matches.length
+      : (currentIndex - 1 + matches.length) % matches.length;
+
+    const nextMatch = matches[nextIndex];
+    const editorTextarea = editorRef.current;
+    if (editorTextarea) {
+        editorTextarea.focus();
+        editorTextarea.setSelectionRange(nextMatch.start, nextMatch.end);
+        
+        const scrollPosition = (nextMatch.start / activeNote!.content.length) * editorTextarea.scrollHeight - (editorTextarea.clientHeight / 2);
+        editorTextarea.scrollTop = Math.max(0, scrollPosition);
+    }
+
+    setSelectionNavigator(prev => prev ? { ...prev, currentIndex: nextIndex } : null);
+  };
 
   const handleAiTextAction = async (action: AITextAction, language?: string) => {
     const textarea = editorRef.current;
@@ -774,7 +868,23 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   
   const previewPane = (
       <div className="flex flex-col h-full bg-bg-primary dark:bg-dark-bg-primary relative">
-          <div className="flex-grow overflow-y-auto p-6 select-text preview-pane">
+          {selectionNavigator && (
+            <SelectionNavigator
+              top={selectionNavigator.top}
+              left={selectionNavigator.left}
+              matchCount={selectionNavigator.matches.length}
+              currentIndex={selectionNavigator.currentIndex}
+              onNext={() => navigateMatches('next')}
+              onPrev={() => navigateMatches('prev')}
+              onClose={() => setSelectionNavigator(null)}
+            />
+          )}
+          <div className="flex-grow overflow-y-auto p-6 select-text preview-pane" onClick={() => {
+               // Clear navigator if clicking on the pane itself, but not on selected text
+               if (window.getSelection()?.toString().trim() === '') {
+                   setSelectionNavigator(null);
+               }
+          }}>
             {/* Title Section */}
             <div className="mb-6 pb-4 border-b border-border-color dark:border-dark-border-color">
               <div className="flex items-center gap-3 mb-2">

@@ -801,8 +801,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       
       // Execute the command through the textarea's execCommand for proper undo support
       textarea.focus();
+      textarea.setSelectionRange(start, end); // Ensure the selected text is replaced
       document.execCommand('insertText', false, wrappedText);
       
+      // Manually trigger content update after execCommand
+      onUpdateNote({ content: textarea.value });
+
       // Update cursor position to after the wrapped text
       setTimeout(() => {
         textarea.setSelectionRange(start + wrappedText.length, start + wrappedText.length);

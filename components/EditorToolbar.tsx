@@ -121,20 +121,24 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
         break;
     }
 
-    const updatedValue = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
-    onUpdate(updatedValue);
-    
-    // Focus and update cursor position
+    // Use execCommand for undo-friendly text replacement
     textarea.focus();
+    textarea.setSelectionRange(start, end);
+    document.execCommand('insertText', false, newText);
+
+    // Manually trigger content update after execCommand
+    onUpdate(textarea.value);
+
+    // Update cursor position
     setTimeout(() => {
-        if (syntax === 'link') {
-             const urlPos = start + selectedText.length + 3;
-             textarea.setSelectionRange(urlPos, urlPos + 3);
-        } else if (selectedText) {
-            textarea.setSelectionRange(start + newText.length, start + newText.length);
-        } else {
-            textarea.setSelectionRange(start + cursorOffset, start + cursorOffset);
-        }
+      if (syntax === 'link') {
+        const urlPos = start + selectedText.length + 3;
+        textarea.setSelectionRange(urlPos, urlPos + 3);
+      } else if (selectedText) {
+        textarea.setSelectionRange(start + newText.length, start + newText.length);
+      } else {
+        textarea.setSelectionRange(start + cursorOffset, start + cursorOffset);
+      }
     }, 0);
   };
 

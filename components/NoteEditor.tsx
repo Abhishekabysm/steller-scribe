@@ -507,7 +507,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       // Sparse regex for long selections using non-greedy match
       const firstWords = words.slice(0, 4).map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\W*');
       const lastWords = words.slice(-4).map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\W*');
-      searchPattern = `${firstWords}.*?${lastWords}`;
+      searchPattern = `${firstWords}[\\s\\S]*?${lastWords}`;
     } else {
       // Full regex for shorter selections
       searchPattern = words.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\W*');

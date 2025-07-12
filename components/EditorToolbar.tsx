@@ -8,11 +8,15 @@ import LinkIcon from './icons/LinkIcon';
 import CodeIcon from './icons/CodeIcon';
 import ListIcon from './icons/ListIcon';
 import MagicIcon from './icons/MagicIcon';
+import SparklesIcon from './icons/SparklesIcon';
 import HeadingIcon from './icons/HeadingIcon';
 import StrikethroughIcon from './icons/StrikethroughIcon';
 import QuoteIcon from './icons/QuoteIcon';
 import TaskListIcon from './icons/TaskListIcon';
 import HorizontalRuleIcon from './icons/HorizontalRuleIcon';
+import ConfirmationModal from './ConfirmationModal';
+import { performTextAction } from '../services/geminiService';
+import { AITextAction } from '../types';
 
 
 interface EditorToolbarProps {
@@ -21,19 +25,24 @@ interface EditorToolbarProps {
   onGenerateClick: () => void;
 }
 
-const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; title: string }> = ({ onClick, children, title }) => (
+const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; title: string; disabled?: boolean }> = ({ onClick, children, title, disabled }) => (
   <button
     type="button"
     onClick={onClick}
     title={title}
-    className="p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
+    className="p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors disabled:opacity-50"
+    disabled={disabled}
   >
     {children}
   </button>
 );
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, onGenerateClick }) => {
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [originalText, setOriginalText] = useState('');
+  const [beautifiedText, setBeautifiedText] = useState('');
   const [showAllTools, setShowAllTools] = useState(false);
+  const [isBeautifying, setIsBeautifying] = useState(false);
   
   const applyFormat = (syntax: 'bold' | 'italic' | 'underline' | 'code' | 'link' | 'list' | 'h1' | 'h2' | 'h3' | 'strikethrough' | 'quote' | 'tasklist' | 'hr') => {
     const textarea = textareaRef.current;
@@ -129,7 +138,54 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
     }, 0);
   };
 
+  const handleBeautifyClick = async () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
 
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    const textToProcess = selectedText || textarea.value;
+
+    
+    
+    
+    
+    
+    
+
+    setOriginalText(textToProcess);
+    setIsBeautifying(true); // Start loading
+
+    try {
+      const result = await performTextAction(textToProcess, 'beautify' as AITextAction);
+      setBeautifiedText(result);
+      setShowConfirmationModal(true);
+    } catch (error) {
+      console.error("Error beautifying text:", error);
+      // Optionally show a toast notification for the error
+    } finally {
+      setIsBeautifying(false); // End loading
+    }
+  };
+
+  const handleConfirmBeautify = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    let updatedValue;
+
+    if (originalText === textarea.value) { // If entire content was selected
+      updatedValue = beautifiedText;
+    } else { // If a selection was made
+      updatedValue = textarea.value.substring(0, start) + beautifiedText + textarea.value.substring(end);
+    }
+    
+    onUpdate(updatedValue);
+    setShowConfirmationModal(false);
+  };
 
   const primaryTools = (
     <>
@@ -160,6 +216,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
       <ToolbarButton onClick={() => applyFormat('list')} title="Bulleted List">
         <ListIcon className="w-5 h-5" />
       </ToolbarButton>
+      <ToolbarButton onClick={handleBeautifyClick} title="Beautify (AI)" disabled={isBeautifying}>
+        {isBeautifying ? (
+          <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+        ) : (
+          <SparklesIcon className="w-5 h-5" />
+        )}
+      </ToolbarButton>
     </>
   );
 
@@ -181,34 +244,56 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
   );
 
   return (
-    <div className="border-b border-border-color dark:border-dark-border-color">
-      <div className="flex items-center justify-between px-2 py-1">
-        <div className="flex items-center space-x-1 overflow-x-auto">
-          {primaryTools}
-          <div className="hidden md:flex items-center space-x-1">
-            {secondaryTools}
+    <>
+      <div className="border-b border-border-color dark:border-dark-border-color">
+        <div className="flex items-center justify-between px-2 py-1">
+          <div className="flex items-center space-x-1 overflow-x-auto">
+            {primaryTools}
+            <div className="hidden md:flex items-center space-x-1">
+              {secondaryTools}
+            </div>
+          </div>
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={() => setShowAllTools(!showAllTools)}
+              className="md:hidden p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
+              title="More tools"
+            >
+              <span className="text-sm">•••</span>
+            </button>
+            <div className="w-px h-6 bg-border-color dark:bg-dark-border-color mx-2"></div>
+            <ToolbarButton onClick={onGenerateClick} title="Generate Note with AI">
+              <MagicIcon className="w-5 h-5 text-accent dark:text-dark-accent" />
+            </ToolbarButton>
           </div>
         </div>
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={() => setShowAllTools(!showAllTools)}
-            className="md:hidden p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
-            title="More tools"
-          >
-            <span className="text-sm">•••</span>
-          </button>
-          <div className="w-px h-6 bg-border-color dark:bg-dark-border-color mx-2"></div>
-          <ToolbarButton onClick={onGenerateClick} title="Generate Note with AI">
-            <MagicIcon className="w-5 h-5 text-accent dark:text-dark-accent" />
-          </ToolbarButton>
-        </div>
+        {showAllTools && (
+          <div className="md:hidden flex items-center space-x-1 px-2 py-1 bg-bg-secondary dark:bg-dark-bg-secondary overflow-x-auto">
+            {secondaryTools}
+          </div>
+        )}
       </div>
-      {showAllTools && (
-        <div className="md:hidden flex items-center space-x-1 px-2 py-1 bg-bg-secondary dark:bg-dark-bg-secondary overflow-x-auto">
-          {secondaryTools}
-        </div>
-      )}
-    </div>
+      <ConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={() => setShowConfirmationModal(false)}
+        onConfirm={handleConfirmBeautify}
+        title="Apply Beautified Text?"
+        message={
+          <>
+            <p className="mb-2 text-text-primary dark:text-dark-text-primary">Original text:</p>
+            <div className="bg-bg-tertiary dark:bg-dark-bg-tertiary p-3 rounded-md max-h-[30vh] overflow-y-auto mb-4 text-sm border border-border-color dark:border-dark-border-color">
+              {originalText}
+            </div>
+            <p className="mb-2 text-text-primary dark:text-dark-text-primary">Beautified text:</p>
+            <div className="bg-bg-tertiary dark:bg-dark-bg-tertiary p-3 rounded-md max-h-[30vh] overflow-y-auto text-sm border border-border-color dark:border-dark-border-color">
+              {beautifiedText}
+            </div>
+          </>
+        }
+        confirmText="Apply Changes"
+        cancelText="Discard"
+      />
+    </>
   );
 };
 

@@ -135,6 +135,9 @@ export const performTextAction = async (text: string, action: AITextAction, lang
             case 'translate':
                 prompt = `Translate the following text into ${language}. Only output the translated text.\n\nText: "${text}"`;
                 break;
+            case 'beautify':
+                prompt = `Expand the following text, add more details, rephrase for clarity and flow, and simplify the language. Only output the beautified text.\n\nText: "${text}"`;
+                break;
             default:
                 throw new Error("Invalid AI text action.");
         }

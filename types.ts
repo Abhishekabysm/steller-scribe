@@ -26,4 +26,4 @@ export interface Toast {
     type: 'success' | 'error' | 'info';
 }
 
-export type AITextAction = 'improve' | 'fix-grammar' | 'shorten' | 'translate' | 'dictionary';
+export type AITextAction = 'improve' | 'fix-grammar' | 'shorten' | 'translate' | 'dictionary' | 'beautify';

@@ -1,4 +1,4 @@
-
+          
 import React, { useState, useMemo, useCallback, useRef, KeyboardEvent, useEffect } from 'react';
 import { Note, AITextAction } from '../types';
 import { summarizeText, suggestTagsForText, generateNoteContent, performTextAction, generateTitle } from '../services/geminiService';
@@ -462,7 +462,38 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     };
   }, []);
 
+  
 
+  const handlePreviewSelection = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+
+    if (selectedText.length > 0 && activeNote) {
+      const markdownContent = activeNote.content;
+      const editorTextarea = editorRef.current;
+
+      if (!editorTextarea) return;
+
+      // Try to find the selected text directly in the markdown content
+      const startIndex = markdownContent.indexOf(selectedText);
+
+      if (startIndex !== -1) {
+        const endIndex = startIndex + selectedText.length;
+        editorTextarea.focus();
+        editorTextarea.setSelectionRange(startIndex, endIndex);
+        
+        // Scroll to the selected text in the editor
+        const scrollPosition = (startIndex / markdownContent.length) * editorTextarea.scrollHeight - (editorTextarea.clientHeight / 2);
+        editorTextarea.scrollTop = scrollPosition;
+
+      } else {
+        console.warn("Could not find selected text in Markdown content:", selectedText);
+      }
+    }
+  }, [activeNote, editorRef]);
 
   const handleAiTextAction = async (action: AITextAction, language?: string) => {
     const textarea = editorRef.current;
@@ -786,6 +817,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
               className="prose prose-sm md:prose-base dark:prose-invert max-w-none" 
               dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
               style={{ userSelect: 'text', cursor: 'text' }}
+              onMouseUp={handlePreviewSelection}
             />
           </div>
 

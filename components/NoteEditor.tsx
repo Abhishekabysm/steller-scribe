@@ -483,12 +483,20 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     const range = selection.getRangeAt(0);
     const selectedText = range.toString();
 
-    // Enhanced normalization to handle typographic characters
-    const normalizedSelectedText = selectedText
-      .replace(/\s+/g, ' ')
-      .replace(/[’‘]/g, "'")      // Normalize apostrophes/single quotes
-      .replace(/[“”]/g, '"')      // Normalize double quotes
-      .trim();
+    const isCodeSelection = range.startContainer.parentElement?.closest('pre, code');
+    let normalizedSelectedText;
+
+    if (isCodeSelection) {
+      // For code, preserve internal newlines but trim the whole block
+      normalizedSelectedText = selectedText.trim();
+    } else {
+      // For regular text, normalize all whitespace to a single space
+      normalizedSelectedText = selectedText
+        .replace(/\s+/g, ' ')
+        .replace(/[’‘]/g, "'")
+        .replace(/[“”]/g, '"')
+        .trim();
+    }
 
     if (normalizedSelectedText.length === 0 || !activeNote) {
       setSelectionNavigator(null);

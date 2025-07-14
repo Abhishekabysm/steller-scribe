@@ -138,17 +138,20 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       }
 
       const buttonContainer = document.createElement('div');
-      buttonContainer.className = 'copy-button-container absolute top-2 right-2'; // Tailwind classes for positioning
+      buttonContainer.className = 'copy-button-container absolute top-2 right-2 z-10'; // Added z-10 for better layering
 
      const copyButton = document.createElement('button');
-     copyButton.className = 'p-1.5 rounded-md bg-bg-secondary dark:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors flex items-center justify-center gap-1';
+     copyButton.className = 'p-1.5 rounded-md bg-bg-secondary dark:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors flex items-center justify-center gap-1 shadow-sm';
      
      const copyIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>`;
      const checkIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path></svg>`;
 
      copyButton.innerHTML = copyIconSVG;
      copyButton.title = 'Copy code';
-     copyButton.onclick = () => {
+     copyButton.setAttribute('data-copy-button', 'true'); // Marker to identify copy buttons
+     
+     copyButton.onclick = (e) => {
+       e.stopPropagation(); // Prevent event bubbling
        const codeToCopy = codeElement.innerText;
        navigator.clipboard.writeText(codeToCopy).then(() => {
          // Change icon to tick and add text (icon to the right)
@@ -161,10 +164,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
          
          // Revert to copy icon after a delay
          setTimeout(() => {
-           copyButton.innerHTML = copyIconSVG;
-           copyButton.title = 'Copy code';
-           copyButton.classList.remove('text-green-500', 'dark:text-green-400');
-           copyButton.classList.add('text-text-secondary', 'dark:text-dark-text-secondary');
+           // Check if button still exists before reverting
+           if (copyButton.parentNode) {
+             copyButton.innerHTML = copyIconSVG;
+             copyButton.title = 'Copy code';
+             copyButton.classList.remove('text-green-500', 'dark:text-green-400');
+             copyButton.classList.add('text-text-secondary', 'dark:text-dark-text-secondary');
+           }
          }, 1500); // 1.5 seconds
        }).catch(err => {
          addToast('Failed to copy code: ' + err, 'error');
@@ -196,6 +202,77 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       return () => clearTimeout(timer);
     }
   }, [renderedMarkdown, addCopyButtonsToCodeBlocks, viewMode, mobileView]); // Dependencies for re-running effect
+
+  // Additional effect to ensure copy buttons are always present
+  useEffect(() => {
+    // Observer to watch for DOM changes and re-add copy buttons if needed
+    const observer = new MutationObserver((mutations) => {
+      let shouldAddButtons = false;
+      
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          // Check if any code blocks were added or modified
+          const addedNodes = Array.from(mutation.addedNodes);
+          const removedNodes = Array.from(mutation.removedNodes);
+          
+          const hasCodeBlocks = addedNodes.some(node => 
+            node.nodeType === Node.ELEMENT_NODE && 
+            ((node as Element).tagName === 'PRE' || (node as Element).querySelector('pre code'))
+          );
+          
+          // Also check if copy buttons were removed
+          const buttonsRemoved = removedNodes.some(node =>
+            node.nodeType === Node.ELEMENT_NODE &&
+            ((node as Element).querySelector('.copy-button-container') || 
+             (node as Element).classList?.contains('copy-button-container'))
+          );
+          
+          if (hasCodeBlocks || buttonsRemoved) {
+            shouldAddButtons = true;
+          }
+        }
+      });
+      
+      if (shouldAddButtons) {
+        // Small delay to ensure DOM is settled
+        setTimeout(() => {
+          addCopyButtonsToCodeBlocks();
+        }, 50);
+      }
+    });
+
+    // Start observing the preview pane for changes
+    const previewPane = document.querySelector('.preview-pane');
+    if (previewPane) {
+      observer.observe(previewPane, {
+        childList: true,
+        subtree: true,
+        attributes: false // We don't need to watch for attribute changes
+      });
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [addCopyButtonsToCodeBlocks]);
+
+  // Fallback periodic check to ensure copy buttons are always present
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const codeBlocks = document.querySelectorAll('.preview-pane pre');
+      const missingButtons = Array.from(codeBlocks).some(block => 
+        !block.querySelector('.copy-button-container')
+      );
+      
+      if (missingButtons && codeBlocks.length > 0) {
+        addCopyButtonsToCodeBlocks();
+      }
+    }, 2000); // Check every 2 seconds
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [addCopyButtonsToCodeBlocks]);
 
   // Reset suggestions when activeNote changes
   useEffect(() => {

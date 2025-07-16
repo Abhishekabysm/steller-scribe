@@ -82,7 +82,16 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   useEffect(() => {
     // Initialize Marked and Highlight.js here, in the component that uses them.
     if (typeof marked !== 'undefined' && typeof hljs !== 'undefined') {
+      const renderer = new marked.Renderer();
+      renderer.link = (href: string, title: string | null, text: string) => {
+        // Ensure href is safe
+        const safeHref = href.startsWith('javascript:') ? '' : href;
+        const safeTitle = title || '';
+        return `<a href="${safeHref}" title="${safeTitle}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+      };
+
       marked.setOptions({
+        renderer,
         highlight: function (code: string, lang: string) {
           const language = hljs.getLanguage(lang) ? lang : 'plaintext';
           return hljs.highlight(code, { language, ignoreIllegals: true }).value;
@@ -90,6 +99,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         langPrefix: 'hljs language-',
         gfm: true,
         breaks: true,
+        linkify: true, // Automatically convert URLs to links
       });
     }
   }, []);
@@ -123,9 +133,52 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     }
   }, [renderedMarkdown]); // Only run when rendered markdown changes
 
-  // Function to add copy buttons to code blocks
-  const addCopyButtonsToCodeBlocks = useCallback(() => {
-    const codeBlocks = document.querySelectorAll('.preview-pane pre');
+  // Function to process URLs and add copy buttons to code blocks
+  const processPreviewContent = useCallback(() => {
+    const previewPane = document.querySelector('.preview-pane');
+    if (!previewPane) return;
+
+    // First, handle autolinking of URLs that marked might have missed
+    const urlRegex = /(https?:\/\/[^\s<>"'`;{}|\\^\]]*[^\s<>"'`;{}|\\^\].,])/g;
+
+    function traverseAndLinkify(node: Node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.nodeValue;
+        if (text && urlRegex.test(text)) {
+          const fragment = document.createDocumentFragment();
+          let lastIndex = 0;
+          text.replace(urlRegex, (match, url, offset) => {
+            if (offset > lastIndex) {
+              fragment.appendChild(document.createTextNode(text.substring(lastIndex, offset)));
+            }
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = url;
+            fragment.appendChild(a);
+            lastIndex = offset + match.length;
+            return match; // Return the match to keep replace function happy
+          });
+          if (lastIndex < text.length) {
+            fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+          }
+          node.parentNode?.replaceChild(fragment, node);
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE && node.nodeName !== 'A' && node.nodeName !== 'PRE' && node.nodeName !== 'CODE') {
+        // Only traverse if not an anchor, pre, or code tag to avoid re-processing or breaking existing links/code
+        node.childNodes.forEach(traverseAndLinkify);
+      }
+    }
+
+    // Apply linkify to the main content area, excluding the title and tags sections
+    const contentSection = previewPane.querySelector('.prose');
+    if (contentSection) {
+      contentSection.childNodes.forEach(traverseAndLinkify);
+    }
+
+    // Then, add copy buttons to code blocks
+    const codeBlocks = previewPane.querySelectorAll('pre');
     codeBlocks.forEach((preBlock) => {
       // Check if a copy button already exists for this block
       if (preBlock.querySelector('.copy-button-container')) {
@@ -196,12 +249,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         });
         // Always attempt to add copy buttons after highlighting,
         // addCopyButtonsToCodeBlocks will handle existing buttons.
-        addCopyButtonsToCodeBlocks();
+        processPreviewContent();
       }, 100); // Reduced delay for quicker button appearance
       
       return () => clearTimeout(timer);
     }
-  }, [renderedMarkdown, addCopyButtonsToCodeBlocks, viewMode, mobileView]); // Dependencies for re-running effect
+  }, [renderedMarkdown, processPreviewContent, viewMode, mobileView]); // Dependencies for re-running effect
 
   // Additional effect to ensure copy buttons are always present
   useEffect(() => {
@@ -236,7 +289,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       if (shouldAddButtons) {
         // Small delay to ensure DOM is settled
         setTimeout(() => {
-          addCopyButtonsToCodeBlocks();
+          processPreviewContent();
         }, 50);
       }
     });
@@ -254,7 +307,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     return () => {
       observer.disconnect();
     };
-  }, [addCopyButtonsToCodeBlocks]);
+  }, [processPreviewContent]);
 
   // Fallback periodic check to ensure copy buttons are always present
   useEffect(() => {
@@ -265,14 +318,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       );
       
       if (missingButtons && codeBlocks.length > 0) {
-        addCopyButtonsToCodeBlocks();
+        processPreviewContent();
       }
     }, 2000); // Check every 2 seconds
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [addCopyButtonsToCodeBlocks]);
+  }, [processPreviewContent]);
 
   // Reset suggestions when activeNote changes
   useEffect(() => {

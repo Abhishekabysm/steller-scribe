@@ -5,8 +5,7 @@ import { getWordMeaning } from '../services/dictionaryService';
 import { useToasts } from '../hooks/useToasts';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-import { FaRegStar, FaRegTrashCan, FaXmark, FaPencil, FaEye, FaTag, FaDownload } from 'react-icons/fa6';
-import LogoIcon from './icons/LogoIcon'; // Keeping LogoIcon as it might be custom
+import { FaRegStar, FaRegTrashCan, FaXmark, FaPencil, FaEye, FaTag, FaDownload, FaPenNib } from 'react-icons/fa6';
 import ConfirmationModal from './ConfirmationModal';
 import AIGenerateModal from './AIGenerateModal';
 import EditorToolbar from './EditorToolbar';
@@ -455,10 +454,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                     top = adjustedAbsoluteTop - containerOffsetY;
                     
                     // Final safety check to ensure it's within container bounds
-                    left = Math.max(10, Math.min(left, containerRect.width - menuWidth - 10));
-                    top = Math.max(10, Math.min(top, containerRect.height - 80));
-                    
-                    // For aggressive selections, ensure we have valid coordinates
                     if (isNaN(left) || isNaN(top) || left < 0 || top < 0) {
                         // Ultimate fallback - position at center of textarea
                         const textareaRect = textarea.getBoundingClientRect();
@@ -606,7 +601,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         
         const navigatorWidth = 160; // Estimated width of the navigator
         const navigatorHeight = 44; // Estimated height
-
+        
         // Center based on the cursor's X position for better accuracy on multi-line selections
         let left = e.clientX - containerRect.left - (navigatorWidth / 2);
         let top = rangeRect.top - containerRect.top - navigatorHeight;
@@ -812,7 +807,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   if (!activeNote) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center text-text-muted dark:text-dark-text-muted bg-bg-primary dark:bg-dark-bg-primary">
-        <LogoIcon className="w-24 h-24 mb-4 text-accent/50 dark:text-dark-accent/50 opacity-50" />
+        <FaPenNib className="w-24 h-24 mb-4 text-accent/50 dark:text-dark-accent/50 opacity-50" />
         <h2 className="text-2xl font-bold text-text-primary dark:text-dark-text-primary">Select a note to get started</h2>
         <p className="mt-2 text-lg">Or create a new one to capture your ideas!</p>
       </div>
@@ -951,8 +946,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       <div className="flex flex-col h-full bg-bg-primary dark:bg-dark-bg-primary relative">
           {selectionNavigator && (
             <SelectionNavigator
-              top={selectionNavigator.top}
-              left={selectionNavigator.left}
+              top={selectionNavigator.top} 
+              left={selectionNavigator.left} 
               matchCount={selectionNavigator.matches.length}
               currentIndex={selectionNavigator.currentIndex}
               onNext={() => navigateMatches('next')}

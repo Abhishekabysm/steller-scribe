@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronUpIcon, ChevronDownIcon } from './icons/ChevronIcons';
+import { FaChevronUp, FaChevronDown, FaXmark } from 'react-icons/fa6';
 
 interface SelectionNavigatorProps {
   top: number;
@@ -33,22 +33,20 @@ const SelectionNavigator: React.FC<SelectionNavigatorProps> = ({
           onClick={onPrev}
           className="p-1 rounded-full hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary"
         >
-          <ChevronUpIcon className="w-4 h-4" />
+          <FaChevronUp className="w-4 h-4" />
         </button>
         <button
           onClick={onNext}
           className="p-1 rounded-full hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary"
         >
-          <ChevronDownIcon className="w-4 h-4" />
+          <FaChevronDown className="w-4 h-4" />
         </button>
       </div>
       <button
         onClick={onClose}
         className="ml-1 p-1 rounded-full hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <FaXmark className="w-4 h-4" />
       </button>
     </div>
   );

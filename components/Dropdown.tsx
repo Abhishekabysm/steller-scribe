@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ChevronDownIcon from './icons/ChevronDownIcon';
+import { FaChevronDown } from 'react-icons/fa';
 
 interface DropdownOption {
   value: string;
@@ -43,7 +43,7 @@ const Dropdown: React.FC<DropdownProps> = ({ options, value, onChange }) => {
         className="flex items-center justify-between bg-transparent text-sm text-text-muted dark:text-dark-text-muted font-semibold pl-3 pr-2 py-1 rounded-md hover:bg-surface/50 dark:hover:bg-dark-surface/50 focus:outline-none focus:ring-2 focus:ring-accent dark:focus:ring-dark-accent cursor-pointer transition-colors"
       >
         <span>{selectedOption?.label || 'Select...'}</span>
-        <ChevronDownIcon className={`w-4 h-4 ml-2 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
+        <FaChevronDown className={`w-4 h-4 ml-2 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
       </button>
 
       {isOpen && (

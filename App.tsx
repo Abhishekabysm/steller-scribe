@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Note, SortOption } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -9,11 +8,8 @@ import NoteList from './components/NoteList';
 import NoteEditor from './components/NoteEditor';
 import ImportModal from './components/ImportModal';
 import ConfirmationModal from './components/ConfirmationModal';
-import LogoIcon from './components/icons/LogoIcon';
-import MenuIcon from './components/icons/MenuIcon';
-import SunIcon from './components/icons/SunIcon';
-import MoonIcon from './components/icons/MoonIcon';
-import SearchIcon from './components/icons/SearchIcon';
+import { FaBars } from 'react-icons/fa6';
+import { FaSun, FaMoon, FaSearch, FaStar } from 'react-icons/fa';
 
 const AppContent: React.FC = () => {
   const [notes, setNotes] = useLocalStorage<Note[]>('stellar-scribe-notes-v2', []);
@@ -228,10 +224,10 @@ const AppContent: React.FC = () => {
             className={`p-2 rounded-lg text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary transition-all duration-200 ${isSidebarOpen ? 'md:hidden' : ''}`}
             title="Toggle sidebar"
           >
-            <MenuIcon className="w-5 h-5"/>
+            <FaBars className="w-5 h-5"/>
           </button>
           <div className="flex items-center space-x-2 min-w-0">
-            <LogoIcon className="w-8 h-8 text-accent dark:text-dark-accent flex-shrink-0" />
+            <FaStar className="w-8 h-8 text-accent dark:text-dark-accent flex-shrink-0" />
             <h1 className="text-xl font-bold text-text-primary dark:text-dark-text-primary hidden sm:block truncate">
               Stellar Scribe
             </h1>
@@ -241,7 +237,7 @@ const AppContent: React.FC = () => {
         <div className="flex items-center space-x-3 flex-grow max-w-md ml-4">
           <div className="relative flex-grow">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <SearchIcon className="w-4 h-4 text-text-muted dark:text-dark-text-muted" />
+              <FaSearch className="w-4 h-4 text-text-muted dark:text-dark-text-muted" />
             </div>
             <input
               type="search"
@@ -296,7 +292,7 @@ const AppContent: React.FC = () => {
             className="p-2.5 rounded-lg hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-all duration-200 flex-shrink-0" 
             title="Toggle theme"
           >
-            {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
+            {theme === 'light' ? <FaMoon className="w-5 h-5" /> : <FaSun className="w-5 h-5" />}
           </button>
         </div>
       </header>

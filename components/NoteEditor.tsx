@@ -82,23 +82,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   useEffect(() => {
     // Initialize Marked and Highlight.js here, in the component that uses them.
     if (typeof marked !== 'undefined' && typeof hljs !== 'undefined') {
-      const renderer = new marked.Renderer();
-      renderer.link = (href: string, title: string | null, text: string) => {
-        // Ensure href is safe
-        const safeHref = href.startsWith('javascript:') ? '' : href;
-        const safeTitle = title || '';
-        return `<a href="${safeHref}" title="${safeTitle}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-      };
-
       marked.setOptions({
-        renderer,
         highlight: function (code: string, lang: string) {
           const language = hljs.getLanguage(lang) ? lang : 'plaintext';
           return hljs.highlight(code, { language, ignoreIllegals: true }).value;
         },
         langPrefix: 'hljs language-',
         gfm: true,
-        breaks: true,
+        breaks: true, // Treat single newlines as <br>
         linkify: true, // Automatically convert URLs to links
       });
     }
@@ -137,46 +128,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const processPreviewContent = useCallback(() => {
     const previewPane = document.querySelector('.preview-pane');
     if (!previewPane) return;
-
-    // First, handle autolinking of URLs that marked might have missed
-    const urlRegex = /(https?:\/\/[^\s<>"'`;{}|\\^\]]*[^\s<>"'`;{}|\\^\].,])/g;
-
-    function traverseAndLinkify(node: Node) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const text = node.nodeValue;
-        if (text && urlRegex.test(text)) {
-          const fragment = document.createDocumentFragment();
-          let lastIndex = 0;
-          text.replace(urlRegex, (match, url, offset) => {
-            if (offset > lastIndex) {
-              fragment.appendChild(document.createTextNode(text.substring(lastIndex, offset)));
-            }
-            const a = document.createElement('a');
-            a.href = url;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            a.textContent = url;
-            fragment.appendChild(a);
-            lastIndex = offset + match.length;
-            return match; // Return the match to keep replace function happy
-          });
-          if (lastIndex < text.length) {
-            fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
-          }
-          node.parentNode?.replaceChild(fragment, node);
-        }
-      } else if (node.nodeType === Node.ELEMENT_NODE && node.nodeName !== 'A' && node.nodeName !== 'PRE' && node.nodeName !== 'CODE') {
-        // Only traverse if not an anchor, pre, or code tag to avoid re-processing or breaking existing links/code
-        node.childNodes.forEach(traverseAndLinkify);
-      }
-    }
-
-    // Apply linkify to the main content area, excluding the title and tags sections
-    const contentSection = previewPane.querySelector('.prose');
-    if (contentSection) {
-      contentSection.childNodes.forEach(traverseAndLinkify);
-    }
-
+    
     // Then, add copy buttons to code blocks
     const codeBlocks = previewPane.querySelectorAll('pre');
     codeBlocks.forEach((preBlock) => {
@@ -256,76 +208,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     }
   }, [renderedMarkdown, processPreviewContent, viewMode, mobileView]); // Dependencies for re-running effect
 
-  // Additional effect to ensure copy buttons are always present
-  useEffect(() => {
-    // Observer to watch for DOM changes and re-add copy buttons if needed
-    const observer = new MutationObserver((mutations) => {
-      let shouldAddButtons = false;
-      
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList') {
-          // Check if any code blocks were added or modified
-          const addedNodes = Array.from(mutation.addedNodes);
-          const removedNodes = Array.from(mutation.removedNodes);
-          
-          const hasCodeBlocks = addedNodes.some(node => 
-            node.nodeType === Node.ELEMENT_NODE && 
-            ((node as Element).tagName === 'PRE' || (node as Element).querySelector('pre code'))
-          );
-          
-          // Also check if copy buttons were removed
-          const buttonsRemoved = removedNodes.some(node =>
-            node.nodeType === Node.ELEMENT_NODE &&
-            ((node as Element).querySelector('.copy-button-container') || 
-             (node as Element).classList?.contains('copy-button-container'))
-          );
-          
-          if (hasCodeBlocks || buttonsRemoved) {
-            shouldAddButtons = true;
-          }
-        }
-      });
-      
-      if (shouldAddButtons) {
-        // Small delay to ensure DOM is settled
-        setTimeout(() => {
-          processPreviewContent();
-        }, 50);
-      }
-    });
-
-    // Start observing the preview pane for changes
-    const previewPane = document.querySelector('.preview-pane');
-    if (previewPane) {
-      observer.observe(previewPane, {
-        childList: true,
-        subtree: true,
-        attributes: false // We don't need to watch for attribute changes
-      });
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [processPreviewContent]);
-
-  // Fallback periodic check to ensure copy buttons are always present
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      const codeBlocks = document.querySelectorAll('.preview-pane pre');
-      const missingButtons = Array.from(codeBlocks).some(block => 
-        !block.querySelector('.copy-button-container')
-      );
-      
-      if (missingButtons && codeBlocks.length > 0) {
-        processPreviewContent();
-      }
-    }, 2000); // Check every 2 seconds
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [processPreviewContent]);
 
   // Reset suggestions when activeNote changes
   useEffect(() => {

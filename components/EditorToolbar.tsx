@@ -44,6 +44,15 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
   const [showAllTools, setShowAllTools] = useState(false);
   const [isBeautifying, setIsBeautifying] = useState(false);
   
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+  
   const applyFormat = (syntax: 'bold' | 'italic' | 'underline' | 'code' | 'link' | 'list' | 'h1' | 'h2' | 'h3' | 'strikethrough' | 'quote' | 'tasklist' | 'hr') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -72,7 +81,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
         cursorOffset = 1;
         break;
       case 'link':
-        newText = `[${selectedText}](url)`;
+        if (isValidUrl(selectedText)) {
+          newText = `[${selectedText}](${selectedText})`;
+        } else {
+          newText = `[${selectedText}](url)`;
+        }
         break;
       case 'list':
         const listItems = selectedText.split('\n').map(item => `- ${item}`).join('\n');
@@ -99,7 +112,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
           newText = '> ';
           cursorOffset = 2;
         } else {
-          const quoteLines = selectedText.split('\n').map(line => 
+          const quoteLines = selectedText.split('\n').map(line =>
             line.trim() === '' ? '>' : `> ${line}`
           ).join('\n');
           newText = quoteLines;
@@ -110,14 +123,20 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
           newText = '- [ ] ';
           cursorOffset = 6;
         } else {
-          const taskItems = selectedText.split('\n').map(item => 
+          const taskItems = selectedText.split('\n').map(item =>
             item.trim() === '' ? '' : `- [ ] ${item}`
           ).join('\n');
           newText = taskItems;
         }
         break;
       case 'hr':
-        newText = '\n---\n';
+        // Ensure the HR is on a new line, preceded by a blank line.
+        const value = textarea.value;
+        const textBeforeCursor = value.substring(0, start);
+        const needsInitialNewline = textBeforeCursor.length > 0 && textBeforeCursor[textBeforeCursor.length - 1] !== '\n';
+        
+        newText = `${needsInitialNewline ? '\n' : ''}\n---\n`;
+        cursorOffset = newText.length;
         break;
     }
 
@@ -132,8 +151,12 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
     // Update cursor position
     setTimeout(() => {
       if (syntax === 'link') {
-        const urlPos = start + selectedText.length + 3;
-        textarea.setSelectionRange(urlPos, urlPos + 3);
+        if (isValidUrl(selectedText)) {
+          textarea.setSelectionRange(start + newText.length, start + newText.length);
+        } else {
+          const urlPos = start + selectedText.length + 3;
+          textarea.setSelectionRange(urlPos, urlPos + 3);
+        }
       } else if (selectedText) {
         textarea.setSelectionRange(start + newText.length, start + newText.length);
       } else {

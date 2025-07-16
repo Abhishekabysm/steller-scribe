@@ -5,7 +5,8 @@ import { getWordMeaning } from '../services/dictionaryService';
 import { useToasts } from '../hooks/useToasts';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-import { FaRegStar, FaRegTrashCan, FaXmark, FaPencil, FaEye, FaTag, FaDownload, FaPenNib } from 'react-icons/fa6';
+import { FaRegTrashCan, FaXmark, FaPencil, FaEye, FaTag, FaDownload, FaPenNib } from 'react-icons/fa6';
+import { FaMagic } from 'react-icons/fa';
 import ConfirmationModal from './ConfirmationModal';
 import AIGenerateModal from './AIGenerateModal';
 import EditorToolbar from './EditorToolbar';
@@ -850,7 +851,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                   >
                       {isGeneratingTitle
                           ? <LoadingSpinner />
-                          : <FaRegStar className="w-5 h-5" />
+                          : <FaMagic className="w-5 h-5" />
                       }
                   </button>
               </div>
@@ -1029,7 +1030,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             <span className="sm:hidden">Tags</span>
             </button>
             <button onClick={handleSummarize} disabled={isSummarizing} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
-            {isSummarizing ? <LoadingSpinner/> : <FaRegStar className="w-4 h-4 text-accent dark:text-dark-accent" />}
+            {isSummarizing ? <LoadingSpinner/> : <FaMagic className="w-4 h-4 text-accent dark:text-dark-accent" />}
             <span className="hidden md:inline">Summarize</span>
             <span className="md:hidden">Summary</span>
             </button>

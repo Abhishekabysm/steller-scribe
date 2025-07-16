@@ -136,7 +136,7 @@ export const performTextAction = async (text: string, action: AITextAction, lang
                 prompt = `Translate the following text into ${language}. Only output the translated text.\n\nText: "${text}"`;
                 break;
             case 'beautify':
-                prompt = `Expand the following text, add more details, rephrase for clarity and flow, and simplify the language. Only output the beautified text.\n\nText: "${text}"`;
+                prompt = `Reformat and enhance the following text to be clean, well-structured, and visually appealing. Use proper Markdown formatting, including appropriate headings (H1, H2, H3), bullet points or numbered lists, bold text, and code blocks for any code snippets. Ensure clarity, flow, and conciseness. Only output the reformatted text.\n\nText: "${text}"`;
                 break;
             default:
                 throw new Error("Invalid AI text action.");

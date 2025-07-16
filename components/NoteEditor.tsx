@@ -128,6 +128,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const processPreviewContent = useCallback(() => {
     const previewPane = document.querySelector('.preview-pane');
     if (!previewPane) return;
+
+    // Add target="_blank" and rel="noopener noreferrer" to all links
+    const links = previewPane.querySelectorAll('a');
+    links.forEach(link => {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+      // Add styling classes
+      link.classList.add('text-accent', 'dark:text-dark-accent', 'hover:underline');
+    });
     
     // Then, add copy buttons to code blocks
     const codeBlocks = previewPane.querySelectorAll('pre');

@@ -1,19 +1,6 @@
-
-
 import React, { useState } from 'react';
-import BoldLetterIcon from './icons/BoldLetterIcon';
-import ItalicLetterIcon from './icons/ItalicLetterIcon';
-import UnderlineIcon from './icons/UnderlineIcon';
-import LinkIcon from './icons/LinkIcon';
-import CodeIcon from './icons/CodeIcon';
-import ListIcon from './icons/ListIcon';
-import MagicIcon from './icons/MagicIcon';
-import SparklesIcon from './icons/SparklesIcon';
-import HeadingIcon from './icons/HeadingIcon';
-import StrikethroughIcon from './icons/StrikethroughIcon';
-import QuoteIcon from './icons/QuoteIcon';
-import TaskListIcon from './icons/TaskListIcon';
-import HorizontalRuleIcon from './icons/HorizontalRuleIcon';
+import { FaBold, FaItalic, FaUnderline, FaLink, FaCode, FaListUl, FaStrikethrough, FaQuoteRight, FaListCheck, FaMinus, FaEllipsis, FaWandMagicSparkles, FaHeading } from 'react-icons/fa6';
+import { FaRegStar } from 'react-icons/fa';
 import ConfirmationModal from './ConfirmationModal';
 import { performTextAction } from '../services/geminiService';
 import { AITextAction } from '../types';
@@ -25,12 +12,12 @@ interface EditorToolbarProps {
   onGenerateClick: () => void;
 }
 
-const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; title: string; disabled?: boolean }> = ({ onClick, children, title, disabled }) => (
+const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; title: string; disabled?: boolean; className?: string }> = ({ onClick, children, title, disabled, className }) => (
   <button
     type="button"
     onClick={onClick}
     title={title}
-    className="p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors disabled:opacity-50"
+    className={`p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors disabled:opacity-50 ${className || ''}`}
     disabled={disabled}
   >
     {children}
@@ -174,13 +161,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
     const selectedText = textarea.value.substring(start, end);
     const textToProcess = selectedText || textarea.value;
 
-    
-    
-    
-    
-    
-    
-
     setOriginalText(textToProcess);
     setIsBeautifying(true); // Start loading
 
@@ -217,37 +197,37 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
   const primaryTools = (
     <>
       <ToolbarButton onClick={() => applyFormat('bold')} title="Bold (Ctrl+B)">
-        <BoldLetterIcon className="w-5 h-5" />
+        <FaBold className="w-5 h-5" />
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('italic')} title="Italic (Ctrl+I)">
-        <ItalicLetterIcon className="w-5 h-5" />
+        <FaItalic className="w-5 h-5" />
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('underline')} title="Underline (Ctrl+U)">
-        <UnderlineIcon className="w-5 h-5" />
+        <FaUnderline className="w-5 h-5" />
       </ToolbarButton>
-      <ToolbarButton onClick={() => applyFormat('h1')} title="Heading 1">
-        <HeadingIcon className="w-5 h-5" level={1} />
+      <ToolbarButton onClick={() => applyFormat('h1')} title="Heading 1" className="relative">
+        <FaHeading className="w-5 h-5" /><span className="absolute text-[0.6rem] font-bold top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">1</span>
       </ToolbarButton>
-      <ToolbarButton onClick={() => applyFormat('h2')} title="Heading 2">
-        <HeadingIcon className="w-5 h-5" level={2} />
+      <ToolbarButton onClick={() => applyFormat('h2')} title="Heading 2" className="relative">
+        <FaHeading className="w-5 h-5" /><span className="absolute text-[0.6rem] font-bold top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">2</span>
       </ToolbarButton>
-      <ToolbarButton onClick={() => applyFormat('h3')} title="Heading 3">
-        <HeadingIcon className="w-5 h-5" level={3} />
+      <ToolbarButton onClick={() => applyFormat('h3')} title="Heading 3" className="relative">
+        <FaHeading className="w-5 h-5" /><span className="absolute text-[0.6rem] font-bold top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">3</span>
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('code')} title="Code">
-        <CodeIcon className="w-5 h-5" />
+        <FaCode className="w-5 h-5" />
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('link')} title="Link">
-        <LinkIcon className="w-5 h-5" />
+        <FaLink className="w-5 h-5" />
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('list')} title="Bulleted List">
-        <ListIcon className="w-5 h-5" />
+        <FaListUl className="w-5 h-5" />
       </ToolbarButton>
       <ToolbarButton onClick={handleBeautifyClick} title="Beautify (AI)" disabled={isBeautifying}>
         {isBeautifying ? (
           <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
         ) : (
-          <SparklesIcon className="w-5 h-5" />
+          <FaRegStar className="w-5 h-5" />
         )}
       </ToolbarButton>
     </>
@@ -256,16 +236,16 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
   const secondaryTools = (
     <>
       <ToolbarButton onClick={() => applyFormat('strikethrough')} title="Strikethrough">
-        <StrikethroughIcon className="w-5 h-5" />
+        <FaStrikethrough className="w-5 h-5" />
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('quote')} title="Quote">
-        <QuoteIcon className="w-5 h-5" />
+        <FaQuoteRight className="w-5 h-5" />
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('tasklist')} title="Task List">
-        <TaskListIcon className="w-5 h-5" />
+        <FaListCheck className="w-5 h-5" />
       </ToolbarButton>
       <ToolbarButton onClick={() => applyFormat('hr')} title="Horizontal Rule">
-        <HorizontalRuleIcon className="w-5 h-5" />
+        <FaMinus className="w-5 h-5" />
       </ToolbarButton>
     </>
   );
@@ -281,16 +261,16 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
             </div>
           </div>
           <div className="flex items-center space-x-1">
-            <button
+            <ToolbarButton
               onClick={() => setShowAllTools(!showAllTools)}
-              className="md:hidden p-2 rounded-md text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
               title="More tools"
+              className="md:hidden"
             >
-              <span className="text-sm">•••</span>
-            </button>
+              <FaEllipsis className="w-5 h-5" />
+            </ToolbarButton>
             <div className="w-px h-6 bg-border-color dark:bg-dark-border-color mx-2"></div>
             <ToolbarButton onClick={onGenerateClick} title="Generate Note with AI">
-              <MagicIcon className="w-5 h-5 text-accent dark:text-dark-accent" />
+              <FaWandMagicSparkles className="w-5 h-5 text-accent dark:text-dark-accent" />
             </ToolbarButton>
           </div>
         </div>
@@ -308,11 +288,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
         message={
           <>
             <p className="mb-2 text-text-primary dark:text-dark-text-primary">Original text:</p>
-            <div className="bg-bg-tertiary dark:bg-dark-bg-tertiary p-3 rounded-md max-h-[30vh] overflow-y-auto mb-4 text-sm border border-border-color dark:border-dark-border-color">
+            <div className="bg-bg-tertiary dark:bg-dark-tertiary p-3 rounded-md max-h-[30vh] overflow-y-auto mb-4 text-sm border border-border-color dark:border-dark-border-color">
               {originalText}
             </div>
             <p className="mb-2 text-text-primary dark:text-dark-text-primary">Beautified text:</p>
-            <div className="bg-bg-tertiary dark:bg-dark-bg-tertiary p-3 rounded-md max-h-[30vh] overflow-y-auto text-sm border border-border-color dark:border-dark-border-color">
+            <div className="bg-bg-tertiary dark:bg-dark-tertiary p-3 rounded-md max-h-[30vh] overflow-y-auto text-sm border border-border-color dark:border-dark-border-color">
               {beautifiedText}
             </div>
           </>

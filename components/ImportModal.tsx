@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShareableNote } from '../utils/shareUtils';
-import XIcon from './icons/XIcon';
+import { FaXmark } from 'react-icons/fa6';
 import { MdCloudDownload, MdAdd } from 'react-icons/md';
 
 interface ImportModalProps {
@@ -35,7 +35,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-all duration-200"
           >
-            <XIcon className="w-5 h-5" />
+            <FaXmark className="w-5 h-5" />
           </button>
         </div>
 

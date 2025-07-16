@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Toast as ToastType } from '../types';
-import XIcon from './icons/XIcon';
-import SparklesIcon from './icons/SparklesIcon';
+import { FaXmark } from 'react-icons/fa6';
+import { FaRegStar } from 'react-icons/fa';
 
 interface ToastProps {
   toast: ToastType;
@@ -42,14 +42,14 @@ const Toast: React.FC<ToastProps> = ({ toast, removeToast }) => {
       role="alert"
     >
       <div className="flex items-center p-4">
-        <SparklesIcon className="w-6 h-6 mr-3 flex-shrink-0" />
+        <FaRegStar className="w-6 h-6 mr-3 flex-shrink-0" />
         <p className="flex-grow text-sm font-medium">{toast.message}</p>
         <button
           onClick={handleRemove}
           className="ml-4 p-1 rounded-full hover:bg-black/20 focus:outline-none focus:ring-2 focus:ring-white/50"
           aria-label="Close"
         >
-          <XIcon className="w-4 h-4" />
+          <FaXmark className="w-4 h-4" />
         </button>
       </div>
     </div>

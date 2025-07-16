@@ -1,4 +1,3 @@
-          
 import React, { useState, useMemo, useCallback, useRef, KeyboardEvent, useEffect } from 'react';
 import { Note, AITextAction } from '../types';
 import { summarizeText, suggestTagsForText, generateNoteContent, performTextAction, generateTitle } from '../services/geminiService';
@@ -6,19 +5,13 @@ import { getWordMeaning } from '../services/dictionaryService';
 import { useToasts } from '../hooks/useToasts';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-import SparklesIcon from './icons/SparklesIcon';
-import TrashIcon from './icons/TrashIcon';
-import LogoIcon from './icons/LogoIcon';
+import { FaRegStar, FaRegTrashCan, FaXmark, FaPencil, FaEye, FaTag, FaDownload } from 'react-icons/fa6';
+import LogoIcon from './icons/LogoIcon'; // Keeping LogoIcon as it might be custom
 import ConfirmationModal from './ConfirmationModal';
 import AIGenerateModal from './AIGenerateModal';
-import XIcon from './icons/XIcon';
 import EditorToolbar from './EditorToolbar';
 import SplitPane from './SplitPane';
-import EditIcon from './icons/EditIcon';
-import ViewIcon from './icons/ViewIcon';
-import TagIcon from './icons/TagIcon';
 import ContextualMenu from './ContextualMenu';
-import DownloadIcon from './icons/DownloadIcon';
 import { MdShare,} from 'react-icons/md';
 import DownloadModal from './DownloadModal';
 import SelectionNavigator from './SelectionNavigator';
@@ -44,7 +37,7 @@ const Tag: React.FC<{ tag: string; onRemove: (tag: string) => void }> = ({ tag, 
   <div className="flex items-center bg-accent/20 text-accent dark:bg-dark-accent/20 dark:text-dark-accent-hover text-sm font-medium pl-3 pr-2 py-1 rounded-full animate-fade-in">
     <span>{tag}</span>
     <button onClick={() => onRemove(tag)} className="ml-1.5 p-0.5 rounded-full hover:bg-accent/30 dark:hover:bg-dark-accent/30">
-        <XIcon className="w-3 h-3"/>
+        <FaXmark className="w-3 h-3"/>
     </button>
   </div>
 );
@@ -107,22 +100,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     }
     return '';
   }, [activeNote?.content]);
-
-  useEffect(() => {
-    if (typeof hljs !== 'undefined') {
-      const timer = setTimeout(() => {
-        const blocks = document.querySelectorAll('pre code');
-        blocks.forEach((block) => {
-          // Only highlight if not already highlighted
-          if (!block.classList.contains('hljs')) {
-            hljs.highlightElement(block);
-          }
-        });
-      }, 200); // Increased delay to batch updates
-      
-      return () => clearTimeout(timer);
-    }
-  }, [renderedMarkdown]); // Only run when rendered markdown changes
 
   // Function to process URLs and add copy buttons to code blocks
   const processPreviewContent = useCallback(() => {
@@ -268,8 +245,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         document.removeEventListener('keydown', handleKeyDown);
     };
   }, [contextualMenu]);
-
-
 
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -567,7 +542,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   }, []);
 
   
-
   const handlePreviewSelection = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
@@ -881,7 +855,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                   >
                       {isGeneratingTitle
                           ? <LoadingSpinner />
-                          : <SparklesIcon className="w-5 h-5" />
+                          : <FaRegStar className="w-5 h-5" />
                       }
                   </button>
               </div>
@@ -1055,12 +1029,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             )}
             <div className="flex justify-end items-center gap-2">
             <button onClick={handleSuggestTags} disabled={isSuggestingTags} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
-            {isSuggestingTags ? <LoadingSpinner/> : <TagIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
+            {isSuggestingTags ? <LoadingSpinner/> : <FaTag className="w-4 h-4 text-accent dark:text-dark-accent" />}
             <span className="hidden sm:inline">Suggest Tags</span>
             <span className="sm:hidden">Tags</span>
             </button>
             <button onClick={handleSummarize} disabled={isSummarizing} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
-            {isSummarizing ? <LoadingSpinner/> : <SparklesIcon className="w-4 h-4 text-accent dark:text-dark-accent" />}
+            {isSummarizing ? <LoadingSpinner/> : <FaRegStar className="w-4 h-4 text-accent dark:text-dark-accent" />}
             <span className="hidden md:inline">Summarize</span>
             <span className="md:hidden">Summary</span>
             </button>
@@ -1069,11 +1043,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                <span className="hidden lg:inline">Share</span>
               </button>
             <button onClick={() => setIsDownloadModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">
-            <DownloadIcon className="w-4 h-4 text-accent dark:text-dark-accent" />
+            <FaDownload className="w-4 h-4 text-accent dark:text-dark-accent" />
                <span className="hidden lg:inline">Download</span>
               </button>
                <button onClick={() => setIsDeleteModalOpen(true)} className="p-2 rounded-md hover:bg-red-500/10 text-red-500 transition-colors">
-                  <TrashIcon className="w-5 h-5" />
+                  <FaRegTrashCan className="w-5 h-5" />
                </button>
             </div>
           </div>
@@ -1097,8 +1071,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
               // Mobile view with toggle
               <div className="h-full flex flex-col">
                   <div className="flex-shrink-0 flex p-1 bg-bg-secondary dark:bg-dark-bg-secondary border-b border-border-color dark:border-dark-border-color">
-                      <button onClick={() => setMobileView('editor')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'editor' ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent' : 'text-text-muted dark:text-dark-text-muted'}`}><EditIcon className="w-5 h-5 mx-auto"/></button>
-                      <button onClick={() => setMobileView('preview')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'preview' ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent' : 'text-text-muted dark:text-dark-text-muted'}`}><ViewIcon className="w-5 h-5 mx-auto"/></button>
+                      <button onClick={() => setMobileView('editor')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'editor' ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent' : 'text-text-muted dark:text-dark-text-muted'}`}><FaPencil className="w-5 h-5 mx-auto"/></button>
+                      <button onClick={() => setMobileView('preview')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'preview' ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent' : 'text-text-muted dark:text-dark-text-muted'}`}><FaEye className="w-5 h-5 mx-auto"/></button>
                   </div>
                   <div className="flex-grow overflow-hidden">
                     {mobileView === 'editor' ? editorPane : previewPane}

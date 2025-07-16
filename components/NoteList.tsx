@@ -1,10 +1,6 @@
 import React from 'react';
 import { Note, SortOption } from '../types';
-import DocumentPlusIcon from './icons/DocumentPlusIcon';
-import PlusIcon from './icons/PlusIcon';
-import PinIcon from './icons/PinIcon';
-import XIcon from './icons/XIcon';
-import TrashIcon from './icons/TrashIcon';
+import { FaRegSquarePlus, FaPlus, FaThumbtack, FaXmark, FaRegTrashCan } from 'react-icons/fa6';
 import Dropdown from './Dropdown';
 import { MdCloudDownload } from 'react-icons/md';
 
@@ -28,7 +24,7 @@ const Tag: React.FC<{ tag: string }> = ({ tag }) => (
   </span>
 );
 
-const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => void; onTogglePin: (e: React.MouseEvent) => void; onDelete: (note: Note) => void }> = ({ note, isActive, onClick, onTogglePin, onDelete }) => {
+const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => void; onTogglePin: (id: string) => void; onDelete: (note: Note) => void }> = ({ note, isActive, onClick, onTogglePin, onDelete }) => {
   const date = new Date(note.updatedAt).toLocaleDateString("en-US", {
     month: 'short',
     day: 'numeric',
@@ -45,7 +41,7 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
   const handlePinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    onTogglePin(e);
+    onTogglePin(note.id);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -70,14 +66,14 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
           className={`p-1.5 rounded-full text-text-muted/60 hover:text-accent dark:text-dark-text-muted/60 dark:hover:text-dark-accent transition-colors ${note.isPinned ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
           title={note.isPinned ? 'Unpin note' : 'Pin note'}
         >
-          <PinIcon className="w-4 h-4 sm:w-5 sm:h-5" isFilled={note.isPinned} />
+          <FaThumbtack className={`w-4 h-4 sm:w-5 sm:h-5 ${note.isPinned ? 'text-accent dark:text-dark-accent' : ''}`} />
         </button>
         <button 
           onClick={handleDeleteClick} 
           className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 shadow-sm"
           title="Delete note"
         >
-          <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+          <FaRegTrashCan className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
       <h3 className="font-bold text-text-primary dark:text-dark-text-primary truncate pr-16 flex items-center gap-2">
@@ -157,7 +153,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
               className="hidden md:block p-1 rounded-full hover:bg-bg-primary dark:hover:bg-dark-bg-primary text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
               title="Close sidebar"
             >
-              <XIcon className="w-5 h-5" />
+              <FaXmark className="w-5 h-5" />
             </button>
           )}
           <h2 className="text-lg font-bold text-text-primary dark:text-dark-text-primary">Notes</h2>
@@ -175,7 +171,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
           onClick={onAddNote}
           className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
         >
-          <PlusIcon className="w-4 h-4 flex-shrink-0 stroke-current" />
+          <FaPlus className="w-4 h-4 flex-shrink-0" />
           <span className="text-sm font-medium leading-4">New Note</span>
         </button>
       </div>
@@ -219,7 +215,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
         </div>
       ) : (
         <div className="p-6 text-center text-text-muted dark:text-dark-text-muted flex flex-col items-center justify-center h-full">
-            <DocumentPlusIcon className="w-16 h-16 mb-4 text-text-muted/50 dark:text-dark-text-muted/50" />
+            <FaRegSquarePlus className="w-16 h-16 mb-4 text-text-muted/50 dark:text-dark-text-muted/50" />
             <h3 className="text-lg font-semibold text-text-secondary dark:text-dark-text-secondary">
               {searchTerm ? 'No matching notes' : 'No notes yet'}
             </h3>
@@ -231,7 +227,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
                     onClick={onAddNote}
                     className="flex items-center space-x-2 px-4 py-2 bg-accent text-white rounded-md hover:bg-accent-hover dark:bg-dark-accent dark:hover:bg-dark-accent-hover transition-colors font-semibold"
                 >
-                    <PlusIcon className="w-5 h-5" />
+                    <FaPlus className="w-5 h-5" />
                     <span>Create First Note</span>
                 </button>
             )}

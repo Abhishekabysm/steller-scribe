@@ -1,11 +1,7 @@
-
 import React, { useState} from 'react';
 import { AITextAction } from '../types';
-import WandSparklesIcon from './icons/WandSparklesIcon';
-import CheckBadgeIcon from './icons/CheckBadgeIcon';
-import TextShrinkIcon from './icons/TextShrinkIcon';
-import TranslateIcon from './icons/TranslateIcon';
-import DictionaryIcon from './icons/DictionaryIcon';
+import { FaWandSparkles, FaCompress, FaLanguage, FaBookOpen } from 'react-icons/fa6';
+import { FaCheckCircle } from 'react-icons/fa';
 import { getWordMeaning } from '../services/dictionaryService';
 
 interface ContextualMenuProps {
@@ -17,9 +13,9 @@ interface ContextualMenuProps {
 }
 
 const actionButtons = [
-    { action: 'improve', icon: WandSparklesIcon, title: 'Improve writing clarity and flow' },
-    { action: 'fix-grammar', icon: CheckBadgeIcon, title: 'Correct spelling and grammar' },
-    { action: 'shorten', icon: TextShrinkIcon, title: 'Make text more concise' },
+    { action: 'improve', icon: FaWandSparkles, title: 'Improve writing clarity and flow' },
+    { action: 'fix-grammar', icon: FaCheckCircle, title: 'Correct spelling and grammar' },
+    { action: 'shorten', icon: FaCompress, title: 'Make text more concise' },
 ] as const;
 
 const languages = ['English', 'Spanish', 'French', 'German', 'Hindi', 'Japanese'] as const;
@@ -131,7 +127,7 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
             {isLoading && activeAction === 'translate' ? (
                 <div className="w-5 h-5 border-2 border-text-muted/50 border-t-accent dark:border-dark-text-muted/50 dark:border-t-dark-accent rounded-full animate-spin"></div>
             ) : (
-                <TranslateIcon className="w-5 h-5" />
+                <FaLanguage className="w-5 h-5" />
             )}
         </button>
 
@@ -173,7 +169,7 @@ const ContextualMenu: React.FC<ContextualMenuProps> = ({ top, left, onAction, is
             {isDictionaryLoading ? (
                 <div className="w-5 h-5 border-2 border-text-muted/50 border-t-accent dark:border-dark-text-muted/50 dark:border-t-dark-accent rounded-full animate-spin"></div>
             ) : (
-                <DictionaryIcon className="w-5 h-5" />
+                <FaBookOpen className="w-5 h-5" />
             )}
         </button>
 

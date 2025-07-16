@@ -1,5 +1,5 @@
 import React from 'react';
-import XIcon from './icons/XIcon';
+import { FaXmark } from 'react-icons/fa6';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -48,7 +48,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             className="p-2.5 rounded-lg text-text-muted dark:text-dark-text-muted hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
             title="Close"
           >
-            <XIcon className="w-6 h-6" />
+            <FaXmark className="w-6 h-6" />
           </button>
         </div>
         <div className="text-text-secondary dark:text-dark-text-secondary mb-4 leading-relaxed">{message}</div>

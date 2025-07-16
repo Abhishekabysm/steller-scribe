@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Note } from '../types';
 import { downloadAsPDF, downloadAsDOCX } from '../services/downloadService';
 import { useToasts } from '../hooks/useToasts';
-import XIcon from './icons/XIcon';
-import DownloadIcon from './icons/DownloadIcon';
+import { FaXmark, FaDownload } from 'react-icons/fa6';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -46,7 +45,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, note }) 
             onClick={onClose}
             className="p-1 rounded-md hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
           >
-            <XIcon className="w-5 h-5" />
+            <FaXmark className="w-5 h-5" />
           </button>
         </div>
 
@@ -69,7 +68,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, note }) 
               {isDownloading === 'pdf' ? (
                 <div className="w-5 h-5 border-2 border-red-500/50 border-t-red-500 rounded-full animate-spin"></div>
               ) : (
-                <DownloadIcon className="w-5 h-5" />
+                <FaDownload className="w-5 h-5" />
               )}
               <span className="font-medium">Download as PDF</span>
             </button>
@@ -82,7 +81,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, note }) 
               {isDownloading === 'docx' ? (
                 <div className="w-5 h-5 border-2 border-blue-500/50 border-t-blue-500 rounded-full animate-spin"></div>
               ) : (
-                <DownloadIcon className="w-5 h-5" />
+                <FaDownload className="w-5 h-5" />
               )}
               <span className="font-medium">Download as DOCX</span>
             </button>

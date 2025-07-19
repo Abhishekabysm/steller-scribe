@@ -54,3 +54,4 @@ textarea.editor-textarea::selection,
 .contextual-menu-active textarea::selection {
   background-color: rgba(59, 130, 246, 0.3);
 }
+

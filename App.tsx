@@ -8,9 +8,9 @@ import NoteList from './components/NoteList';
 import NoteEditor from './components/NoteEditor';
 import ImportModal from './components/ImportModal';
 import ConfirmationModal from './components/ConfirmationModal';
-import SummaryModal from './components/SummaryModal'; // Import SummaryModal
-import CommandPalette from './components/CommandPalette'; // Import CommandPalette
-import { summarizeText } from './services/geminiService'; // Import summarizeText
+import SummaryModal from './components/SummaryModal'; 
+import CommandPalette from './components/CommandPalette'; 
+import { summarizeText } from './services/geminiService'; 
 import { FaBars } from 'react-icons/fa6';
 import { FaSun, FaMoon, FaSearch, FaStar } from 'react-icons/fa';
 

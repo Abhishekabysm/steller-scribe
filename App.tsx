@@ -397,7 +397,6 @@ const AppContent: React.FC = () => {
             onUpdateNote={updateNote}
             onDeleteNote={deleteNote}
             viewMode={viewMode}
-            onSummarize={handleSummarize} // Pass handleSummarize
           />
         </section>
       </main>

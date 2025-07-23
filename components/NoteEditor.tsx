@@ -27,7 +27,6 @@ interface NoteEditorProps {
   onUpdateNote: (note: Partial<Note>) => void;
   onDeleteNote: (id: string) => void;
   viewMode?: 'split' | 'editor' | 'preview';
-  onSummarize: () => void; // Add this prop
 }
 
 const LoadingSpinner: React.FC = () => (
@@ -43,7 +42,7 @@ const Tag: React.FC<{ tag: string; onRemove: (tag: string) => void }> = ({ tag, 
   </div>
 );
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDeleteNote, viewMode = 'split', onSummarize }) => {
+const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDeleteNote, viewMode = 'split' }) => {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -281,6 +280,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       }
   };
 
+  // Ensure handleSummarize is correctly used
   const handleSummarize = useCallback(async () => {
     if (!activeNote) return;
     setIsSummarizing(true);
@@ -1030,7 +1030,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             <span className="hidden sm:inline">Suggest Tags</span>
             <span className="sm:hidden">Tags</span>
             </button>
-            <button onClick={onSummarize} disabled={isSummarizing} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
+            <button onClick={handleSummarize} disabled={isSummarizing} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
             {isSummarizing ? <LoadingSpinner/> : <FaMagic className="w-4 h-4 text-accent dark:text-dark-accent" />}
             <span className="hidden md:inline">Summarize</span>
             <span className="md:hidden">Summary</span>

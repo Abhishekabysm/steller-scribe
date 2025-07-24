@@ -445,7 +445,6 @@ const AppContent: React.FC = () => {
         toggleTheme={toggleTheme}
         handleSummarize={handleSummarize}
         selectNote={selectNote}
-        togglePinNote={togglePinNote}
         notes={notes}
         theme={theme}
       />

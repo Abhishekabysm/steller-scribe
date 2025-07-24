@@ -193,17 +193,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         const cleanedTextToCopy = textToCopy.replace(/\s/g, ''); // Remove all whitespace
         navigator.clipboard.writeText(cleanedTextToCopy).then(() => {
           // Visual feedback: Temporarily change text
-          codeElement.textContent = 'Copied!';
-          
-          // Clear any existing timeout to prevent quick clicks from breaking it
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-          }
-
-          timeoutId = setTimeout(() => {
-            codeElement.textContent = textToCopy; // Revert using stored original text
-            timeoutId = null;
-          }, 1500); // Revert after 1.5 seconds
+          addToast('Copied to clipboard!', 'success');
 
         }).catch(err => {
           // No toast for error, just log to console

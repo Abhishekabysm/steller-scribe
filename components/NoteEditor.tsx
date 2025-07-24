@@ -173,7 +173,44 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       (preBlock as HTMLElement).style.position = 'relative'; // Ensure relative positioning for absolute button
       preBlock.appendChild(buttonContainer);
     });
-  }, [addToast]);
+
+    // Add click-to-copy functionality for inline code snippets
+    const inlineCodeElements = previewPane.querySelectorAll('code:not(pre > code)');
+    inlineCodeElements.forEach((codeElement) => {
+      // Ensure the element doesn't already have a click listener for this feature
+      if (codeElement.getAttribute('data-copy-inline') === 'true') {
+        return;
+      }
+      codeElement.setAttribute('data-copy-inline', 'true'); // Mark as processed
+      codeElement.setAttribute('data-original-text', codeElement.textContent || ''); // Store original text
+
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+      codeElement.addEventListener('click', () => {
+        const textToCopy = codeElement.getAttribute('data-original-text');
+        if (!textToCopy) return;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          // Visual feedback: Temporarily change text
+          codeElement.textContent = 'Copied!';
+          
+          // Clear any existing timeout to prevent quick clicks from breaking it
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+
+          timeoutId = setTimeout(() => {
+            codeElement.textContent = textToCopy; // Revert using stored original text
+            timeoutId = null;
+          }, 1500); // Revert after 1.5 seconds
+
+        }).catch(err => {
+          // No toast for error, just log to console
+          console.error('Failed to copy inline code: ', err);
+        });
+      });
+    });
+  }, []);
 
   useEffect(() => {
     if (typeof hljs !== 'undefined') {
@@ -186,7 +223,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
           }
         });
         // Always attempt to add copy buttons after highlighting,
-        // addCopyButtonsToCodeBlocks will handle existing buttons.
+        // and add click-to-copy for inline code.
         processPreviewContent();
       }, 100); // Reduced delay for quicker button appearance
       

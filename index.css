@@ -55,3 +55,16 @@ textarea.editor-textarea::selection,
   background-color: rgba(59, 130, 246, 0.3);
 }
 
+
+/* Styling for inline code snippets to make them clickable */
+.prose code:not(pre > code) {
+  cursor: pointer;
+  position: relative;
+  /* Additional styling to visually indicate it's clickable, e.g., a subtle underline or background change */
+  /* text-decoration: underline dotted; */
+}
+
+/* Optional: Add a subtle hover effect for inline code */
+.prose code:not(pre > code):hover {
+  opacity: 0.8;
+}

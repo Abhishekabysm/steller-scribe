@@ -184,7 +184,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       codeElement.setAttribute('data-copy-inline', 'true'); // Mark as processed
       codeElement.setAttribute('data-original-text', codeElement.textContent || ''); // Store original text
 
-      let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
       codeElement.addEventListener('click', () => {
         const textToCopy = codeElement.getAttribute('data-original-text');

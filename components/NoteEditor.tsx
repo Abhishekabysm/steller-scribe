@@ -143,7 +143,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
      
      copyButton.onclick = (e) => {
        e.stopPropagation(); // Prevent event bubbling
-       const codeToCopy = codeElement.innerText;
+       const codeToCopy = codeElement.innerText.replace(/\s/g, ''); // Remove all whitespace
        navigator.clipboard.writeText(codeToCopy).then(() => {
          // Change icon to tick and add text (icon to the right)
          copyButton.innerHTML = `<span class="text-green-500 dark:text-green-400">Copied!</span> ${checkIconSVG}`;
@@ -190,7 +190,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         const textToCopy = codeElement.getAttribute('data-original-text');
         if (!textToCopy) return;
 
-        navigator.clipboard.writeText(textToCopy).then(() => {
+        const cleanedTextToCopy = textToCopy.replace(/\s/g, ''); // Remove all whitespace
+        navigator.clipboard.writeText(cleanedTextToCopy).then(() => {
           // Visual feedback: Temporarily change text
           codeElement.textContent = 'Copied!';
           

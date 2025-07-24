@@ -68,3 +68,26 @@ textarea.editor-textarea::selection,
 .prose code:not(pre > code):hover {
   opacity: 0.8;
 }
+
+/* Custom styles for smaller screens */
+@media (max-width: 480px) {
+  .prose {
+    font-size: 0.875rem; /* ~14px */
+    line-height: 1.4;
+  }
+  .prose h1 {
+    font-size: 1.75rem; /* ~28px */
+  }
+  .prose h2 {
+    font-size: 1.5rem; /* ~24px */
+  }
+  .prose h3 {
+    font-size: 1.25rem; /* ~20px */
+  }
+  .prose h4 {
+    font-size: 1.125rem; /* ~18px */
+  }
+  .prose code {
+    font-size: 0.8125rem; /* Slightly smaller code font */
+  }
+}

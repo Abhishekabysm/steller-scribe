@@ -995,7 +995,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
               onClose={() => setSelectionNavigator(null)}
             />
           )}
-          <div className="flex-grow overflow-y-auto p-6 select-text preview-pane" onClick={() => {
+          <div className="flex-grow overflow-y-auto p-4 sm:p-6 select-text preview-pane" onClick={() => {
                // Clear navigator if clicking on the pane itself, but not on selected text
                if (window.getSelection()?.toString().trim() === '') {
                    setSelectionNavigator(null);
@@ -1004,7 +1004,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             {/* Title Section */}
             <div className="mb-6 pb-4 border-b border-border-color dark:border-dark-border-color">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl md:text-4xl font-bold text-text-primary dark:text-dark-text-primary break-words">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary dark:text-dark-text-primary break-words">
                   {activeNote.title || 'Untitled Note'}
                 </h1>
                 {activeNote.isImported && (
@@ -1040,7 +1040,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             </div>
             {/* Content Section */}
             <div 
-              className="prose prose-sm md:prose-base dark:prose-invert max-w-none" 
+              className="prose prose-xs sm:prose-sm md:prose-base dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
               style={{ userSelect: 'text', cursor: 'text' }}
               onMouseUp={handlePreviewSelection}

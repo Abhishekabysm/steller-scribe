@@ -4,14 +4,15 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTheme } from './hooks/useTheme';
 import { ToastProvider, useToasts } from './hooks/useToasts';
 import { getSharedNoteFromUrl, clearShareFromUrl } from './utils/shareUtils';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import NoteList from './components/NoteList';
 import NoteEditor from './components/NoteEditor';
 import ImportModal from './components/ImportModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import SummaryModal from './components/SummaryModal'; 
 import CommandPalette from './components/CommandPalette'; 
-import { summarizeText } from './services/geminiService'; 
-import { FaBars } from 'react-icons/fa6';
+import { summarizeText } from './services/geminiService';
+import { FaBars, FaXmark } from 'react-icons/fa6';
 import { FaSun, FaMoon, FaSearch, FaStar } from 'react-icons/fa';
 
 const AppContent: React.FC = () => {
@@ -31,7 +32,10 @@ const AppContent: React.FC = () => {
   const [summaryContent, setSummaryContent] = useState(''); // New state for summary content
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false); // New state for command palette
   const { addToast } = useToasts();
-  
+  const [placeholderText, setPlaceholderText] = useState('Search notes...');
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const isSmallScreen = useMediaQuery('(max-width: 640px)'); // Tailwind's 'sm' breakpoint is 640px
+
   // Effect to check for shared notes on app load
   useEffect(() => {
     const importNote = async () => {
@@ -71,6 +75,20 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Effect to update placeholder text on resize
+  useEffect(() => {
+    const updatePlaceholder = () => {
+      if (window.innerWidth <= 640) { // Tailwind's 'sm' breakpoint is 640px
+        setPlaceholderText('Search');
+      } else {
+        setPlaceholderText('Search notes...');
+      }
+    };
+
+    updatePlaceholder(); // Set initially
+    window.addEventListener('resize', updatePlaceholder);
+    return () => window.removeEventListener('resize', updatePlaceholder);
+  }, []);
   // Effect to prevent body scroll when sidebar is open on mobile
   useEffect(() => {
     if (isSidebarOpen && window.innerWidth <= 768) {
@@ -261,6 +279,32 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col font-sans antialiased">
+<style>{`
+        input[type="search"]::-webkit-search-cancel-button {
+          -webkit-appearance: none;
+          filter: invert(1) grayscale(1) brightness(2); /* Make it white */
+          cursor: pointer;
+        }
+
+        @media (min-width: 640px) { /* Tailwind's sm breakpoint */
+          input[type="search"]::-webkit-search-cancel-button {
+            display: none;
+          }
+        }
+      `}</style>
+      <style>{`
+        input[type="search"]::-webkit-search-cancel-button {
+          -webkit-appearance: none;
+          filter: invert(1) grayscale(1) brightness(2); /* Make it white */
+          cursor: pointer;
+        }
+
+        @media (min-width: 640px) { /* Tailwind's sm breakpoint */
+          input[type="search"]::-webkit-search-cancel-button {
+            display: none;
+          }
+        }
+      `}</style>
       <header className="flex-shrink-0 bg-surface dark:bg-dark-surface border-b border-border-color dark:border-dark-border-color px-4 py-3 flex items-center justify-between z-30 shadow-sm">
         <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
           <button
@@ -278,47 +322,109 @@ const AppContent: React.FC = () => {
           </div>
         </div>
         
-        <div className="flex items-center space-x-3 flex-grow max-w-md ml-4">
+<div className="flex items-center space-x-3 flex-grow max-w-md ml-4">
   <div className="relative flex-grow">
-    {/* Glassy search container */}
+    {/* Search container with minimal glass effect */}
     <div className="relative group">
-      {/* Subtle gradient glow on hover */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl opacity-0 group-hover:opacity-60 group-focus-within:opacity-80 blur transition duration-300"></div>
+      {/* Subtle hover glow */}
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400/10 to-indigo-400/10 rounded-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 blur-sm transition-all duration-300"></div>
       
-      {/* Search input with enhanced glass effect */}
+      {/* Main search input */}
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-          <FaSearch className="w-4 h-4 text-gray-400 dark:text-gray-500 transition-colors duration-200" />
+        {/* Search icon */}
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+          <FaSearch className="w-4 h-4 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors duration-200" />
         </div>
+        
+        {/* Input field */}
         <input
           type="search"
-          placeholder="Search notes..."
+          id="search-input"
+          placeholder={placeholderText}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-11 pr-16 py-3 bg-white/80 dark:bg-gray-900/50 backdrop-blur-md rounded-xl text-sm font-medium text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:bg-white/90 dark:focus:bg-gray-900/70 transition-all duration-200 border border-gray-200/60 dark:border-gray-700/50 shadow-sm hover:shadow-md hover:border-gray-300/80 dark:hover:border-gray-600/60 focus:border-blue-400/50 dark:focus:border-blue-500/50"
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setShowRecommendations(e.target.value.length > 0);
+          }}
+          onFocus={() => setShowRecommendations(searchTerm.length > 0)}
+          onBlur={() => setTimeout(() => setShowRecommendations(false), 150)}
+          className="w-full pl-10 pr-10 sm:pr-14 py-2.5 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200/60 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:border-blue-400 dark:focus:border-blue-400 focus:bg-white/90 dark:focus:bg-gray-800/70 transition-all duration-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/60 hover:border-gray-300/70 dark:hover:border-gray-600/60"
         />
-        {/* Command Palette Hint with enhanced styling */}
-        <div 
-          className="absolute inset-y-0 right-0 pr-3 hidden sm:flex items-center" 
-          onClick={() => setIsCommandPaletteOpen(true)}
-        >
-          <kbd className="bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none border border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800">
-            ⌘K
-          </kbd>
+        
+        {/* Right-aligned content: Clear button */}
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+          {searchTerm && isSmallScreen && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="text-text-muted/60 dark:text-dark-text-muted/60 hover:text-text-primary dark:hover:text-dark-text-primary focus:outline-none"
+              title="Clear search"
+            >
+              <FaXmark className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
     </div>
+    
+    {/* Search recommendations dropdown */}
+    {showRecommendations && searchTerm.length > 0 && (
+      <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg border border-gray-200/60 dark:border-gray-700/50 shadow-lg shadow-gray-900/5 dark:shadow-gray-900/20 z-50 max-h-64 overflow-y-auto">
+        {notes.filter(note =>
+          note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          note.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        ).slice(0, 5).map((note, index) => (
+          <div
+            key={note.id}
+            className={`px-4 py-3 hover:bg-blue-50/80 dark:hover:bg-blue-900/20 cursor-pointer transition-colors duration-150 ${
+              index !== 0 ? 'border-t border-gray-100 dark:border-gray-700/50' : ''
+            }`}
+            onMouseDown={() => {
+              selectNote(note.id);
+              setSearchTerm('');
+              setShowRecommendations(false);
+            }}
+          >
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-2 h-2 bg-blue-400 dark:bg-blue-500 rounded-full mt-2"></div>
+              <div className="flex-grow min-w-0">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
+                  {note.title}
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                  {note.content.replace(/[#*`]/g, '').substring(0, 80)}...
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        {notes.filter(note =>
+          note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          note.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        ).length === 0 && (
+          <div className="px-4 py-6 text-center">
+            <FaSearch className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No notes found for "{searchTerm}"
+            </p>
+          </div>
+        )}
+      </div>
+    )}
   </div>
   
   {/* View Mode Controls - Only show on desktop when note is active */}
   {window.innerWidth > 768 && activeNote && (
-    <div className="hidden lg:flex items-center bg-bg-secondary dark:bg-dark-bg-secondary rounded-lg p-1">
+    <div className="hidden lg:flex items-center bg-gray-100/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-lg p-1 border border-gray-200/40 dark:border-gray-700/40">
       <button
         onClick={() => setViewMode('editor')}
-        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
           viewMode === 'editor'
-            ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent shadow-sm'
-            : 'text-text-muted dark:text-dark-text-muted hover:text-black dark:hover:text-white'
+            ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200/60 dark:border-gray-600/60'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-700/60 border border-transparent'
         }`}
         title="Editor only"
       >
@@ -326,10 +432,10 @@ const AppContent: React.FC = () => {
       </button>
       <button
         onClick={() => setViewMode('split')}
-        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
           viewMode === 'split'
-            ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent shadow-sm'
-            : 'text-text-muted dark:text-dark-text-muted hover:text-black dark:hover:text-white'
+            ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200/60 dark:border-gray-600/60'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-700/60 border border-transparent'
         }`}
         title="Split view"
       >
@@ -337,10 +443,10 @@ const AppContent: React.FC = () => {
       </button>
       <button
         onClick={() => setViewMode('preview')}
-        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
           viewMode === 'preview'
-            ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent shadow-sm'
-            : 'text-text-muted dark:text-dark-text-muted hover:text-black dark:hover:text-white'
+            ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200/60 dark:border-gray-600/60'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-700/60 border border-transparent'
         }`}
         title="Preview only"
       >
@@ -351,10 +457,10 @@ const AppContent: React.FC = () => {
   
   <button
     onClick={toggleTheme}
-    className="p-2.5 rounded-lg hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary transition-all duration-200 flex-shrink-0"
+    className="p-2.5 rounded-lg hover:bg-gray-100/80 dark:hover:bg-gray-800/80 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-all duration-200 flex-shrink-0"
     title="Toggle theme"
   >
-    {theme === 'light' ? <FaMoon className="w-5 h-5" /> : <FaSun className="w-5 h-5" />}
+    {theme === 'light' ? <FaMoon className="w-4 h-4" /> : <FaSun className="w-4 h-4" />}
   </button>
 </div>
       </header>

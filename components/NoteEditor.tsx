@@ -174,32 +174,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       preBlock.appendChild(buttonContainer);
     });
 
-    // Add click-to-copy functionality for inline code snippets
-    const inlineCodeElements = previewPane.querySelectorAll('code:not(pre > code)');
-    inlineCodeElements.forEach((codeElement) => {
-      // Ensure the element doesn't already have a click listener for this feature
-      if (codeElement.getAttribute('data-copy-inline') === 'true') {
-        return;
-      }
-      codeElement.setAttribute('data-copy-inline', 'true'); // Mark as processed
-      codeElement.setAttribute('data-original-text', codeElement.textContent || ''); // Store original text
-
-
-      codeElement.addEventListener('click', () => {
-        const textToCopy = codeElement.getAttribute('data-original-text');
-        if (!textToCopy) return;
-
-        const cleanedTextToCopy = textToCopy.replace(/\s/g, ''); // Remove all whitespace
-        navigator.clipboard.writeText(cleanedTextToCopy).then(() => {
-          // Visual feedback: Temporarily change text
-          addToast('Copied to clipboard!', 'success');
-
-        }).catch(err => {
-          // No toast for error, just log to console
-          console.error('Failed to copy inline code: ', err);
-        });
-      });
-    });
   }, []);
 
   useEffect(() => {
@@ -984,10 +958,21 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
               onClose={() => setSelectionNavigator(null)}
             />
           )}
-          <div className="flex-grow overflow-y-auto p-4 sm:p-6 select-text preview-pane" onClick={() => {
+          <div className="flex-grow overflow-y-auto p-4 sm:p-6 select-text preview-pane" onClick={(e) => {
                // Clear navigator if clicking on the pane itself, but not on selected text
                if (window.getSelection()?.toString().trim() === '') {
                    setSelectionNavigator(null);
+               }
+
+               const target = e.target as HTMLElement;
+               // Check if the clicked element is an inline <code> tag and not inside a <pre> tag
+               if (target.tagName === 'CODE' && !target.closest('pre')) {
+                 const originalText = target.textContent || ''; // Store original text before copying
+                 navigator.clipboard.writeText(originalText).then(() => {
+                   addToast('Copied to clipboard!', 'success'); // Only use toast for feedback
+                 }).catch(err => {
+                   console.error('Failed to copy inline code: ', err);
+                 });
                }
           }}>
             {/* Title Section */}

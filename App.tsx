@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Note, SortOption } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTheme } from './hooks/useTheme';
@@ -35,6 +35,14 @@ const AppContent: React.FC = () => {
   const [placeholderText, setPlaceholderText] = useState('Search notes...');
   const [showRecommendations, setShowRecommendations] = useState(false);
   const isSmallScreen = useMediaQuery('(max-width: 640px)'); // Tailwind's 'sm' breakpoint is 640px
+
+  // Refs for the view mode buttons
+  const editorButtonRef = useRef<HTMLButtonElement>(null);
+  const splitButtonRef = useRef<HTMLButtonElement>(null);
+  const previewButtonRef = useRef<HTMLButtonElement>(null);
+
+  // State for the active indicator position and width
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
   // Effect to check for shared notes on app load
   useEffect(() => {
@@ -277,6 +285,32 @@ const AppContent: React.FC = () => {
     return () => document.removeEventListener('keydown', down);
   }, []);
 
+  // Effect to update the indicator's position and width
+  useEffect(() => {
+    const updateIndicator = () => {
+      let targetRef: React.MutableRefObject<HTMLButtonElement | null> | null = null;
+      if (viewMode === 'editor') {
+        targetRef = editorButtonRef;
+      } else if (viewMode === 'split') {
+        targetRef = splitButtonRef;
+      } else if (viewMode === 'preview') {
+        targetRef = previewButtonRef;
+      }
+
+      if (targetRef?.current) {
+        setIndicatorStyle({
+          left: targetRef.current.offsetLeft,
+          width: targetRef.current.offsetWidth,
+        });
+      }
+    };
+
+    updateIndicator(); // Initial update
+    window.addEventListener('resize', updateIndicator); // Update on resize
+    // Update when viewMode changes to ensure smooth transition
+    return () => window.removeEventListener('resize', updateIndicator);
+  }, [viewMode, activeNote]); // activeNote added as dependency for initial render when it becomes available
+
   return (
     <div className="h-screen w-screen flex flex-col font-sans antialiased">
 <style>{`
@@ -348,7 +382,7 @@ const AppContent: React.FC = () => {
           }}
           onFocus={() => setShowRecommendations(searchTerm.length > 0)}
           onBlur={() => setTimeout(() => setShowRecommendations(false), 150)}
-          className="w-full pl-10 pr-10 sm:pr-14 py-2.5 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200/60 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:border-blue-400 dark:focus:border-blue-400 focus:bg-white/90 dark:focus:bg-gray-800/70 transition-all duration-200 hover:bg-gray-100/80 dark:hover:bg-gray-800/60 hover:border-gray-300/70 dark:hover:border-gray-600/60"
+          className="w-full pl-10 pr-10 sm:pr-14 py-2.5 bg-gray-50/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200/60 dark:border-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:border-blue-400 dark:focus:border-blue-400 focus:bg-white/90 dark:focus:bg-gray-900/70 transition-all duration-200 hover:bg-gray-100/80 dark:hover:bg-gray-900/60 hover:border-gray-300/70 dark:hover:border-gray-700/60"
         />
         
         {/* Right-aligned content: Clear button */}
@@ -418,35 +452,43 @@ const AppContent: React.FC = () => {
   
   {/* View Mode Controls - Only show on desktop when note is active */}
   {window.innerWidth > 768 && activeNote && (
-    <div className="hidden lg:flex items-center bg-gray-100/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-lg p-1 border border-gray-200/40 dark:border-gray-700/40">
+    <div className="relative hidden lg:flex items-center bg-gray-100/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-lg p-1 border border-gray-200/40 dark:border-gray-800/40">
+      {/* Sliding active indicator */}
+      <div
+        className="absolute top-1 bottom-1 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200/60 dark:border-gray-700/60 transition-all duration-300 ease-in-out"
+        style={indicatorStyle}
+      ></div>
       <button
+        ref={editorButtonRef}
         onClick={() => setViewMode('editor')}
-        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+        className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-300 ${
           viewMode === 'editor'
-            ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200/60 dark:border-gray-600/60'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-700/60 border border-transparent'
+            ? 'text-blue-600 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
         title="Editor only"
       >
         Edit
       </button>
       <button
+        ref={splitButtonRef}
         onClick={() => setViewMode('split')}
-        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+        className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-300 ${
           viewMode === 'split'
-            ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200/60 dark:border-gray-600/60'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-700/60 border border-transparent'
+            ? 'text-blue-600 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
         title="Split view"
       >
         Split
       </button>
       <button
+        ref={previewButtonRef}
         onClick={() => setViewMode('preview')}
-        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+        className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-300 ${
           viewMode === 'preview'
-            ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200/60 dark:border-gray-600/60'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-700/60 border border-transparent'
+            ? 'text-blue-600 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
         title="Preview only"
       >

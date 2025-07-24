@@ -367,7 +367,7 @@ const AppContent: React.FC = () => {
       <div className="relative">
         {/* Search icon */}
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-          <FaSearch className="w-4 h-4 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors duration-200" />
+          <FaSearch className="w-4 h-4 text-gray-800 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors duration-200" />
         </div>
         
         {/* Input field */}
@@ -382,7 +382,7 @@ const AppContent: React.FC = () => {
           }}
           onFocus={() => setShowRecommendations(searchTerm.length > 0)}
           onBlur={() => setTimeout(() => setShowRecommendations(false), 150)}
-          className="w-full pl-10 pr-10 sm:pr-14 py-2.5 bg-gray-50/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200/60 dark:border-gray-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:border-blue-400 dark:focus:border-blue-400 focus:bg-white/90 dark:focus:bg-gray-900/70 transition-all duration-200 hover:bg-gray-100/80 dark:hover:bg-gray-900/60 hover:border-gray-300/70 dark:hover:border-gray-700/60"
+          className="w-full pl-10 pr-10 sm:pr-14 py-2.5 bg-white rounded-lg text-sm text-gray-900 placeholder-gray-700 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:border-blue-400 dark:focus:border-blue-400 focus:bg-white/90 dark:focus:bg-gray-900/70 transition-all duration-200 hover:bg-gray-100/80 dark:hover:bg-gray-900/60 hover:border-gray-300/70 dark:hover:border-gray-700/60 dark:bg-gray-900/50 dark:placeholder-gray-500 dark:border-gray-800/50"
         />
         
         {/* Right-aligned content: Clear button */}
@@ -452,10 +452,10 @@ const AppContent: React.FC = () => {
   
   {/* View Mode Controls - Only show on desktop when note is active */}
   {window.innerWidth > 768 && activeNote && (
-    <div className="relative hidden lg:flex items-center bg-gray-100/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-lg p-1 border border-gray-200/40 dark:border-gray-800/40">
+    <div className="relative hidden lg:flex items-center bg-white dark:bg-gray-900/60 backdrop-blur-sm rounded-lg p-1 border border-gray-500 dark:border-gray-800/40">
       {/* Sliding active indicator */}
       <div
-        className="absolute top-1 bottom-1 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200/60 dark:border-gray-700/60 transition-all duration-300 ease-in-out"
+        className="absolute top-1 bottom-1 bg-blue-200 dark:bg-gray-800 rounded-md shadow-sm border border-blue-400 dark:border-gray-700/60 transition-all duration-300 ease-in-out"
         style={indicatorStyle}
       ></div>
       <button
@@ -464,7 +464,7 @@ const AppContent: React.FC = () => {
         className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-300 ${
           viewMode === 'editor'
             ? 'text-blue-600 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            : 'text-gray-900 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
         title="Editor only"
       >
@@ -476,7 +476,7 @@ const AppContent: React.FC = () => {
         className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-300 ${
           viewMode === 'split'
             ? 'text-blue-600 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            : 'text-gray-900 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
         title="Split view"
       >
@@ -488,7 +488,7 @@ const AppContent: React.FC = () => {
         className={`relative z-10 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-300 ${
           viewMode === 'preview'
             ? 'text-blue-600 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            : 'text-gray-900 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
         title="Preview only"
       >

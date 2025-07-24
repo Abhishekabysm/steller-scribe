@@ -13,7 +13,6 @@ interface CommandPaletteProps {
   toggleTheme: () => void;
   handleSummarize: () => void;
   selectNote: (id: string) => void;
-  togglePinNote: (id: string) => void;
   notes: Note[];
   theme: 'light' | 'dark';
 }
@@ -25,7 +24,6 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
   toggleTheme,
   handleSummarize,
   selectNote,
-  togglePinNote,
   notes,
   theme,
 }) => {
@@ -59,10 +57,6 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
     onClose();
   }, [selectNote, onClose]);
 
-  const handleTogglePinNote = useCallback((noteId: string) => {
-    togglePinNote(noteId);
-    onClose();
-  }, [togglePinNote, onClose]);
 
   const handleAddNote = useCallback(() => {
     addNote();
@@ -344,7 +338,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                     {notes.filter(note => note.isPinned).map((note, index) => (
                       <Command.Item 
                         key={`pin-${note.id}`} 
-                        onSelect={() => handleTogglePinNote(note.id)}
+                        onSelect={() => handleSelectNote(note.id)}
                         className="group relative flex items-center gap-4 px-4 py-3.5 mx-2 rounded-xl text-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                         data-selected={selectedIndex === 3 + notes.slice(0, 5).length + index}
                       >
@@ -355,8 +349,8 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                           <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                         <div className="relative flex-1">
-                          <div className="font-semibold text-gray-900 dark:text-gray-100 group-data-[selected=true]:text-gray-900 dark:group-data-[selected=true]:text-gray-100">Unpin: {note.title || 'Untitled Note'}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 group-data-[selected=true]:text-gray-600 dark:group-data-[selected=true]:text-gray-300">Remove from pinned notes</div>
+                          <div className="font-semibold text-gray-900 dark:text-gray-100 group-data-[selected=true]:text-gray-900 dark:group-data-[selected=true]:text-gray-100">Open: {note.title || 'Untitled Note'}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 group-data-[selected=true]:text-gray-600 dark:group-data-[selected=true]:text-gray-300">Open pinned note</div>
                         </div>
                         <div className="relative flex items-center gap-2">
                           <span className="text-[10px] font-medium text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">Action</span>

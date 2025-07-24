@@ -223,6 +223,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
       <ToolbarButton onClick={() => applyFormat('list')} title="Bulleted List">
         <FaListUl className="w-5 h-5" />
       </ToolbarButton>
+    </>
+  );
+
+  const secondaryTools = (
+    <>
       <ToolbarButton onClick={handleBeautifyClick} title="Beautify (AI)" disabled={isBeautifying}>
         {isBeautifying ? (
           <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
@@ -230,11 +235,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
           <FaRegStar className="w-5 h-5" />
         )}
       </ToolbarButton>
-    </>
-  );
-
-  const secondaryTools = (
-    <>
       <ToolbarButton onClick={() => applyFormat('strikethrough')} title="Strikethrough">
         <FaStrikethrough className="w-5 h-5" />
       </ToolbarButton>

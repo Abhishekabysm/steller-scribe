@@ -66,7 +66,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   } | null>(null);
 
   const isDesktop = useMediaQuery('(min-width: 768px)');
-  const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
+  const [mobileView, setMobileView] = useState<'editor' | 'preview'>('preview');
   
   const { addToast } = useToasts();
   const editorRef = useRef<HTMLTextAreaElement>(null);
@@ -1095,9 +1095,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
           ) : (
               // Mobile view with toggle
               <div className="h-full flex flex-col">
-                  <div className="flex-shrink-0 flex p-1 bg-gray-200 dark:bg-dark-bg-secondary border-b border-gray-300 dark:border-dark-border-color">
-                      <button onClick={() => setMobileView('editor')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'editor' ? 'bg-gray-50 dark:bg-dark-surface text-blue-600 dark:text-dark-accent' : 'text-gray-500 dark:text-dark-text-muted'}`}><FaPencil className="w-5 h-5 mx-auto"/></button>
-                      <button onClick={() => setMobileView('preview')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'preview' ? 'bg-gray-50 dark:bg-dark-surface text-blue-600 dark:text-dark-accent' : 'text-gray-500 dark:text-dark-text-muted'}`}><FaEye className="w-5 h-5 mx-auto"/></button>
+                  <div className="relative flex-shrink-0 flex bg-gray-200 dark:bg-dark-bg-secondary border-b border-gray-300 dark:border-dark-border-color rounded-md mx-2 my-2 overflow-hidden">
+                      <div className={`absolute inset-0 w-1/2 rounded-md bg-blue-600 dark:bg-dark-accent/90 transition-all duration-300 ease-in-out ${mobileView === 'editor' ? 'left-0' : 'left-1/2'}`}></div>
+                      <button onClick={() => setMobileView('editor')} className={`relative flex-1 p-2 rounded-md text-sm font-semibold z-10 transition-colors duration-300 ease-in-out ${mobileView === 'editor' ? 'text-white dark:text-dark-text-primary' : 'text-gray-700 dark:text-dark-text-muted'}`}><FaPencil className="w-5 h-5 mx-auto"/></button>
+                      <button onClick={() => setMobileView('preview')} className={`relative flex-1 p-2 rounded-md text-sm font-semibold z-10 transition-colors duration-300 ease-in-out ${mobileView === 'preview' ? 'text-white dark:text-dark-text-primary' : 'text-gray-700 dark:text-dark-text-muted'}`}><FaEye className="w-5 h-5 mx-auto"/></button>
                   </div>
                   <div className="flex-grow overflow-hidden">
                     {mobileView === 'editor' ? editorPane : previewPane}

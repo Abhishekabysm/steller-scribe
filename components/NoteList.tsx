@@ -195,9 +195,12 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
                 </ul>
               </section>
           )}
+          {pinnedNotes.length > 0 && otherNotes.length > 0 && (
+            <hr className="my-4 border-t border-gray-300 dark:border-dark-border-color" />
+          )}
           {otherNotes.length > 0 && (
              <section>
-                {pinnedNotes.length > 0 && <SectionHeader>Recent</SectionHeader>}
+                <SectionHeader>Recent</SectionHeader>
                  <ul className="space-y-1 p-2">
                   {otherNotes.map(note => (
                     <NoteListItem

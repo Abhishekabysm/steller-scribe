@@ -370,11 +370,11 @@ const AppContent: React.FC = () => {
           }}
           onFocus={() => setShowRecommendations(searchTerm.length > 0)}
           onBlur={() => setTimeout(() => setShowRecommendations(false), 150)}
-          className="w-full pl-10 pr-10 sm:pr-14 py-2.5 bg-white rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-700 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:border-blue-400 dark:focus:border-blue-400 focus:bg-white/90 dark:focus:bg-gray-900/70 transition-all duration-200 hover:bg-gray-100/80 dark:hover:bg-gray-900/60 hover:border-gray-300/70 dark:hover:border-gray-700/60 dark:bg-gray-900/50 dark:placeholder-gray-500 dark:border-gray-800/50"
+          className="w-full pl-10 pr-10 sm:pr-20 py-2.5 bg-white rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-700 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:border-blue-400 dark:focus:border-blue-400 focus:bg-white/90 dark:focus:bg-gray-900/70 transition-all duration-200 hover:bg-gray-100/80 dark:hover:bg-gray-900/60 hover:border-gray-300/70 dark:hover:border-gray-700/60 dark:bg-gray-900/50 dark:placeholder-gray-500 dark:border-gray-800/50"
         />
         
-        {/* Right-aligned content: Clear button */}
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+        {/* Right-aligned content: Clear button or CtrlK */}
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center space-x-2">
           {searchTerm && isSmallScreen && (
             <button
               type="button"
@@ -384,6 +384,11 @@ const AppContent: React.FC = () => {
             >
               <FaXmark className="w-5 h-5" />
             </button>
+          )}
+          {!isSmallScreen && (
+            <div className="hidden sm:flex items-center text-xs text-gray-500 dark:text-gray-400">
+              <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">CtrlK</kbd>
+            </div>
           )}
         </div>
       </div>

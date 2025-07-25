@@ -3,15 +3,14 @@ import { useState, useEffect, useCallback } from 'react';
 type Theme = 'light' | 'dark';
 
 export const useTheme = (): [Theme, () => void] => {
-  const [theme, setTheme] = useState<Theme>('dark');
-
-  useEffect(() => {
+  const [theme, setTheme] = useState<Theme>(() => {
     const storedTheme = window.localStorage.getItem('stellar-scribe-theme') as Theme | null;
+    if (storedTheme) {
+      return storedTheme;
+    }
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    const initialTheme = storedTheme || (systemPrefersDark ? 'dark' : 'light');
-    setTheme(initialTheme);
-  }, []);
+    return systemPrefersDark ? 'dark' : 'light';
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;

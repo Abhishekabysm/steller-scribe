@@ -19,7 +19,7 @@ const AppContent: React.FC = () => {
   const [notes, setNotes] = useLocalStorage<Note[]>('stellar-scribe-notes-v2', []);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useLocalStorage('stellar-scribe-sidebar-open', window.innerWidth > 768);
   const [theme, toggleTheme] = useTheme();
   const [sortOption, setSortOption] = useState<SortOption>('updatedAt');
   const [viewMode, setViewMode] = useState<'split' | 'editor' | 'preview'>('split');
@@ -70,18 +70,6 @@ const AppContent: React.FC = () => {
     }
   }, [notes, activeNoteId]);
 
-  // Effect to handle window resizing for responsive sidebar
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 768) {
-        setIsSidebarOpen(true);
-      } else {
-        setIsSidebarOpen(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Effect to update placeholder text on resize
   useEffect(() => {

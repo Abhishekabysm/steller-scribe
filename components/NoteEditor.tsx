@@ -34,7 +34,7 @@ const LoadingSpinner: React.FC = () => (
 );
 
 const Tag: React.FC<{ tag: string; onRemove: (tag: string) => void }> = ({ tag, onRemove }) => (
-  <div className="flex items-center bg-accent/20 text-accent dark:bg-dark-accent/20 dark:text-dark-accent-hover text-sm font-medium pl-3 pr-2 py-1 rounded-full animate-fade-in">
+  <div className="flex items-center bg-accent/20 text-accent dark:bg-dark-accent/20 dark:text-dark-accent-hover text-xs sm:text-sm font-medium px-2 py-1 sm:pl-3 sm:pr-2 rounded-full animate-fade-in">
     <span>{tag}</span>
     <button onClick={() => onRemove(tag)} className="ml-1.5 p-0.5 rounded-full hover:bg-accent/30 dark:hover:bg-dark-accent/30">
         <FaXmark className="w-3 h-3"/>
@@ -819,45 +819,46 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
 
   const editorPane = (
       <div className="flex flex-col h-full bg-surface dark:bg-dark-surface relative" ref={editorContainerRef}>
-          <div className="p-4 border-b border-border-color dark:border-dark-border-color">
-              <div className="flex items-center">
-                  <input
-                      type="text"
-                      value={activeNote.title}
-                      onChange={handleTitleChange}
-                      placeholder="Untitled Note"
-                      className="flex-1 min-w-0 text-2xl font-bold bg-transparent text-text-primary dark:text-dark-text-primary focus:outline-none placeholder:text-text-muted"
-                  />
-                  {activeNote.isImported && (
-                    <div className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-800 flex-shrink-0">
-                      <MdCloudDownload 
-                        className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 dark:text-blue-400" 
-                        title="This note was imported from a shared link"
+          <div className="p-3 sm:p-4 border-b border-border-color dark:border-dark-border-color">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex-grow flex items-center">
+                      <input
+                          type="text"
+                          value={activeNote.title}
+                          onChange={handleTitleChange}
+                          placeholder="Untitled Note"
+                          className="flex-1 min-w-0 text-xl sm:text-2xl font-bold bg-transparent text-text-primary dark:text-dark-text-primary focus:outline-none placeholder:text-text-muted"
                       />
-                      <span className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium">
-                        <span className="hidden sm:inline">Imported</span>
-                        <span className="sm:hidden">Imported</span>
-                        {activeNote.importedAt && (
-                          <span className="ml-1 text-xs opacity-75 hidden sm:inline">
-                            on {new Date(activeNote.importedAt).toLocaleDateString()}
+                      <button
+                          onClick={handleGenerateTitle}
+                          disabled={isGeneratingTitle}
+                          title="Generate title from content"
+                          className="flex-shrink-0 ml-2 p-1.5 text-text-secondary dark:text-dark-text-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-md hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary"
+                      >
+                          {isGeneratingTitle
+                              ? <LoadingSpinner />
+                              : <FaMagic className="w-5 h-5" />
+                          }
+                      </button>
+                  </div>
+                  {activeNote.isImported && (
+                      <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-800 flex-shrink-0 self-start sm:self-center">
+                          <MdCloudDownload
+                              className="w-4 h-4 text-blue-500 dark:text-blue-400"
+                              title="This note was imported from a shared link"
+                          />
+                          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                              Imported
+                              {activeNote.importedAt && (
+                                  <span className="ml-1 opacity-75 hidden sm:inline">
+                                      on {new Date(activeNote.importedAt).toLocaleDateString()}
+                                  </span>
+                              )}
                           </span>
-                        )}
-                      </span>
-                    </div>
+                      </div>
                   )}
-                  <button
-                      onClick={handleGenerateTitle}
-                      disabled={isGeneratingTitle}
-                      title="Generate title from content"
-                      className="flex-shrink-0 ml-2 p-1.5 text-text-secondary dark:text-dark-text-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-md hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary"
-                  >
-                      {isGeneratingTitle
-                          ? <LoadingSpinner />
-                          : <FaMagic className="w-5 h-5" />
-                      }
-                  </button>
               </div>
-              <div className="flex items-center flex-wrap gap-2 mt-3">
+              <div className="flex items-center flex-wrap gap-2 mt-4">
                   {activeNote.tags.map(tag => <Tag key={tag} tag={tag} onRemove={removeTag} />)}
                   <input 
                       type="text"

@@ -327,7 +327,7 @@ const AppContent: React.FC = () => {
           }
         }
       `}</style>
-      <header className="flex-shrink-0 bg-header-background dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border-color px-4 py-3 flex items-center justify-between z-30 shadow-sm">
+      <header className="flex-shrink-0 bg-header-background dark:bg-dark-header-background border-b border-gray-200 dark:border-dark-border-color px-4 py-3 flex items-center justify-between z-30 shadow-sm">
         <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}

@@ -1,5 +1,6 @@
+/// <reference path="../types/speechRecognition.d.ts" />
 import React, { useState } from 'react';
-import { FaBold, FaItalic, FaUnderline, FaLink, FaCode, FaListUl, FaStrikethrough, FaQuoteRight, FaListCheck, FaMinus, FaEllipsis, FaWandMagicSparkles, FaHeading } from 'react-icons/fa6';
+import { FaBold, FaItalic, FaUnderline, FaLink, FaCode, FaListUl, FaStrikethrough, FaQuoteRight, FaListCheck, FaMinus, FaEllipsis, FaWandMagicSparkles, FaHeading, FaMicrophone, FaStop } from 'react-icons/fa6';
 import { FaRegStar } from 'react-icons/fa';
 import ConfirmationModal from './ConfirmationModal';
 import { performTextAction } from '../services/geminiService';
@@ -8,7 +9,7 @@ import { AITextAction } from '../types';
 
 interface EditorToolbarProps {
   textareaRef: React.RefObject<HTMLTextAreaElement>;
-  onUpdate: (value: string) => void;
+  onUpdate: (value: string, newCursorPos?: number) => void;
   onGenerateClick: () => void;
 }
 
@@ -30,6 +31,78 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
   const [beautifiedText, setBeautifiedText] = useState('');
   const [showAllTools, setShowAllTools] = useState(false);
   const [isBeautifying, setIsBeautifying] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(false); // New state for API support
+  const recognitionRef = React.useRef<SpeechRecognition | null>(null);
+
+  React.useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setIsSpeechRecognitionSupported(true); // Set to true if supported
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-IN';
+
+      recognitionRef.current.onresult = (event) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        let currentInterimTranscript = '';
+        let currentFinalTranscript = '';
+
+        // Accumulate current interim and final transcripts
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            currentFinalTranscript += transcript;
+          } else {
+            currentInterimTranscript += transcript;
+          }
+        }
+
+        if (currentFinalTranscript) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const currentText = textarea.value;
+          const newText = currentText.substring(0, start) + currentFinalTranscript + currentText.substring(end);
+          
+          // Pass the new text and the desired cursor position to the parent
+          onUpdate(newText, start + currentFinalTranscript.length);
+        }
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+        // No need to commit final text here if it's already done on onresult
+      };
+    } else {
+      console.warn("Speech Recognition API not supported in this browser.");
+      setIsSpeechRecognitionSupported(false); // Set to false if not supported
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [onUpdate, textareaRef]);
+
+  const toggleSpeechRecognition = () => {
+    if (recognitionRef.current) {
+      if (isListening) {
+        recognitionRef.current.stop();
+      } else {
+        recognitionRef.current.start();
+      }
+      setIsListening(!isListening);
+    }
+  };
   
   const isValidUrl = (string: string) => {
     try {
@@ -261,6 +334,20 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
             </div>
           </div>
           <div className="flex items-center space-x-1">
+            {isSpeechRecognitionSupported && (
+              <ToolbarButton
+                onClick={toggleSpeechRecognition}
+                title={isListening ? "Stop Voice Input" : "Start Voice Input"}
+                className=""
+                disabled={!recognitionRef.current}
+              >
+                {isListening ? (
+                  <div className="w-5 h-5 bg-red-500 rounded-full blink-red"></div>
+                ) : (
+                  <FaMicrophone className="w-5 h-5" />
+                )}
+              </ToolbarButton>
+            )}
             <ToolbarButton
               onClick={() => setShowAllTools(!showAllTools)}
               title="More tools"

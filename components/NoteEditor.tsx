@@ -59,6 +59,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isAIModifyModalOpen, setIsAIModifyModalOpen] = useState(false); // New state for AIModifyModal
   const [textToModify, setTextToModify] = useState(''); // State to hold text for AI modification
+
+  // Undo/Redo state
+  const [undoStack, setUndoStack] = useState<string[]>([]);
+  const [redoStack, setRedoStack] = useState<string[]>([]);
+  const [currentEditorContent, setCurrentEditorContent] = useState(activeNote?.content || '');
+
+  const MAX_HISTORY_LENGTH = 100; // Limit undo history to 100 steps
   
   // State for selection navigation
   const [selectionNavigator, setSelectionNavigator] = useState<{
@@ -292,12 +299,77 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
     onUpdateNote({ title: e.target.value });
   };
 
+  useEffect(() => {
+    if (activeNote) {
+      setCurrentEditorContent(activeNote.content);
+      // Reset undo/redo stacks when activeNote changes
+      setUndoStack([]);
+      setRedoStack([]);
+    }
+  }, [activeNote?.id]); // Only re-run when the note ID changes
+
+  const pushToUndoStack = useCallback((oldContent: string) => {
+    setUndoStack(prev => {
+      const newStack = [...prev, oldContent];
+      // Trim history if it exceeds MAX_HISTORY_LENGTH
+      if (newStack.length > MAX_HISTORY_LENGTH) {
+        return newStack.slice(newStack.length - MAX_HISTORY_LENGTH);
+      }
+      return newStack;
+    });
+    setRedoStack([]); // Clear redo stack on new action
+  }, []);
+
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
-    onUpdateNote({ content: newValue });
+    if (activeNote && newValue !== activeNote.content) {
+      pushToUndoStack(activeNote.content);
+    }
+    setCurrentEditorContent(newValue); // Update local state immediately
+    onUpdateNote({ content: newValue }); // Propagate change to parent
     // Hide menu when user starts typing
     if (contextualMenu) setContextualMenu(null);
   };
+  
+  const undo = useCallback(() => {
+    if (undoStack.length === 0) return;
+
+    const previousContent = undoStack[undoStack.length - 1];
+    setUndoStack(prev => prev.slice(0, -1)); // Remove last item
+    setRedoStack(prev => [...prev, currentEditorContent]); // Add current to redo stack
+
+    setCurrentEditorContent(previousContent);
+    onUpdateNote({ content: previousContent });
+    
+    // Restore cursor position if possible, or just set to end
+    setTimeout(() => {
+      const textarea = editorRef.current;
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(previousContent.length, previousContent.length);
+      }
+    }, 0);
+  }, [undoStack, redoStack, currentEditorContent, onUpdateNote]);
+
+  const redo = useCallback(() => {
+    if (redoStack.length === 0) return;
+
+    const nextContent = redoStack[redoStack.length - 1];
+    setRedoStack(prev => prev.slice(0, -1)); // Remove last item
+    setUndoStack(prev => [...prev, currentEditorContent]); // Add current to undo stack
+
+    setCurrentEditorContent(nextContent);
+    onUpdateNote({ content: nextContent });
+
+    // Restore cursor position if possible, or just set to end
+    setTimeout(() => {
+      const textarea = editorRef.current;
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(nextContent.length, nextContent.length);
+      }
+    }, 0);
+  }, [undoStack, redoStack, currentEditorContent, onUpdateNote]);
   
   const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -644,7 +716,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
 
     try {
       const searchRegex = new RegExp(searchPattern, 'gi');
-      const matches = [];
+      const matches: Array<{ start: number; end: number }> = [];
       let match;
       while ((match = searchRegex.exec(originalContent)) !== null) {
         if (match[0].trim().length > 0) {
@@ -740,12 +812,16 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
         else {
             const modifiedText = await performTextAction(selectedText, action, language);
             
+            // Push current content to undo stack before change
+            pushToUndoStack(textarea.value);
+
             // Use execCommand for undo-friendly text replacement
             textarea.focus();
             textarea.setSelectionRange(start, end);
             document.execCommand('insertText', false, modifiedText);
             
-            // Manually trigger content update after execCommand
+            // Manually update currentEditorContent and propagate change to parent
+            setCurrentEditorContent(textarea.value);
             onUpdateNote({ content: textarea.value });
             
             const editorWrapper = document.querySelector('.editor-textarea-wrapper');
@@ -779,6 +855,9 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
             textarea.focus();
             textarea.setSelectionRange(start, end);
             document.execCommand('insertText', false, modifiedText);
+            
+            // Manually update currentEditorContent and propagate change to parent
+            setCurrentEditorContent(textarea.value);
             onUpdateNote({ content: textarea.value });
 
             const editorWrapper = document.querySelector('.editor-textarea-wrapper');
@@ -805,17 +884,30 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
     if (!activeNote || !editorRef.current) return;
     
     const textarea = editorRef.current;
+    
+    // Handle Undo/Redo
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      undo();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
+      e.preventDefault();
+      redo();
+      return;
+    }
+
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = textarea.value.substring(start, end);
     
-    // Only proceed if there's selected text
+    // Only proceed with wrapping if there's selected text
     if (!selectedText || start === end) return;
     
     let wrappedText = '';
     let shouldWrap = false;
     
-    // Check for Ctrl/Cmd key combinations first
+    // Check for Ctrl/Cmd key combinations for formatting
     if (e.ctrlKey || e.metaKey) {
       switch (e.key.toLowerCase()) {
         case 'b':
@@ -850,7 +942,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
           break;
       }
     } else {
-      // Check for regular key presses
+      // Check for regular key presses for wrapping (e.g., quotes)
       switch (e.key) {
         case '"':
           wrappedText = `"${selectedText}"`;
@@ -883,12 +975,16 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
       // Prevent the default key press behavior
       e.preventDefault();
       
+      // Push current content to undo stack before change
+      pushToUndoStack(textarea.value);
+
       // Execute the command through the textarea's execCommand for proper undo support
       textarea.focus();
       textarea.setSelectionRange(start, end); // Ensure the selected text is replaced
       document.execCommand('insertText', false, wrappedText);
       
-      // Manually trigger content update after execCommand
+      // Update local state and propagate change to parent
+      setCurrentEditorContent(textarea.value);
       onUpdateNote({ content: textarea.value });
 
       // Update cursor position to after the wrapped text
@@ -960,11 +1056,30 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                   />
               </div>
           </div>
-          <EditorToolbar textareaRef={editorRef as React.RefObject<HTMLTextAreaElement>} onUpdate={(v) => onUpdateNote({ content: v })} onGenerateClick={() => setIsAIGenerateModalOpen(true)} />
+          <EditorToolbar
+            textareaRef={editorRef as React.RefObject<HTMLTextAreaElement>}
+            onUpdate={(v, newCursorPos) => {
+              // Only push to undo stack if content actually changed
+              if (activeNote && v !== activeNote.content) {
+                pushToUndoStack(activeNote.content);
+              }
+              setCurrentEditorContent(v);
+              onUpdateNote({ content: v });
+              
+              // Set cursor position if provided and textarea is available
+              if (editorRef.current && newCursorPos !== undefined) {
+                // Use setTimeout to ensure DOM is updated before setting selection
+                setTimeout(() => {
+                  editorRef.current?.setSelectionRange(newCursorPos, newCursorPos);
+                }, 0);
+              }
+            }}
+            onGenerateClick={() => setIsAIGenerateModalOpen(true)}
+          />
           <div className="flex-grow overflow-y-auto p-4 editor-textarea-wrapper">
               <textarea
                   ref={editorRef}
-                  value={activeNote.content}
+                  value={currentEditorContent} // Use local state for controlled component
                   onChange={handleContentChange}
                   onKeyDown={handleKeyDown}
                   onMouseUp={handleTextSelection}

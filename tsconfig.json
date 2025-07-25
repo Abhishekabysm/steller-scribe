@@ -26,5 +26,12 @@
     "paths": {
       "@/*" :  ["./*"]
     }
-  }
+  },
+  "include": [
+    "src",
+    "types"
+  ],
+  "files": [
+    "types/speechRecognition.d.ts"
+  ]
 }

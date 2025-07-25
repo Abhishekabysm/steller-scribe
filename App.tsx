@@ -17,7 +17,7 @@ import { FaSun, FaMoon, FaSearch, FaStar } from 'react-icons/fa';
 
 const AppContent: React.FC = () => {
   const [notes, setNotes] = useLocalStorage<Note[]>('stellar-scribe-notes-v2', []);
-  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
+  const [activeNoteId, setActiveNoteId] = useLocalStorage<string | null>('stellar-scribe-active-note-id', null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useLocalStorage('stellar-scribe-sidebar-open', window.innerWidth > 768);
   const [theme, toggleTheme] = useTheme();

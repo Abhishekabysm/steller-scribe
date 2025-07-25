@@ -98,26 +98,27 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
       // Only handle other shortcuts when command palette is open
       if (!isOpen) return;
 
-      // Handle ⌘N or Ctrl+N for new note
-      if (e.key === 'n' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        handleAddNote();
-        return;
-      }
+     // Handle ⌘N or Ctrl+N for new note
+     if (e.key === 'n' && (e.metaKey || e.ctrlKey)) {
+       e.preventDefault();
+       handleAddNote();
+       return;
+     }
 
-      // Handle ⌘T or Ctrl+T for theme toggle
-      if (e.key === 't' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        handleToggleTheme();
-        return;
-      }
+     // Handle ⌘T or Ctrl+T for theme toggle
+     if (e.key === 't' && (e.metaKey || e.ctrlKey)) {
+       e.preventDefault();
+       handleToggleTheme();
+       return;
+     }
 
-      // Handle ⌘S or Ctrl+S for summarize
-      if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        handleSummarizeNote();
-        return;
-      }
+     // Handle ⌘S or Ctrl+S for summarize
+     if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
+       e.preventDefault();
+       handleSummarizeNote();
+       return;
+     }
+
     };
 
     document.addEventListener('keydown', handleKeydown);
@@ -223,7 +224,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
           {(!search || ['new', 'theme', 'summary'].some(term => search.toLowerCase().includes(term))) && (
             <>
               {(!search || search.toLowerCase().includes('new')) && (
-                <Command.Item 
+                <Command.Item
                   onSelect={handleAddNote}
                   className="flex items-center px-4 py-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer mb-2 transition-colors"
                   disabled={isLoading}
@@ -235,19 +236,19 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <div className="text-base font-medium text-gray-900 dark:text-gray-100">New Note</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Create a blank note</div>
                   </div>
-                  <kbd className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded font-mono">⌘N</kbd>
+                  
                 </Command.Item>
               )}
 
               {(!search || search.toLowerCase().includes('theme')) && (
-                <Command.Item 
+                <Command.Item
                   onSelect={handleToggleTheme}
                   className="flex items-center px-4 py-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer mb-2 transition-colors"
                   disabled={isLoading}
                 >
                   <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center mr-4">
-                    {theme === 'light' ? 
-                      <FaMoon className="w-5 h-5 text-gray-600 dark:text-gray-400" /> : 
+                    {theme === 'light' ?
+                      <FaMoon className="w-5 h-5 text-gray-600 dark:text-gray-400" /> :
                       <FaSun className="w-5 h-5 text-yellow-500" />
                     }
                   </div>
@@ -257,12 +258,12 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Toggle theme</div>
                   </div>
-                  <kbd className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded font-mono">⌘T</kbd>
+                  
                 </Command.Item>
               )}
 
               {(!search || search.toLowerCase().includes('summary')) && (
-                <Command.Item 
+                <Command.Item
                   onSelect={handleSummarizeNote}
                   className="flex items-center px-4 py-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer mb-2 transition-colors"
                   disabled={isLoading}
@@ -274,7 +275,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <div className="text-base font-medium text-gray-900 dark:text-gray-100">Summarize Note</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Generate AI summary</div>
                   </div>
-                  <kbd className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded font-mono">⌘S</kbd>
+                  
                 </Command.Item>
               )}
 

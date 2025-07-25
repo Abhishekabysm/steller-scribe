@@ -4,6 +4,7 @@ import { FaRegSquarePlus, FaPlus, FaThumbtack, FaXmark, FaRegTrashCan } from 're
 import Dropdown from './Dropdown';
 import { MdCloudDownload } from 'react-icons/md';
 
+
 interface NoteListProps {
   notes: Note[];
   activeNoteId: string | null;
@@ -18,17 +19,20 @@ interface NoteListProps {
   onCloseSidebar?: () => void;
 }
 
+
 const Tag: React.FC<{ tag: string }> = ({ tag }) => (
   <span className="text-xs font-medium mr-1.5 px-2 py-0.5 rounded-full bg-accent/10 text-accent dark:bg-dark-accent/20 dark:text-dark-accent-hover">
     #{tag}
   </span>
 );
 
-const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => void; onTogglePin: (id: string) => void; onDelete: (note: Note) => void }> = ({ note, isActive, onClick, onTogglePin, onDelete }) => {
+
+const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => void; onTogglePin: (id: string) => void; onDelete: (note: Note) => void; }> = ({ note, isActive, onClick, onTogglePin, onDelete }) => {
   const date = new Date(note.updatedAt).toLocaleDateString("en-US", {
     month: 'short',
     day: 'numeric',
   });
+
 
   const handleClick = (e: React.MouseEvent) => {
     // Don't select note if clicking on pin button or delete button
@@ -38,11 +42,13 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
     onClick();
   };
 
+
   const handlePinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     onTogglePin(note.id);
   };
+
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -50,13 +56,14 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
     onDelete(note);
   };
 
+
   return (
     <li
       onClick={handleClick}
-      className={`group cursor-pointer p-3 border-l-4 rounded-r-md transition-all duration-200 ease-in-out relative ${
+      className={`group cursor-pointer p-3 rounded-md transition-all duration-200 ease-in-out relative mb-2 shadow-sm ${
         isActive
-          ? 'bg-blue-100 border-blue-500 dark:bg-dark-accent/20 dark:border-dark-accent'
-          : 'bg-gray-50 border-transparent hover:bg-gray-100 hover:border-gray-300 dark:bg-dark-surface/50 dark:hover:bg-dark-surface dark:hover:border-dark-text-muted/50'
+          ? 'bg-blue-100 dark:bg-dark-accent/20 border border-blue-400 dark:border-dark-accent'
+          : 'bg-gray-100 dark:bg-dark-surface hover:bg-gray-200 dark:hover:bg-dark-surface-hover border border-gray-200 dark:border-dark-border-color'
       }`}
       aria-current={isActive}
     >
@@ -76,7 +83,11 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
           <FaRegTrashCan className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
-      <h3 className="font-bold text-text-primary dark:text-dark-text-primary truncate pr-16 flex items-center gap-2">
+      <h3 className={`font-bold truncate pr-16 flex items-center gap-2 ${
+        isActive 
+          ? 'text-blue-800 dark:text-dark-text-primary' 
+          : 'text-text-primary dark:text-dark-text-primary'
+      }`}>
         <span className="truncate">{note.title || 'Untitled Note'}</span>
         {note.isImported && (
           <MdCloudDownload 
@@ -86,7 +97,11 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
         )}
       </h3>
       <div className="flex items-center mt-1.5">
-        <p className="text-sm text-gray-500 dark:text-dark-text-muted truncate">
+        <p className={`text-sm truncate ${
+          isActive 
+            ? 'text-blue-700 dark:text-dark-text-secondary' 
+            : 'text-gray-500 dark:text-dark-text-muted'
+        }`}>
           <span className="mr-2">{date}</span>
           {note.content.substring(0, 30).replace(/#|`|\*|\[|\]/g, '')}...
         </p>
@@ -100,9 +115,11 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
   );
 };
 
+
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <h2 className="px-3 pt-4 pb-1 text-sm font-semibold text-gray-500 dark:text-dark-text-muted uppercase tracking-wider">{children}</h2>
 );
+
 
 
 const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, onAddNote, onTogglePin, onDeleteNote, onDeletePinnedNote, searchTerm, sortOption, onSortChange, onCloseSidebar }) => {
@@ -123,6 +140,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
             return inTitle || inContent || inTags;
         });
 
+
         return filtered.sort((a, b) => {
             switch(sortOption) {
                 case 'createdAt': return b.createdAt - a.createdAt;
@@ -134,14 +152,17 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
         });
     }, [notes, searchTerm, sortOption]);
 
+
     const pinnedNotes = sortedAndFilteredNotes.filter(n => n.isPinned);
     const otherNotes = sortedAndFilteredNotes.filter(n => !n.isPinned);
+
 
     const sortOptions = [
         { value: 'updatedAt', label: 'Last Updated' },
         { value: 'createdAt', label: 'Date Created' },
         { value: 'title', label: 'Title (A-Z)' },
     ];
+
 
   return (
     <div className="h-full bg-gray-200 dark:bg-dark-bg-secondary flex flex-col">
@@ -181,8 +202,8 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
           {pinnedNotes.length > 0 && (
               <section>
                 <SectionHeader>Pinned</SectionHeader>
-                <ul className="space-y-1 p-2">
-                  {pinnedNotes.map(note => (
+                <ul className="p-2">
+                  {pinnedNotes.map((note) => (
                     <NoteListItem
                       key={note.id}
                       note={note}
@@ -195,14 +216,11 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
                 </ul>
               </section>
           )}
-          {pinnedNotes.length > 0 && otherNotes.length > 0 && (
-            <hr className="my-4 border-t border-gray-300 dark:border-dark-border-color" />
-          )}
           {otherNotes.length > 0 && (
              <section>
                 <SectionHeader>Recent</SectionHeader>
-                 <ul className="space-y-1 p-2">
-                  {otherNotes.map(note => (
+                 <ul className="p-2">
+                  {otherNotes.map((note) => (
                     <NoteListItem
                       key={note.id}
                       note={note}
@@ -240,5 +258,6 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
     </div>
   );
 };
+
 
 export default NoteList;

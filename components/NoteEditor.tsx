@@ -260,11 +260,17 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   };
   
   const handleTagInput = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    const isMobileTrigger = !isDesktop && e.key === ',';
+    const isDesktopTrigger = isDesktop && (e.key === 'Enter' || e.key === ',');
+    
+    if (isMobileTrigger || isDesktopTrigger) { // Trigger on comma for mobile, or Enter/comma for desktop
         e.preventDefault();
         const newTag = e.currentTarget.value.trim().toLowerCase();
-        if (newTag && !activeNote?.tags.includes(newTag)) {
-            onUpdateNote({ tags: [...(activeNote?.tags || []), newTag] });
+        // Remove trailing comma if present (from mobile input)
+        const finalTag = newTag.endsWith(',') ? newTag.slice(0, -1) : newTag;
+
+        if (finalTag && !activeNote?.tags.includes(finalTag)) {
+            onUpdateNote({ tags: [...(activeNote?.tags || []), finalTag] });
             e.currentTarget.value = '';
         }
     }
@@ -809,17 +815,17 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
 
   if (!activeNote) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center text-text-muted dark:text-dark-text-muted bg-bg-primary dark:bg-dark-bg-primary">
-        <FaPenNib className="w-24 h-24 mb-4 text-accent/50 dark:text-dark-accent/50 opacity-50" />
-        <h2 className="text-2xl font-bold text-text-primary dark:text-dark-text-primary">Select a note to get started</h2>
+      <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-dark-text-muted bg-gray-50 dark:bg-dark-bg-primary">
+        <FaPenNib className="w-24 h-24 mb-4 text-blue-400/50 dark:text-dark-accent/50 opacity-50" />
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary">Select a note to get started</h2>
         <p className="mt-2 text-lg">Or create a new one to capture your ideas!</p>
       </div>
     );
   }
 
   const editorPane = (
-      <div className="flex flex-col h-full bg-surface dark:bg-dark-surface relative" ref={editorContainerRef}>
-          <div className="p-3 sm:p-4 border-b border-border-color dark:border-dark-border-color">
+      <div className="flex flex-col h-full bg-gray-50 dark:bg-dark-surface relative" ref={editorContainerRef}>
+          <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-dark-border-color">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex-grow flex items-center">
                       <input
@@ -827,13 +833,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                           value={activeNote.title}
                           onChange={handleTitleChange}
                           placeholder="Untitled Note"
-                          className="flex-1 min-w-0 text-xl sm:text-2xl font-bold bg-transparent text-text-primary dark:text-dark-text-primary focus:outline-none placeholder:text-text-muted"
+                          className="flex-1 min-w-0 text-xl sm:text-2xl font-bold bg-transparent text-gray-900 dark:text-dark-text-primary focus:outline-none placeholder:text-gray-400"
                       />
                       <button
                           onClick={handleGenerateTitle}
                           disabled={isGeneratingTitle}
                           title="Generate title from content"
-                          className="flex-shrink-0 ml-2 p-1.5 text-text-secondary dark:text-dark-text-secondary hover:text-accent dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-md hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary"
+                          className="flex-shrink-0 ml-2 p-1.5 text-gray-600 dark:text-dark-text-secondary hover:text-blue-600 dark:hover:text-dark-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-md hover:bg-gray-100 dark:hover:bg-dark-bg-secondary"
                       >
                           {isGeneratingTitle
                               ? <LoadingSpinner />
@@ -842,12 +848,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                       </button>
                   </div>
                   {activeNote.isImported && (
-                      <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-800 flex-shrink-0 self-start sm:self-center">
+                      <div className="flex items-center gap-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 rounded-full border border-blue-300 dark:border-blue-800 flex-shrink-0 self-start sm:self-center">
                           <MdCloudDownload
-                              className="w-4 h-4 text-blue-500 dark:text-blue-400"
+                              className="w-4 h-4 text-blue-600 dark:text-blue-400"
                               title="This note was imported from a shared link"
                           />
-                          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          <span className="text-xs text-blue-700 dark:text-blue-400 font-medium">
                               Imported
                               {activeNote.importedAt && (
                                   <span className="ml-1 opacity-75 hidden sm:inline">
@@ -860,11 +866,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
               </div>
               <div className="flex items-center flex-wrap gap-2 mt-4">
                   {activeNote.tags.map(tag => <Tag key={tag} tag={tag} onRemove={removeTag} />)}
-                  <input 
+                  <input
                       type="text"
                       onKeyDown={handleTagInput}
                       placeholder="Add a tag..."
-                      className="bg-transparent text-sm focus:outline-none text-text-muted dark:text-dark-text-muted"
+                      className="bg-transparent text-sm focus:outline-none text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-dark-text-muted"
                   />
               </div>
           </div>
@@ -912,9 +918,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                   onFocus={() => {
                     // When textarea gets focus, set up selection monitoring for mobile
                     setTimeout(() => {
-                      if ('ontouchstart' in window) {
-                        handleSelectionChange();
-                      }
+                        if ('ontouchstart' in window) {
+                          handleSelectionChange();
+                        }
                     }, 500);
                   }}
 
@@ -923,18 +929,18 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                     WebkitTouchCallout: 'none', // Disable iOS callout menu
                     WebkitTapHighlightColor: 'transparent'
                   }}
-                  className="w-full h-full bg-transparent text-text-secondary dark:text-dark-text-secondary focus:outline-none resize-none leading-relaxed font-mono editor-textarea"
+                  className="w-full h-full bg-transparent text-gray-800 dark:text-dark-text-secondary focus:outline-none resize-none leading-relaxed font-mono editor-textarea"
                   placeholder="Start writing..."
               />
           </div>
-          <footer className="flex-shrink-0 p-2 border-t border-border-color dark:border-dark-border-color text-xs text-text-muted dark:text-dark-text-muted flex items-center justify-between">
+          <footer className="flex-shrink-0 p-2 border-t border-gray-200 dark:border-dark-border-color text-xs text-gray-500 dark:text-dark-text-muted flex items-center justify-between">
               <span>{activeNote.content.split(/\s+/).filter(Boolean).length} words</span>
               <span>Last updated: {new Date(activeNote.updatedAt).toLocaleString()}</span>
           </footer>
           {contextualMenu && (
-              <ContextualMenu 
-                  top={contextualMenu.top} 
-                  left={contextualMenu.left} 
+              <ContextualMenu
+                  top={contextualMenu.top}
+                  left={contextualMenu.left}
                   onAction={handleAiTextAction}
                   isLoading={isAiActionLoading}
                   selectedText={editorRef.current?.value.substring(
@@ -947,11 +953,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   );
   
   const previewPane = (
-      <div className="flex flex-col h-full bg-bg-primary dark:bg-dark-bg-primary relative">
+      <div className="flex flex-col h-full bg-gray-100 dark:bg-dark-bg-primary relative">
           {selectionNavigator && (
             <SelectionNavigator
-              top={selectionNavigator.top} 
-              left={selectionNavigator.left} 
+              top={selectionNavigator.top}
+              left={selectionNavigator.left}
               matchCount={selectionNavigator.matches.length}
               currentIndex={selectionNavigator.currentIndex}
               onNext={() => navigateMatches('next')}
@@ -977,18 +983,18 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                }
           }}>
             {/* Title Section */}
-            <div className="mb-6 pb-4 border-b border-border-color dark:border-dark-border-color">
+            <div className="mb-6 pb-4 border-b border-gray-200 dark:border-dark-border-color">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary dark:text-dark-text-primary break-words">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-dark-text-primary break-words">
                   {activeNote.title || 'Untitled Note'}
                 </h1>
                 {activeNote.isImported && (
-                  <div className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-full border border-blue-200 dark:border-blue-800 flex-shrink-0">
-                    <MdCloudDownload 
-                      className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 dark:text-blue-400" 
+                  <div className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100 dark:bg-blue-900/20 rounded-full border border-blue-300 dark:border-blue-800 flex-shrink-0">
+                    <MdCloudDownload
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400"
                       title="This note was imported from a shared link"
                     />
-                    <span className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium">
+                    <span className="text-xs sm:text-sm text-blue-700 dark:text-blue-400 font-medium">
                       <span className="hidden sm:inline">Imported</span>
                       <span className="sm:hidden">Imported</span>
                       {activeNote.importedAt && (
@@ -1003,9 +1009,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
               {activeNote.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {activeNote.tags.map(tag => (
-                    <span 
-                      key={tag} 
-                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent dark:bg-dark-accent/20 dark:text-dark-accent-hover"
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-dark-accent/20 dark:text-dark-accent-hover"
                     >
                       #{tag}
                     </span>
@@ -1014,7 +1020,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
               )}
             </div>
             {/* Content Section */}
-            <div 
+            <div
               className="prose prose-xs sm:prose-sm md:prose-base dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
               style={{ userSelect: 'text', cursor: 'text' }}
@@ -1022,15 +1028,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             />
           </div>
 
-          <div className="flex-shrink-0 p-2 sm:p-3 border-t border-border-color dark:border-dark-border-color">
+          <div className="flex-shrink-0 p-2 sm:p-3 border-t border-gray-200 dark:border-dark-border-color">
             {suggestedTags.length > 0 && (
                 <div className="mb-3">
-                    <div className="text-xs sm:text-sm font-semibold text-text-muted dark:text-dark-text-muted mb-2">
+                    <div className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-dark-text-muted mb-2">
                         Suggestions:
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {suggestedTags.map(tag => (
-                            <button key={tag} onClick={() => addSuggestedTag(tag)} className="text-xs sm:text-sm font-medium px-2.5 py-1.5 rounded-full bg-accent/10 text-accent dark:bg-dark-accent/20 dark:text-dark-accent-hover hover:bg-accent/20 dark:hover:bg-dark-accent/30 transition-colors whitespace-nowrap">
+                            <button key={tag} onClick={() => addSuggestedTag(tag)} className="text-xs sm:text-sm font-medium px-2.5 py-1.5 rounded-full bg-blue-100 text-blue-700 dark:bg-dark-accent/20 dark:text-dark-accent-hover hover:bg-blue-200 dark:hover:bg-dark-accent/30 transition-colors whitespace-nowrap">
                                 + {tag}
                             </button>
                         ))}
@@ -1038,22 +1044,22 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                 </div>
             )}
             <div className="flex justify-end items-center gap-2">
-            <button onClick={handleSuggestTags} disabled={isSuggestingTags} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
-            {isSuggestingTags ? <LoadingSpinner/> : <FaTag className="w-4 h-4 text-accent dark:text-dark-accent" />}
+            <button onClick={handleSuggestTags} disabled={isSuggestingTags} className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-gray-200 dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
+            {isSuggestingTags ? <LoadingSpinner/> : <FaTag className="w-4 h-4 text-blue-600 dark:text-dark-accent" />}
             <span className="hidden sm:inline">Suggest Tags</span>
             <span className="sm:hidden">Tags</span>
             </button>
-            <button onClick={handleSummarize} disabled={isSummarizing} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
-            {isSummarizing ? <LoadingSpinner/> : <FaMagic className="w-4 h-4 text-accent dark:text-dark-accent" />}
+            <button onClick={handleSummarize} disabled={isSummarizing} className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-gray-200 dark:hover:bg-dark-border-color transition-colors disabled:opacity-50">
+            {isSummarizing ? <LoadingSpinner/> : <FaMagic className="w-4 h-4 text-blue-600 dark:text-dark-accent" />}
             <span className="hidden md:inline">Summarize</span>
             <span className="md:hidden">Summary</span>
             </button>
-            <button onClick={() => setIsShareModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">
-            <MdShare className="w-4 h-4 text-accent dark:text-dark-accent" />
+            <button onClick={() => setIsShareModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-gray-200 dark:hover:bg-dark-border-color transition-colors">
+            <MdShare className="w-4 h-4 text-blue-600 dark:text-dark-accent" />
                <span className="hidden lg:inline">Share</span>
               </button>
-            <button onClick={() => setIsDownloadModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-bg-secondary dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-border-color dark:hover:bg-dark-border-color transition-colors">
-            <FaDownload className="w-4 h-4 text-accent dark:text-dark-accent" />
+            <button onClick={() => setIsDownloadModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-gray-200 dark:hover:bg-dark-border-color transition-colors">
+            <FaDownload className="w-4 h-4 text-blue-600 dark:text-dark-accent" />
                <span className="hidden lg:inline">Download</span>
               </button>
                <button onClick={() => setIsDeleteModalOpen(true)} className="p-2 rounded-md hover:bg-red-500/10 text-red-500 transition-colors">
@@ -1080,9 +1086,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
           ) : (
               // Mobile view with toggle
               <div className="h-full flex flex-col">
-                  <div className="flex-shrink-0 flex p-1 bg-bg-secondary dark:bg-dark-bg-secondary border-b border-border-color dark:border-dark-border-color">
-                      <button onClick={() => setMobileView('editor')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'editor' ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent' : 'text-text-muted dark:text-dark-text-muted'}`}><FaPencil className="w-5 h-5 mx-auto"/></button>
-                      <button onClick={() => setMobileView('preview')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'preview' ? 'bg-surface dark:bg-dark-surface text-accent dark:text-dark-accent' : 'text-text-muted dark:text-dark-text-muted'}`}><FaEye className="w-5 h-5 mx-auto"/></button>
+                  <div className="flex-shrink-0 flex p-1 bg-gray-200 dark:bg-dark-bg-secondary border-b border-gray-300 dark:border-dark-border-color">
+                      <button onClick={() => setMobileView('editor')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'editor' ? 'bg-gray-50 dark:bg-dark-surface text-blue-600 dark:text-dark-accent' : 'text-gray-500 dark:text-dark-text-muted'}`}><FaPencil className="w-5 h-5 mx-auto"/></button>
+                      <button onClick={() => setMobileView('preview')} className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${mobileView === 'preview' ? 'bg-gray-50 dark:bg-dark-surface text-blue-600 dark:text-dark-accent' : 'text-gray-500 dark:text-dark-text-muted'}`}><FaEye className="w-5 h-5 mx-auto"/></button>
                   </div>
                   <div className="flex-grow overflow-hidden">
                     {mobileView === 'editor' ? editorPane : previewPane}

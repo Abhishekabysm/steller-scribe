@@ -327,7 +327,7 @@ const AppContent: React.FC = () => {
           }
         }
       `}</style>
-      <header className="flex-shrink-0 bg-surface dark:bg-dark-surface border-b border-border-color dark:border-dark-border-color px-4 py-3 flex items-center justify-between z-30 shadow-sm">
+      <header className="flex-shrink-0 bg-header-background dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border-color px-4 py-3 flex items-center justify-between z-30 shadow-sm">
         <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -440,7 +440,7 @@ const AppContent: React.FC = () => {
   
   {/* View Mode Controls - Only show on desktop when note is active */}
   {window.innerWidth > 768 && activeNote && (
-    <div className="relative hidden lg:flex items-center bg-white dark:bg-gray-900/60 backdrop-blur-sm rounded-lg p-1 border border-gray-500 dark:border-gray-800/40">
+    <div className="relative hidden lg:flex items-center bg-gray-200 dark:bg-gray-900/60 backdrop-blur-sm rounded-lg p-1 border border-gray-300 dark:border-gray-800/40">
       {/* Sliding active indicator */}
       <div
         className="absolute top-1 bottom-1 bg-blue-200 dark:bg-gray-800 rounded-md shadow-sm border border-blue-400 dark:border-gray-700/60 transition-all duration-300 ease-in-out"
@@ -494,7 +494,7 @@ const AppContent: React.FC = () => {
   </button>
 </div>
       </header>
-      <main className="flex-grow flex overflow-hidden relative">
+      <main className="flex-grow flex overflow-hidden relative bg-gray-100 dark:bg-dark-bg-primary">
         {isSidebarOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-10 md:hidden animate-fade-in"

@@ -259,20 +259,28 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     if (contextualMenu) setContextualMenu(null);
   };
   
-  const handleTagInput = (e: KeyboardEvent<HTMLInputElement>) => {
-    const isMobileTrigger = !isDesktop && e.key === ',';
-    const isDesktopTrigger = isDesktop && (e.key === 'Enter' || e.key === ',');
-    
-    if (isMobileTrigger || isDesktopTrigger) { // Trigger on comma for mobile, or Enter/comma for desktop
-        e.preventDefault();
-        const newTag = e.currentTarget.value.trim().toLowerCase();
-        // Remove trailing comma if present (from mobile input)
-        const finalTag = newTag.endsWith(',') ? newTag.slice(0, -1) : newTag;
+  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const newTag = e.currentTarget.value.trim().toLowerCase();
+      if (newTag && !activeNote?.tags.includes(newTag)) {
+        onUpdateNote({ tags: [...(activeNote?.tags || []), newTag] });
+      }
+      e.currentTarget.value = ''; // Clear the input field
+    }
+  };
 
-        if (finalTag && !activeNote?.tags.includes(finalTag)) {
-            onUpdateNote({ tags: [...(activeNote?.tags || []), finalTag] });
-            e.currentTarget.value = '';
-        }
+  const handleTagKeyUp = (e: KeyboardEvent<HTMLInputElement>) => {
+    // Check if the key pressed was a comma, or if the value now contains a comma
+    // The second check is crucial for mobile keyboards where e.key might not be ','
+    if (e.key === ',' || e.currentTarget.value.includes(',')) {
+      e.preventDefault(); // Prevent the comma from being typed if it's not already
+      const newTag = e.currentTarget.value.split(',')[0].trim().toLowerCase();
+      
+      if (newTag && !activeNote?.tags.includes(newTag)) {
+        onUpdateNote({ tags: [...(activeNote?.tags || []), newTag] });
+      }
+      e.currentTarget.value = ''; // Clear the input field
     }
   };
 
@@ -868,7 +876,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
                   {activeNote.tags.map(tag => <Tag key={tag} tag={tag} onRemove={removeTag} />)}
                   <input
                       type="text"
-                      onKeyDown={handleTagInput}
+                      onKeyDown={handleTagKeyDown}
+                      onKeyUp={handleTagKeyUp}
                       placeholder="Add a tag..."
                       className="bg-transparent text-sm focus:outline-none text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-dark-text-muted"
                   />

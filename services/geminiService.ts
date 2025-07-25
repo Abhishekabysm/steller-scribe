@@ -175,7 +175,7 @@ export const generateTitle = async (text: string): Promise<string> => {
     
     try {
         const client = getAiClient();
-        const prompt = `Provide a concise and descriptive title (5 words or less) for the following note content. Only output the title without any extra punctuation or quotes:\n\n${text}`;
+        const prompt = `Generate a very short, concise, and to-the-point title (ideally 3-5 words) for the following note. The title should directly reflect the main subject of the content. Output only the title itself.\n\nNote Content:\n"""\n${text}\n"""`;
         
         const response = await client.models.generateContent({
             model: "gemini-2.5-flash",

@@ -20,8 +20,6 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: {
               vendor: ['react', 'react-dom'],
-              cmdk: ['cmdk'],
-              radix: ['@radix-ui/react-dialog', '@radix-ui/react-dismissable-layer', '@radix-ui/react-portal', '@radix-ui/react-focus-guards', '@radix-ui/react-presence', '@radix-ui/react-focus-scope'],
             },
           },
         },

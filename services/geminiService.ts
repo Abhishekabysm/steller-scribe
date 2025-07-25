@@ -86,14 +86,26 @@ export const suggestTagsForText = async (text: string): Promise<string[]> => {
     }
 }
 
-export const generateNoteContent = async (topic: string, language: string): Promise<string> => {
+export const generateNoteContent = async (
+    topic: string,
+    language: string,
+    contentStyle?: string | null,
+    contentLength?: string | null
+): Promise<string> => {
     if (!topic || topic.trim().length === 0) {
         return "Please provide a topic to generate a note.";
     }
 
     try {
         const client = getAiClient();
-        const prompt = `Generate a well-structured and comprehensive note about "${topic}". The note should be written in ${language}. It must be in Markdown format. Include a main title (as a H1, e.g., # Title), several sections with headings (as H2s, e.g., ## Section), use bullet points or numbered lists for details, and emphasize key terms using bold text.`;
+        let prompt = `Generate a well-structured and comprehensive note about "${topic}". The note should be written in ${language}. It must be in Markdown format. Include a main title (as a H1, e.g., # Title), several sections with headings (as H2s, e.g., ## Section), use bullet points or numbered lists for details, and emphasize key terms using bold text.`;
+
+        if (contentStyle) {
+            prompt += ` The content style should be ${contentStyle}.`;
+        }
+        if (contentLength) {
+            prompt += ` The content should be ${contentLength} in length.`;
+        }
 
         const response = await client.models.generateContent({
             model: "gemini-2.5-flash",

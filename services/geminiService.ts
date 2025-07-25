@@ -138,6 +138,10 @@ export const performTextAction = async (text: string, action: AITextAction, lang
             case 'beautify':
                 prompt = `Reformat and enhance the following text to be clean, well-structured, and visually appealing. Use proper Markdown formatting, including appropriate headings (H1, H2, H3), bullet points or numbered lists, bold text, and code blocks for any code snippets. Ensure clarity, flow, and conciseness. Only output the reformatted text.\n\nText: "${text}"`;
                 break;
+            case 'modify-expand':
+                // Here, 'language' parameter is repurposed to carry the user's instructions
+                prompt = `Given the following text: "${text}", please modify or expand it according to these instructions: "${language}". Only output the modified/expanded text.`;
+                break;
             default:
                 throw new Error("Invalid AI text action.");
         }
@@ -153,7 +157,7 @@ export const performTextAction = async (text: string, action: AITextAction, lang
         if (!response.text) {
             throw new Error("Failed to perform action - empty response from AI");
         }
-        return response.text.replace(/```(text|json|)\s*|\s*```/g, '').trim();
+        return response.text.trim();
     } catch (error) {
         console.error(`Error performing AI text action "${action}":`, error);
         if (error instanceof Error) {

@@ -1,6 +1,6 @@
 import React, { useState} from 'react';
 import { AITextAction } from '../types';
-import { FaWandSparkles, FaCompress, FaLanguage, FaBookOpen } from 'react-icons/fa6';
+import { FaWandSparkles, FaCompress, FaLanguage, FaBookOpen, FaPencil } from 'react-icons/fa6';
 import { FaCheckCircle } from 'react-icons/fa';
 import { getWordMeaning } from '../services/dictionaryService';
 
@@ -16,6 +16,7 @@ const actionButtons = [
     { action: 'improve', icon: FaWandSparkles, title: 'Improve writing clarity and flow' },
     { action: 'fix-grammar', icon: FaCheckCircle, title: 'Correct spelling and grammar' },
     { action: 'shorten', icon: FaCompress, title: 'Make text more concise' },
+    { action: 'modify-expand', icon: FaPencil, title: 'Modify or expand text with AI' },
 ] as const;
 
 const languages = ['English', 'Spanish', 'French', 'German', 'Hindi', 'Japanese'] as const;

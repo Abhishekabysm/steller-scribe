@@ -17,6 +17,7 @@ import DownloadModal from './DownloadModal';
 import SelectionNavigator from './SelectionNavigator';
 import SummaryModal from './SummaryModal';
 import ShareModal from './ShareModal';
+import AIModifyModal from './AIModifyModal'; // Import the new modal
 import { MdCloudDownload } from 'react-icons/md';
 
 declare const marked: any;
@@ -56,6 +57,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [summaryContent, setSummaryContent] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isAIModifyModalOpen, setIsAIModifyModalOpen] = useState(false); // New state for AIModifyModal
+  const [textToModify, setTextToModify] = useState(''); // State to hold text for AI modification
   
   // State for selection navigation
   const [selectionNavigator, setSelectionNavigator] = useState<{
@@ -71,6 +74,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const { addToast } = useToasts();
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
+const previewPaneRef = useRef<HTMLDivElement>(null);
+  const mutationObserverRef = useRef<MutationObserver | null>(null);
 
   useEffect(() => {
     // Initialize Marked and Highlight.js here, in the component that uses them.
@@ -103,7 +108,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
 
   // Function to process URLs and add copy buttons to code blocks
   const processPreviewContent = useCallback(() => {
-    const previewPane = document.querySelector('.preview-pane');
+    const previewPane = previewPaneRef.current || document.querySelector('.preview-pane');
     if (!previewPane) return;
 
     // Add target="_blank" and rel="noopener noreferrer" to all links
@@ -129,7 +134,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       }
 
       const buttonContainer = document.createElement('div');
-      buttonContainer.className = 'copy-button-container absolute top-2 right-2 z-10'; // Added z-10 for better layering
+      buttonContainer.className = 'copy-button-container absolute top-2 right-2 z-60'; // Increased z-index from z-10 to z-60
 
      const copyButton = document.createElement('button');
      copyButton.className = 'p-1.5 rounded-md bg-bg-secondary dark:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors flex items-center justify-center gap-1 shadow-sm';
@@ -174,26 +179,61 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
       preBlock.appendChild(buttonContainer);
     });
 
-  }, []);
+  }, [addToast]); // Add addToast to dependencies
 
+  // FIXED: Replace the existing useEffect with MutationObserver approach
   useEffect(() => {
-    if (typeof hljs !== 'undefined') {
-      // Use a small delay to ensure DOM is ready after dangerouslySetInnerHTML updates
-      const timer = setTimeout(() => {
+    if (typeof hljs !== 'undefined' && previewPaneRef.current) {
+      // Initial processing
+      const processContent = () => {
         const blocks = document.querySelectorAll('pre code');
         blocks.forEach((block) => {
           if (!block.classList.contains('hljs')) {
             hljs.highlightElement(block);
           }
         });
-        // Always attempt to add copy buttons after highlighting,
-        // and add click-to-copy for inline code.
         processPreviewContent();
-      }, 100); // Reduced delay for quicker button appearance
-      
-      return () => clearTimeout(timer);
+      };
+
+      // Setup MutationObserver to watch for changes
+      if (mutationObserverRef.current) {
+        mutationObserverRef.current.disconnect();
+      }
+
+      mutationObserverRef.current = new MutationObserver((mutations) => {
+        let shouldProcess = false;
+        
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList' ||
+              mutation.type === 'characterData') {
+            shouldProcess = true;
+          }
+        });
+
+        if (shouldProcess) {
+          // Small delay to ensure DOM is stable
+          setTimeout(processContent, 100);
+        }
+      });
+
+      // Start observing
+      mutationObserverRef.current.observe(previewPaneRef.current, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+
+      // Initial processing
+      setTimeout(processContent, 100);
+
+      // Cleanup
+      return () => {
+        if (mutationObserverRef.current) {
+          mutationObserverRef.current.disconnect();
+        }
+      };
     }
-  }, [renderedMarkdown, processPreviewContent, viewMode, mobileView]); // Dependencies for re-running effect
+  }, [renderedMarkdown, processPreviewContent]);
 
 
   // Reset suggestions when activeNote changes
@@ -693,7 +733,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         if (action === 'dictionary') {
             const meaning = await getWordMeaning(selectedText, language || 'en');
             addToast(`"${selectedText}" → ${meaning}`, 'info');
-        } else {
+        } else if (action === 'modify-expand') {
+            setTextToModify(selectedText);
+            setIsAIModifyModalOpen(true);
+        }
+        else {
             const modifiedText = await performTextAction(selectedText, action, language);
             
             // Use execCommand for undo-friendly text replacement
@@ -721,6 +765,39 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
     } finally {
         setIsAiActionLoading(false);
         setContextualMenu(null);
+    }
+  };
+
+  const handleModifyTextWithAI = async (selectedText: string, instructions: string) => {
+    setIsAiActionLoading(true);
+    try {
+        const modifiedText = await performTextAction(selectedText, 'modify-expand', instructions); // Re-use performTextAction for now
+        const textarea = editorRef.current;
+        if (textarea) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            textarea.focus();
+            textarea.setSelectionRange(start, end);
+            document.execCommand('insertText', false, modifiedText);
+            onUpdateNote({ content: textarea.value });
+
+            const editorWrapper = document.querySelector('.editor-textarea-wrapper');
+            if (editorWrapper) {
+                editorWrapper.classList.add('flash-glow');
+                setTimeout(() => editorWrapper.classList.remove('flash-glow'), 600);
+            }
+
+            setTimeout(() => {
+                textarea.focus();
+                textarea.setSelectionRange(start, start + modifiedText.length);
+            }, 0);
+        }
+        setIsAIModifyModalOpen(false);
+        addToast('Text modified successfully!', 'success');
+    } catch (error) {
+        addToast(error instanceof Error ? error.message : `AI modification failed.`, 'error');
+    } finally {
+        setIsAiActionLoading(false);
     }
   };
 
@@ -1030,6 +1107,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
             </div>
             {/* Content Section */}
             <div
+              ref={previewPaneRef} // Attach ref to the preview pane
               className="prose prose-xs sm:prose-sm md:prose-base dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
               style={{ userSelect: 'text', cursor: 'text' }}
@@ -1125,6 +1203,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
         isGenerating={isGeneratingNote}
         onClose={() => setIsAIGenerateModalOpen(false)}
         onGenerate={handleGenerateNote}
+      />
+
+      <AIModifyModal
+        isOpen={isAIModifyModalOpen}
+        onClose={() => setIsAIModifyModalOpen(false)}
+        onModify={handleModifyTextWithAI}
+        isLoading={isAiActionLoading}
+        selectedText={textToModify}
       />
 
       <DownloadModal

@@ -131,8 +131,8 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  const addNote = useCallback(() => {
-    const newNote: Note = {
+  const addNote = useCallback((noteToAdd?: Note) => {
+    const newNote: Note = noteToAdd || {
       id: crypto.randomUUID(),
       title: 'New Note',
       content: '# Welcome to your new note!\n\nStart typing here.',
@@ -140,10 +140,11 @@ const AppContent: React.FC = () => {
       updatedAt: Date.now(),
       tags: [],
       isPinned: false,
+      isImported: false, // Ensure this is explicitly set for default notes
     };
     setNotes(prevNotes => [newNote, ...prevNotes]);
     selectNote(newNote.id);
-    addToast('New note created!', 'success');
+    addToast(noteToAdd ? 'Note generated successfully!' : 'New note created!', 'success');
   }, [setNotes, selectNote, addToast]);
 
   const deleteNote = useCallback((id: string) => {
@@ -537,6 +538,7 @@ const AppContent: React.FC = () => {
             activeNote={activeNote}
             onUpdateNote={updateNote}
             onDeleteNote={deleteNote}
+            onAddNote={addNote}
             viewMode={viewMode}
           />
         </section>

@@ -27,6 +27,7 @@ interface NoteEditorProps {
   activeNote: Note | undefined;
   onUpdateNote: (note: Partial<Note>) => void;
   onDeleteNote: (id: string) => void;
+  onAddNote: (note: Note) => void;
   viewMode?: 'split' | 'editor' | 'preview';
 }
 
@@ -43,7 +44,7 @@ const Tag: React.FC<{ tag: string; onRemove: (tag: string) => void }> = ({ tag, 
   </div>
 );
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDeleteNote, viewMode = 'split' }) => {
+const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDeleteNote, onAddNote, viewMode = 'split' }) => {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -449,7 +450,17 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
     setIsGeneratingNote(true);
     try {
         const content = await generateNoteContent(topic, language);
-        onUpdateNote({ title: topic, content: content });
+        const newNote: Note = {
+          id: Date.now().toString(), // Simple unique ID
+          title: topic,
+          content: content,
+          tags: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          isPinned: false,
+          isImported: false,
+        };
+        onAddNote(newNote); // Add the new note instead of updating the current one
         addToast('Note generated successfully!', 'success');
         setIsAIGenerateModalOpen(false);
     } catch (error) {

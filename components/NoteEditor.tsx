@@ -1057,7 +1057,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                   )}
               </div>
               <div className="flex items-center flex-wrap gap-2 mt-4">
-                  {activeNote.tags.map(tag => <Tag key={tag} tag={tag} onRemove={removeTag} />)}
+                  {(activeNote.tags ?? []).map(tag => <Tag key={tag} tag={tag} onRemove={removeTag} />)}
                   <input
                       type="text"
                       onKeyDown={handleTagKeyDown}
@@ -1218,7 +1218,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                   </div>
                 )}
               </div>
-              {activeNote.tags.length > 0 && (
+              {activeNote && activeNote.tags && activeNote.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {activeNote.tags.map(tag => (
                     <span

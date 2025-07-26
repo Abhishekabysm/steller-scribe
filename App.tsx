@@ -20,10 +20,25 @@ const AppContent: React.FC = () => {
   const [activeNoteId, setActiveNoteId] = useLocalStorage<string | null>('stellar-scribe-active-note-id', null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useLocalStorage('stellar-scribe-sidebar-open', window.innerWidth > 768);
+  const [hasMigrated, setHasMigrated] = useLocalStorage<boolean>('stellar-scribe-migrated-v2', false);
   const [theme, toggleTheme] = useTheme();
   const [sortOption, setSortOption] = useState<SortOption>('updatedAt');
   const [viewMode, setViewMode] = useState<'split' | 'editor' | 'preview'>('split');
   const [sharedNote, setSharedNote] = useState<any>(null);
+
+  // Helper function to update notes state with de-duplication and sorting
+  const updateNotesState = useCallback((newNotes: Note[], currentNotes: Note[]) => {
+    const allNotesMap = new Map<string, Note>();
+
+    // Add current notes first
+    currentNotes.forEach(note => allNotesMap.set(note.id, note));
+
+    // Add new notes, overwriting if IDs conflict (ensures latest version is kept)
+    newNotes.forEach(note => allNotesMap.set(note.id, note));
+
+    // Convert Map values back to an array and sort by updatedAt descending
+    return Array.from(allNotesMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+  }, []);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -62,13 +77,67 @@ const AppContent: React.FC = () => {
     }
   }, [addToast]);
 
+  // Effect to migrate notes from old local storage keys
+  useEffect(() => {
+    if (!hasMigrated) {
+      const oldNoteKeys: string[] = [];
+      const migratedNotes: Note[] = [];
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('note_versions_')) {
+          try {
+            const item = localStorage.getItem(key);
+            if (item) {
+              const parsed = JSON.parse(item);
+              // Check if it's an array of notes or a single note
+              if (Array.isArray(parsed)) {
+                migratedNotes.push(...parsed);
+              } else if (parsed && typeof parsed === 'object' && parsed.id && parsed.title && parsed.content) {
+                migratedNotes.push(parsed);
+              }
+            }
+          } catch (error) {
+            console.error(`Error parsing old note key ${key}:`, error);
+          }
+          oldNoteKeys.push(key);
+        }
+      }
+
+      if (migratedNotes.length > 0) {
+        setNotes((prevNotes) => updateNotesState(migratedNotes, prevNotes));
+        addToast(`Migrated ${migratedNotes.length} notes from old storage!`, 'success');
+      }
+
+      // Clean up old keys
+      oldNoteKeys.forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      // Also remove the generic 'note_versions' key if it exists and is empty
+      if (localStorage.getItem('note_versions') === '[]') {
+        localStorage.removeItem('note_versions');
+      }
+
+      setHasMigrated(true); // Mark migration as complete
+    }
+  }, [hasMigrated, setNotes, addToast, setHasMigrated]);
+
   // Effect to set the initial active note
   useEffect(() => {
     const sortedNotes = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
     if (activeNoteId === null && sortedNotes.length > 0) {
       setActiveNoteId(sortedNotes[0].id);
+    } else if (activeNoteId !== null && !notes.some(note => note.id === activeNoteId)) {
+        // If active note was deleted or not found after migration, select the latest one
+        if (sortedNotes.length > 0) {
+            setActiveNoteId(sortedNotes[0].id);
+        } else {
+            setActiveNoteId(null);
+        }
     }
-  }, [notes, activeNoteId]);
+  }, [notes, activeNoteId, setActiveNoteId]);
+
 
 
   // Effect to update placeholder text on resize
@@ -142,7 +211,7 @@ const AppContent: React.FC = () => {
       isPinned: false,
       isImported: false, // Ensure this is explicitly set for default notes
     };
-    setNotes(prevNotes => [newNote, ...prevNotes]);
+    setNotes(prevNotes => updateNotesState([newNote], prevNotes));
     selectNote(newNote.id);
     addToast(noteToAdd ? 'Note generated successfully!' : 'New note created!', 'success');
   }, [setNotes, selectNote, addToast]);
@@ -166,13 +235,14 @@ const AppContent: React.FC = () => {
   const updateNote = useCallback((updatedFields: Partial<Note>) => {
     if (!activeNoteId) return;
 
-    setNotes(prevNotes => 
-      prevNotes.map(note => 
-        note.id === activeNoteId 
-          ? { ...note, ...updatedFields, updatedAt: Date.now() } 
+    setNotes(prevNotes => {
+      const updatedNotes = prevNotes.map(note =>
+        note.id === activeNoteId
+          ? { ...note, ...updatedFields, updatedAt: Date.now() }
           : note
-      )
-    );
+      );
+      return updateNotesState(updatedNotes, prevNotes);
+    });
   }, [activeNoteId, setNotes]);
   
   const togglePinNote = useCallback((id: string) => {
@@ -181,9 +251,10 @@ const AppContent: React.FC = () => {
           if (noteToPin && window.innerWidth > 768) {
               addToast(noteToPin.isPinned ? `Unpinned "${noteToPin.title}"` : `Pinned "${noteToPin.title}"`, 'info');
           }
-          return prevNotes.map(note => 
+          const updatedNotes = prevNotes.map(note =>
               note.id === id ? { ...note, isPinned: !note.isPinned } : note
-          )
+          );
+          return updateNotesState(updatedNotes, prevNotes);
       });
   }, [setNotes, addToast]);
 
@@ -203,7 +274,7 @@ const AppContent: React.FC = () => {
       importedAt: now, // Store import timestamp
     };
     
-    setNotes(prevNotes => [newNote, ...prevNotes]);
+    setNotes(prevNotes => updateNotesState([newNote], prevNotes));
     selectNote(newNote.id);
     setIsImportModalOpen(false);
     setSharedNote(null);
@@ -223,6 +294,7 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleConfirmDelete = useCallback(() => {
+    console.log('App.tsx: Confirmation to delete note received for:', noteToDelete?.id);
     if (noteToDelete) {
       deleteNote(noteToDelete.id);
       setNoteToDelete(null);
@@ -518,6 +590,7 @@ const AppContent: React.FC = () => {
             className={`absolute md:relative z-20 h-full flex-shrink-0 border-r border-border-color dark:border-dark-border-color w-full max-w-xs transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
           >
             <NoteList
+              key={notes.length} // Add a key to force re-render on notes change
               notes={notes}
               activeNoteId={activeNoteId}
               onSelectNote={selectNote}

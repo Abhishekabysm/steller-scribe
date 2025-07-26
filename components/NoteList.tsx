@@ -53,6 +53,7 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    console.log('NoteListItem: Delete button clicked for note:', note.id);
     onDelete(note);
   };
 
@@ -103,7 +104,7 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
             : 'text-gray-500 dark:text-dark-text-muted'
         }`}>
           <span className="mr-2">{date}</span>
-          {note.content.substring(0, 30).replace(/#|`|\*|\[|\]/g, '')}...
+          {(note.content || '').substring(0, 30).replace(/#|`|\*|\[|\]/g, '')}...
         </p>
       </div>
       {note.tags && note.tags.length > 0 && (
@@ -189,7 +190,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
       </div>
       <div className="p-3 border-b border-gray-200 dark:border-dark-border-color">
         <button
-          onClick={onAddNote}
+          onClick={() => onAddNote()}
           className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-dark-accent dark:hover:bg-dark-accent/90 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
         >
           <FaPlus className="w-4 h-4 flex-shrink-0" />
@@ -245,7 +246,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, activeNoteId, onSelectNote, 
             </p>
             {!searchTerm && (
                 <button
-                    onClick={onAddNote}
+                    onClick={() => onAddNote()}
                     className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-dark-accent dark:hover:bg-dark-accent-hover transition-colors font-semibold"
                 >
                     <FaPlus className="w-5 h-5" />

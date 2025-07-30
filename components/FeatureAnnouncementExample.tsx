@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaWandMagicSparkles, FaLightbulb } from 'react-icons/fa6';
+import { FaLightbulb } from 'react-icons/fa6';
 import FeatureAnnouncementModal from './FeatureAnnouncementModal';
 import { useSessionStorage } from '../hooks/useSessionStorage';
 import { useToasts } from '../hooks/useToasts';
@@ -56,58 +56,6 @@ const FeatureAnnouncementManager: React.FC = () => {
         onClick: () => {
           addToast('💡 You can enable smart suggestions anytime from the editor toolbar', 'info');
         },
-      },
-    },
-    {
-      featureId: 'ai-summary-v2',
-      featureName: 'AI Summary',
-      title: '✨ Introducing AI Summary',
-      description: 'Transform lengthy notes into concise, intelligent summaries with AI.',
-      visual: {
-        type: 'icon',
-        iconComponent: FaWandMagicSparkles,
-      },
-      primaryAction: {
-        label: 'Try it now',
-        onClick: () => {
-          addToast('🎉 AI Summary feature activated! Look for the magic wand icon in your note toolbar.', 'success');
-        },
-      },
-      dismissAction: {
-        label: 'Maybe later',
-        onClick: () => {
-          addToast('💡 You can access AI Summary anytime from the note toolbar', 'info');
-        },
-      },
-    },
-    {
-      featureId: 'enhanced-search-v3',
-      featureName: 'Smart Search',
-      title: '🔍 Enhanced Smart Search',
-      description: 'Find notes faster with intelligent, context-aware search.',
-      primaryAction: {
-        label: 'Explore search',
-        onClick: () => {
-          addToast('🔍 Try searching for anything in the search bar above!', 'info');
-        },
-      },
-      dismissAction: {
-        label: 'Got it',
-      },
-    },
-    {
-      featureId: 'export-share-v1',
-      featureName: 'Export & Share',
-      title: '📤 Export & Share Your Notes',
-      description: 'Export as PDF/Word or create shareable links for collaboration.',
-      primaryAction: {
-        label: 'Learn more',
-        onClick: () => {
-          addToast('📋 Find export and share options in each note\'s menu (⋯)', 'success');
-        },
-      },
-      dismissAction: {
-        label: 'Thanks',
       },
     },
   ];

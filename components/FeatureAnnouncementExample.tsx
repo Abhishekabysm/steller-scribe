@@ -136,7 +136,7 @@ const FeatureAnnouncementManager: React.FC = () => {
     setIsInitialized(true);
   }, [dismissedFeatures, isInitialized]);
 
-  const handleClose = () => {
+  const handleClose = (shouldShowNext: boolean = true) => {
     if (!activeAnnouncement) return;
 
     const dismissedId = activeAnnouncement.featureId;
@@ -148,17 +148,20 @@ const FeatureAnnouncementManager: React.FC = () => {
     const newDismissedFeatures = [...dismissedFeatures, dismissedId];
     setDismissedFeatures(newDismissedFeatures);
     
-    // Find the next announcement in the queue
-    const currentIndex = ANNOUNCEMENT_QUEUE.findIndex(a => a.featureId === dismissedId);
-    const nextAnnouncement = ANNOUNCEMENT_QUEUE.slice(currentIndex + 1).find(
-      config => !newDismissedFeatures.includes(config.featureId)
-    );
+    // Only show next announcement if shouldShowNext is true (i.e., user dismissed, not engaged)
+    if (shouldShowNext) {
+      // Find the next announcement in the queue
+      const currentIndex = ANNOUNCEMENT_QUEUE.findIndex(a => a.featureId === dismissedId);
+      const nextAnnouncement = ANNOUNCEMENT_QUEUE.slice(currentIndex + 1).find(
+        config => !newDismissedFeatures.includes(config.featureId)
+      );
 
-    // Show the next announcement after a longer delay to avoid overwhelming the user
-    if (nextAnnouncement) {
-      setTimeout(() => {
-        setActiveAnnouncement(nextAnnouncement);
-      }, 1000); // 1 second delay between announcements
+      // Show the next announcement after a longer delay to avoid overwhelming the user
+      if (nextAnnouncement) {
+        setTimeout(() => {
+          setActiveAnnouncement(nextAnnouncement);
+        }, 1000); // 1 second delay between announcements
+      }
     }
   };
   
@@ -166,7 +169,8 @@ const FeatureAnnouncementManager: React.FC = () => {
     if (activeAnnouncement?.primaryAction?.onClick) {
       activeAnnouncement.primaryAction.onClick();
     }
-    handleClose();
+    // When user clicks primary action, don't show next modal (they're engaged!)
+    handleClose(false);
   };
 
   // --- Development Controls ---

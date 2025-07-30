@@ -11,6 +11,7 @@ import ImportModal from './components/ImportModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import SummaryModal from './components/SummaryModal'; 
 import CommandPalette from './components/CommandPalette'; 
+import FeatureAnnouncementManager from './components/FeatureAnnouncementExample';
 import { summarizeText } from './services/geminiService';
 import { FaBars, FaXmark } from 'react-icons/fa6';
 import { FaSun, FaMoon, FaSearch, FaStar } from 'react-icons/fa';
@@ -664,6 +665,9 @@ const AppContent: React.FC = () => {
         notes={notes}
         theme={theme}
       />
+
+      {/* Feature Announcements */}
+      <FeatureAnnouncementManager />
     </div>
   );
 };

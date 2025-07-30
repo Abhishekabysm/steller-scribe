@@ -38,7 +38,7 @@ const SplitPane: React.FC<SplitPaneProps> = ({ left, right }) => {
 
   return (
     <div ref={containerRef} className="flex h-full w-full overflow-hidden split-pane-container">
-      <div style={{ width: `${dividerPosition}%` }} className="h-full overflow-hidden">
+      <div style={{ width: `${dividerPosition}%` }} className="h-full overflow-hidden flex-shrink-0">
         {left}
       </div>
       <div 
@@ -60,7 +60,7 @@ const SplitPane: React.FC<SplitPaneProps> = ({ left, right }) => {
         {/* Hover glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/5 to-transparent dark:via-dark-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-sm"></div>
       </div>
-      <div style={{ width: `calc(100% - ${dividerPosition}% - 16px)` }} className="h-full overflow-hidden">
+      <div style={{ width: `${100 - dividerPosition}%` }} className="h-full overflow-hidden flex-shrink-0">
         {right}
       </div>
     </div>

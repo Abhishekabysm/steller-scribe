@@ -7,12 +7,12 @@ let ai: GoogleGenAI | null = null;
 // Lazy-initialize the AI client to avoid crashing on load
 const getAiClient = () => {
     if (!ai) {
-        if (!process.env.API_KEY) {
+        if (!import.meta.env.VITE_GEMINI_API_KEY) {
             // This error will now only be thrown if the user tries to use an AI feature
             // without a configured API key, instead of on app startup.
-            throw new Error("API_KEY environment variable not set. Please configure it to use AI features.");
+            throw new Error("VITE_GEMINI_API_KEY environment variable not set. Please configure it to use AI features.");
         }
-        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
     }
     return ai;
 };

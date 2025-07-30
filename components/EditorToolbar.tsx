@@ -1,6 +1,6 @@
 /// <reference path="../types/speechRecognition.d.ts" />
 import React, { useState } from 'react';
-import { FaBold, FaItalic, FaUnderline, FaLink, FaCode, FaListUl, FaStrikethrough, FaQuoteRight, FaListCheck, FaMinus, FaEllipsis, FaWandMagicSparkles, FaHeading, FaMicrophone, FaStop } from 'react-icons/fa6';
+import { FaBold, FaItalic, FaUnderline, FaLink, FaCode, FaListUl, FaStrikethrough, FaQuoteRight, FaListCheck, FaMinus, FaEllipsis, FaWandMagicSparkles, FaHeading, FaMicrophone, FaStop, FaLightbulb } from 'react-icons/fa6';
 import { FaRegStar } from 'react-icons/fa';
 import ConfirmationModal from './ConfirmationModal';
 import { performTextAction } from '../services/geminiService';
@@ -11,6 +11,8 @@ interface EditorToolbarProps {
   textareaRef: React.RefObject<HTMLTextAreaElement>;
   onUpdate: (value: string, newCursorPos?: number) => void;
   onGenerateClick: () => void;
+  suggestionsEnabled: boolean;
+  onToggleSuggestions: (enabled: boolean) => void;
 }
 
 const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; title: string; disabled?: boolean; className?: string }> = ({ onClick, children, title, disabled, className }) => (
@@ -25,7 +27,7 @@ const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; 
   </button>
 );
 
-const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, onGenerateClick }) => {
+const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, onGenerateClick, suggestionsEnabled, onToggleSuggestions }) => {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [originalText, setOriginalText] = useState('');
   const [beautifiedText, setBeautifiedText] = useState('');
@@ -334,6 +336,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
             </div>
           </div>
           <div className="flex items-center space-x-1">
+            <ToolbarButton
+              onClick={() => onToggleSuggestions(!suggestionsEnabled)}
+              title={suggestionsEnabled ? "Disable Auto Suggestions" : "Enable Auto Suggestions"}
+              className={suggestionsEnabled ? "text-yellow-500 dark:text-yellow-400" : ""}
+            >
+              <FaLightbulb className={`w-5 h-5 ${suggestionsEnabled ? 'drop-shadow-sm' : ''}`} />
+            </ToolbarButton>
             {isSpeechRecognitionSupported && (
               <ToolbarButton
                 onClick={toggleSpeechRecognition}

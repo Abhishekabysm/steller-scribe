@@ -13,6 +13,67 @@
   animation: blink 1s linear infinite;
 }
 
+/* Suggestion UI Animations */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.01);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes suggestion-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(5px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-suggestion-appear {
+  animation: suggestion-appear 0.2s ease-out;
+}
+
 /* For Firefox */
 * {
   scrollbar-width: none;
@@ -46,6 +107,24 @@ textarea.editor-textarea,
   -moz-user-select: text;
   user-select: text;
   -webkit-tap-highlight-color: transparent;
+  /* Ensure proper text wrapping and height */
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+
+/* Ensure textarea expands to full container height */
+.editor-textarea-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-textarea {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  resize: none;
 }
 
 /* Prevent default context menu on text selection */

@@ -19,6 +19,7 @@ import SummaryModal from './SummaryModal';
 import ShareModal from './ShareModal';
 import AIModifyModal from './AIModifyModal'; // Import the new modal
 import { MdCloudDownload } from 'react-icons/md';
+import SuggestionTextarea from './SuggestionTextarea';
 
 declare const marked: any;
 declare const hljs: any;
@@ -60,6 +61,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isAIModifyModalOpen, setIsAIModifyModalOpen] = useState(false); // New state for AIModifyModal
   const [textToModify, setTextToModify] = useState(''); // State to hold text for AI modification
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(false); // Auto suggestions toggle - default OFF
 
   // Undo/Redo state
   const [undoStack, setUndoStack] = useState<string[]>([]);
@@ -154,7 +156,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
      copyButton.title = 'Copy code';
      copyButton.setAttribute('data-copy-button', 'true'); // Marker to identify copy buttons
      
-     copyButton.onclick = (e) => {
+     copyButton.onclick = (e: MouseEvent) => {
        e.stopPropagation(); // Prevent event bubbling
        const codeToCopy = codeElement.innerText.replace(/\s/g, ''); // Remove all whitespace
        navigator.clipboard.writeText(codeToCopy).then(() => {
@@ -1086,20 +1088,31 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
               }
             }}
             onGenerateClick={() => setIsAIGenerateModalOpen(true)}
+            suggestionsEnabled={suggestionsEnabled}
+            onToggleSuggestions={(enabled) => {
+              setSuggestionsEnabled(enabled);
+              addToast(
+                enabled ? 'Auto suggestions enabled! Start typing to see AI suggestions.' : 'Auto suggestions disabled.',
+                enabled ? 'success' : 'info'
+              );
+            }}
           />
           <div className="flex-grow overflow-y-auto p-4 editor-textarea-wrapper">
-              <textarea
+              <SuggestionTextarea
                   ref={editorRef}
                   value={currentEditorContent} // Use local state for controlled component
-                  onChange={handleContentChange}
+                  onChange={(val: string) => {
+                      setCurrentEditorContent(val);
+                      onUpdateNote({ content: val });
+                  }}
                   onKeyDown={handleKeyDown}
                   onMouseUp={handleTextSelection}
                   onTouchEnd={handleTextSelection}
-                  onContextMenu={(e) => {
+                  onContextMenu={(e: React.MouseEvent<HTMLTextAreaElement>) => {
                     // Prevent default browser context menu on text selection
                     e.preventDefault();
                   }}
-                  onMouseDown={(e) => {
+                  onMouseDown={(e: React.MouseEvent<HTMLTextAreaElement>) => {
                     // Don't clear menu if clicking on the contextual menu
                     if (!(e.target as HTMLElement).closest('.contextual-menu-container')) {
                       // Only clear menu if we're not starting a new selection
@@ -1113,7 +1126,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                       }, 10);
                     }
                   }}
-                  onTouchStart={(e) => {
+                  onTouchStart={(e: React.TouchEvent<HTMLTextAreaElement>) => {
                     // Don't clear menu if touching the contextual menu
                     if (!(e.target as HTMLElement).closest('.contextual-menu-container')) {
                       // Only clear menu if we're not starting a new selection
@@ -1135,7 +1148,6 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                         }
                     }, 500);
                   }}
-
                   style={{
                     WebkitUserSelect: 'text',
                     WebkitTouchCallout: 'none', // Disable iOS callout menu
@@ -1143,6 +1155,8 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                   }}
                   className="w-full h-full bg-transparent text-gray-800 dark:text-dark-text-secondary focus:outline-none resize-none leading-relaxed font-mono editor-textarea"
                   placeholder="Start writing..."
+                  suggestionsEnabled={suggestionsEnabled}
+                  noteTitle={activeNote.title}
               />
           </div>
           <footer className="flex-shrink-0 p-2 border-t border-gray-200 dark:border-dark-border-color text-xs text-gray-500 dark:text-dark-text-muted flex items-center justify-between">

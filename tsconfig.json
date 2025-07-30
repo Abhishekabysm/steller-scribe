@@ -29,7 +29,12 @@
   },
   "include": [
     "src",
-    "types"
+    "types",
+    "components",
+    "hooks",
+    "services",
+    "*.ts",
+    "*.tsx"
   ],
   "files": [
     "types/speechRecognition.d.ts"

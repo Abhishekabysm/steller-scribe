@@ -59,10 +59,11 @@ const FeatureAnnouncementManager: React.FC = () => {
   // Define all announcements in the order they should appear.
   const ANNOUNCEMENT_QUEUE: FeatureAnnouncementConfig[] = [
     {
-      featureId: 'inline-suggestions-v1',
-      featureName: 'Smart Suggestions',
-      title: '💡 Introducing Smart Suggestions',
-      description: 'Get intelligent writing suggestions as you type to enhance your notes.',
+      featureId: 'code-line-copy-v1',
+      featureName: 'Line copy in code blocks',
+      title: '🔖 Click-to-copy a single code line',
+      description:
+        'Hover a code line to see a subtle gutter caret; click to copy just that line. Inline code copies on click; use the top-right button to copy the whole block.',
       visual: {
         type: 'icon',
         iconComponent: FaLightbulb,
@@ -70,13 +71,13 @@ const FeatureAnnouncementManager: React.FC = () => {
       primaryAction: {
         label: 'Try it now',
         onClick: () => {
-          addToast('💡 Smart suggestions enabled! Toggle the lightbulb icon in the toolbar to control this feature.', 'success');
+          addToast('Tip: Hover a code line to see the gutter caret, then click to copy that line.', 'success');
         },
       },
       dismissAction: {
-        label: 'Maybe later',
+        label: 'Later',
         onClick: () => {
-          addToast('💡 You can enable smart suggestions anytime from the editor toolbar', 'info');
+          addToast('You can use the gutter caret anytime to copy a single line from code blocks.', 'info');
         },
       },
     },
@@ -156,7 +157,7 @@ const FeatureAnnouncementManager: React.FC = () => {
   const handleForceShowLatest = () => {
     // This will show the latest feature modal even if dismissed, but only if no other modal is active
     if (!activeAnnouncement) {
-      const latestConfig = ANNOUNCEMENT_QUEUE.find(a => a.featureId === 'inline-suggestions-v1');
+      const latestConfig = ANNOUNCEMENT_QUEUE.find(a => a.featureId === 'code-line-copy-v1');
       if (latestConfig) setActiveAnnouncement(latestConfig);
     }
   };

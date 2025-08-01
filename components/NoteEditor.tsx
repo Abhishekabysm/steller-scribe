@@ -189,8 +189,6 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
       // - On click (not on the top-right button), copy the hovered line
       let lastHoverLine = -1;
 
-      // removed unused getLineFromEvent (was causing TS warning)
-
       // New approach for precise indication without relying on line-height math:
       // Show a left-gutter caret/indicator aligned to the actual DOM rect under the cursor.
       preBlock.addEventListener('mousemove', (evt: MouseEvent) => {
@@ -210,13 +208,15 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
           : null;
         if (!r || !codeEl.contains(r.startContainer)) return;
 
-        // Build a range that snaps to the current line fragment by expanding to the word boundary
-        const range = document.createRange();
+        // Compute the zero-based visual line number at pointer by counting newline characters up to caret
         try {
-          range.selectNodeContents(codeEl);
-          range.setEnd(r.startContainer, Math.min(r.startOffset, (r.startContainer as any).length ?? 0));
+          const tempRange = document.createRange();
+          tempRange.selectNodeContents(codeEl);
+          tempRange.setEnd(r.startContainer, Math.min(r.startOffset, (r.startContainer as any).length ?? 0));
+          const upToCaret = tempRange.toString();
+          lastHoverLine = upToCaret.replace(/\r\n/g, '\n').split('\n').length - 1;
         } catch {
-          return;
+          lastHoverLine = -1;
         }
 
         const rects = (r as Range).getClientRects ? (r as Range).getClientRects() : [];
@@ -287,6 +287,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
       codeElement.addEventListener('mouseleave', () => {
         const preEl = preBlock as HTMLElement;
         preEl.style.cursor = 'default';
+        lastHoverLine = -1;
         const prevHover = preEl.querySelector('.code-line-hover-caret');
         if (prevHover) prevHover.remove();
       }, { passive: true });

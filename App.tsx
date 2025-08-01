@@ -591,7 +591,7 @@ const AppContent: React.FC = () => {
             className={`absolute md:relative z-20 h-full flex-shrink-0 border-r border-border-color dark:border-dark-border-color w-full max-w-xs transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
           >
             <NoteList
-              key={notes.length} // Add a key to force re-render on notes change
+              key={notes.length}
               notes={notes}
               activeNoteId={activeNoteId}
               onSelectNote={selectNote}
@@ -606,8 +606,9 @@ const AppContent: React.FC = () => {
             />
           </aside>
         )}
-        
-        <section className={`h-full relative transition-all duration-300 ease-in-out ${isSidebarOpen ? 'flex-grow' : 'w-full'}`}>
+
+        {/* Content section should always be allowed to shrink; prevent overflow */}
+        <section className={`h-full relative transition-all duration-300 ease-in-out flex-1 min-w-0`}>
           <NoteEditor
             activeNote={activeNote}
             onUpdateNote={updateNote}

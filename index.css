@@ -87,6 +87,7 @@
 /* Ensure no scrollbars appear on containers */
 .split-pane-container {
   overflow: hidden !important;
+  min-width: 0; /* Prevent children from forcing horizontal overflow */
 }
 
 /* Hide scrollbars specifically on split pane dividers */
@@ -142,6 +143,13 @@ textarea.editor-textarea::selection,
 
 .contextual-menu-active textarea::selection {
   background-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Prevent horizontal overflow when sidebar opens */
+html, body, #root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 

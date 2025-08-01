@@ -37,30 +37,42 @@ const SplitPane: React.FC<SplitPaneProps> = ({ left, right }) => {
   }, [onMouseMove, onMouseUp]);
 
   return (
-    <div ref={containerRef} className="flex h-full w-full overflow-hidden split-pane-container">
-      <div style={{ width: `${dividerPosition}%` }} className="h-full overflow-hidden flex-shrink-0">
+    <div
+      ref={containerRef}
+      className="flex h-full w-full overflow-hidden split-pane-container"
+      style={{ minWidth: 0 }}
+    >
+      {/* Left/editor pane */}
+      <div
+        style={{ width: `${dividerPosition}%`, minWidth: 0 }}
+        className="h-full overflow-hidden flex-shrink-0"
+      >
         {left}
       </div>
-      <div 
-        onMouseDown={onMouseDown} 
+
+      {/* Divider */}
+      <div
+        onMouseDown={onMouseDown}
         className="w-4 h-full cursor-col-resize flex-shrink-0 bg-gradient-to-r from-transparent via-border-color/10 to-transparent dark:via-dark-border-color/10 hover:via-accent/20 dark:hover:via-dark-accent/20 transition-all duration-300 split-pane-divider relative group flex items-center justify-center"
         title="Drag to resize"
       >
-        {/* Subtle border lines */}
         <div className="absolute left-0 top-0 w-px h-full bg-border-color/20 dark:bg-dark-border-color/20"></div>
         <div className="absolute right-0 top-0 w-px h-full bg-border-color/20 dark:bg-dark-border-color/20"></div>
-        
-        {/* Central grip indicator */}
+
         <div className="flex flex-col items-center justify-center space-y-1 opacity-30 group-hover:opacity-70 transition-all duration-300 group-hover:scale-110">
           <div className="w-1 h-1 bg-text-muted dark:bg-dark-text-muted rounded-full shadow-sm"></div>
           <div className="w-1 h-1 bg-text-muted dark:bg-dark-text-muted rounded-full shadow-sm"></div>
           <div className="w-1 h-1 bg-text-muted dark:bg-dark-text-muted rounded-full shadow-sm"></div>
         </div>
-        
-        {/* Hover glow effect */}
+
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/5 to-transparent dark:via-dark-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-sm"></div>
       </div>
-      <div style={{ width: `${100 - dividerPosition}%` }} className="h-full overflow-hidden flex-shrink-0">
+
+      {/* Right/preview pane */}
+      <div
+        style={{ width: `${100 - dividerPosition}%`, minWidth: 0 }}
+        className="h-full overflow-hidden flex-shrink-0"
+      >
         {right}
       </div>
     </div>

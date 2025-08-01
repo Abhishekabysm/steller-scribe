@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaLightbulb } from 'react-icons/fa6';
 import FeatureAnnouncementModal from './FeatureAnnouncementModal';
-import { useSessionStorage } from '../hooks/useSessionStorage';
 import { useToasts } from '../hooks/useToasts';
 
 // Define the shape of an announcement's configuration
@@ -27,8 +26,31 @@ interface FeatureAnnouncementConfig {
 }
 
 /**
+ * LocalStorage helpers (SSR safe)
+ */
+function safeGetLocalStorageItem<T>(key: string, fallback: T): T {
+  try {
+    if (typeof window === 'undefined') return fallback;
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+function safeSetLocalStorageItem<T>(key: string, value: T) {
+  try {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore
+  }
+}
+
+/**
  * Manages and displays a queue of feature announcements,
  * ensuring only one is shown at a time.
+ * Uses localStorage so each feature is shown once per device.
  */
 const FeatureAnnouncementManager: React.FC = () => {
   const { addToast } = useToasts();
@@ -60,9 +82,18 @@ const FeatureAnnouncementManager: React.FC = () => {
     },
   ];
 
-  const [dismissedFeatures, setDismissedFeatures] = useSessionStorage<string[]>('stellar-scribe-dismissed-features', []);
+  const STORAGE_KEY = 'stellar-scribe-dismissed-features-v2';
+
+  const [dismissedFeatures, setDismissedFeatures] = useState<string[]>(
+    () => safeGetLocalStorageItem<string[]>(STORAGE_KEY, [])
+  );
   const [activeAnnouncement, setActiveAnnouncement] = useState<FeatureAnnouncementConfig | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Persist to localStorage whenever list changes
+  useEffect(() => {
+    safeSetLocalStorageItem(STORAGE_KEY, dismissedFeatures);
+  }, [dismissedFeatures]);
 
   // Effect to find and show the first available announcement on component mount.
   useEffect(() => {
@@ -126,7 +157,7 @@ const FeatureAnnouncementManager: React.FC = () => {
     // This will show the latest feature modal even if dismissed, but only if no other modal is active
     if (!activeAnnouncement) {
       const latestConfig = ANNOUNCEMENT_QUEUE.find(a => a.featureId === 'inline-suggestions-v1');
-      if(latestConfig) setActiveAnnouncement(latestConfig);
+      if (latestConfig) setActiveAnnouncement(latestConfig);
     }
   };
 
@@ -152,8 +183,8 @@ const FeatureAnnouncementManager: React.FC = () => {
       )}
       
       {/* Development Button - Only visible in non-production environments */}
-      {typeof window !== 'undefined' && 
-       window.location.hostname !== 'stellar-scribe.vercel.app' && 
+      {typeof window !== 'undefined' &&
+       window.location.hostname !== 'stellar-scribe.vercel.app' &&
        !window.location.hostname.includes('.vercel.app') && (
         <button
           onClick={handleForceShowLatest}

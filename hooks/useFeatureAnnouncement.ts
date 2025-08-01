@@ -1,5 +1,27 @@
 import { useState, useEffect } from 'react';
-import { useSessionStorage } from './useSessionStorage';
+
+/**
+ * LocalStorage helpers with SSR safety
+ */
+function safeGetLocalStorageItem<T>(key: string, fallback: T): T {
+  try {
+    if (typeof window === 'undefined') return fallback;
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function safeSetLocalStorageItem<T>(key: string, value: T) {
+  try {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore quota or privacy errors
+  }
+}
 
 interface FeatureAnnouncementConfig {
   featureId: string;
@@ -25,8 +47,9 @@ interface FeatureAnnouncementConfig {
 }
 
 /**
- * A hook to manage feature announcements with session-based dismissal.
- * Each feature announcement is shown only once per session.
+ * A hook to manage feature announcements with device (localStorage) based dismissal.
+ * Each feature announcement is shown only once per device. When you add a new
+ * feature with a new featureId, it will show once on that device.
  */
 export function useFeatureAnnouncement(config: FeatureAnnouncementConfig) {
   const {
@@ -36,15 +59,21 @@ export function useFeatureAnnouncement(config: FeatureAnnouncementConfig) {
     ...announcementData
   } = config;
 
-  const [dismissedFeatures, setDismissedFeatures] = useSessionStorage<string[]>(
-    'stellar-scribe-dismissed-features',
-    []
+  const STORAGE_KEY = 'stellar-scribe-dismissed-features-v2';
+
+  const [dismissedFeatures, setDismissedFeatures] = useState<string[]>(() =>
+    safeGetLocalStorageItem<string[]>(STORAGE_KEY, [])
   );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasShown, setHasShown] = useState(false);
 
-  // Check if this feature has been dismissed in this session
+  // Persist to localStorage whenever list changes
+  useEffect(() => {
+    safeSetLocalStorageItem(STORAGE_KEY, dismissedFeatures);
+  }, [dismissedFeatures]);
+
+  // Check if this feature has been dismissed on this device
   const isDismissed = dismissedFeatures.includes(featureId);
 
   // Show the modal after delay if enabled and not dismissed
@@ -59,11 +88,15 @@ export function useFeatureAnnouncement(config: FeatureAnnouncementConfig) {
     return () => clearTimeout(timer);
   }, [enabled, isDismissed, hasShown, showAfterDelay]);
 
-  const handleClose = () => {
-    setIsModalOpen(false);
+  const markDismissed = () => {
     if (!dismissedFeatures.includes(featureId)) {
       setDismissedFeatures([...dismissedFeatures, featureId]);
     }
+  };
+
+  const handleClose = () => {
+    setIsModalOpen(false);
+    markDismissed();
   };
 
   const handlePrimaryAction = () => {
@@ -95,7 +128,7 @@ export function useFeatureAnnouncement(config: FeatureAnnouncementConfig) {
     setHasShown(false);
   };
 
-  // Clear all dismissed features (useful for development/testing)
+  // Clear all dismissed features on this device (useful for development/testing)
   const clearAllDismissals = () => {
     setDismissedFeatures([]);
     setHasShown(false);
@@ -115,7 +148,7 @@ export function useFeatureAnnouncement(config: FeatureAnnouncementConfig) {
       title: announcementData.title,
       description: announcementData.description,
       visual: announcementData.visual,
-      primaryAction: announcementData.primaryAction 
+      primaryAction: announcementData.primaryAction
         ? {
             ...announcementData.primaryAction,
             onClick: handlePrimaryAction,

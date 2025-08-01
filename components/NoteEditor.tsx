@@ -1561,13 +1561,43 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           }
 
           const target = e.target as HTMLElement;
-          // Check if the clicked element is an inline <code> tag and not inside a <pre> tag
-          // Make inline-code copy silent (no toast), per user feedback.
+
+          // Ignore clicks on the block copy button inside pre blocks
+          if (target.closest(".copy-button-container")) return;
+
+          // Robust inline-code click-to-copy (outside of PRE)
           if (target.tagName === "CODE" && !target.closest("pre")) {
-            const originalText = target.textContent || "";
-            navigator.clipboard.writeText(originalText).catch((err) => {
-              console.error("Failed to copy inline code: ", err);
-            });
+            const codeEl = target.closest("code");
+            if (codeEl) {
+              const text = (codeEl.textContent || "").trim();
+              if (text.length > 0) {
+                const notify = () => addToast("Copied to clipboard", "success");
+                const flash = () => {
+                  codeEl.classList.add("inline-code-copied");
+                  setTimeout(() => codeEl.classList.remove("inline-code-copied"), 300);
+                };
+                const onSuccess = () => {
+                  flash();
+                  notify();
+                };
+                const fallback = () => {
+                  try {
+                    const r = document.createRange();
+                    r.selectNodeContents(codeEl);
+                    const sel = window.getSelection();
+                    sel?.removeAllRanges();
+                    sel?.addRange(r);
+                    const ok = document.execCommand("copy");
+                    sel?.removeAllRanges();
+                    if (ok) onSuccess();
+                  } catch (err) {
+                    console.error("Failed to copy inline code via fallback:", err);
+                    addToast("Failed to copy", "error");
+                  }
+                };
+                navigator.clipboard.writeText(text).then(onSuccess).catch(fallback);
+              }
+            }
           }
         }}
       >

@@ -63,7 +63,7 @@ const FeatureAnnouncementManager: React.FC = () => {
       featureName: 'Line copy in code blocks',
       title: '🔖 Click-to-copy a single code line',
       description:
-        'Hover a code line to see a subtle gutter caret; click to copy just that line. Inline code copies on click; use the top-right button to copy the whole block.',
+        'Hover a code line to see a subtle gutter caret. Click to copy just that line. Inline code copies on click. Use the top-right button to copy the whole block.',
       visual: {
         type: 'icon',
         iconComponent: FaLightbulb,

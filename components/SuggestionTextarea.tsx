@@ -27,19 +27,19 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
     ref
 ) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    
+    const overlayRef = useRef<HTMLDivElement>(null);
+    const [cursorPosition, setCursorPosition] = useState(0);
+
     // Expose the ref to parent components
     useEffect(() => {
         if (ref && textareaRef.current) {
             if (typeof ref === 'function') {
                 ref(textareaRef.current);
             } else {
-                ref.current = textareaRef.current;
+                (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = textareaRef.current;
             }
         }
     });
-    const overlayRef = useRef<HTMLDivElement>(null);
-    const [cursorPosition, setCursorPosition] = useState(0);
 
     const handleAcceptSuggestion = useCallback((suggestion: string) => {
         if (!textareaRef.current) return;
@@ -47,10 +47,10 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
         const textarea = textareaRef.current;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-        
+
         const newValue = value.slice(0, start) + suggestion + value.slice(end);
         onChange(newValue);
-        
+
         // Set cursor position after the inserted suggestion
         const newCursorPos = start + suggestion.length;
         setTimeout(() => {
@@ -77,153 +77,260 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
         onAcceptSuggestion: handleAcceptSuggestion
     });
 
-    const updateCursorPosition = useCallback(() => {
-        if (!textareaRef.current) return;
-        
-        const textarea = textareaRef.current;
-        const position = textarea.selectionStart;
-        setCursorPosition(position);
-        
-        // Request suggestion based on current cursor position
-        const textBefore = value.slice(0, position);
-        const textAfter = value.slice(position);
-        
-        requestSuggestion(textBefore, textAfter, position);
+    // Watchdog: ensure suggestions never stall while typing quickly.
+    // If no request was issued in the last 400ms while enabled and focused, trigger one.
+    const lastReqAtRef = useRef<number>(0);
+    const watchdogRef = useRef<number | null>(null);
+
+    const markRequested = useCallback(() => {
+        lastReqAtRef.current = performance.now();
+    }, []);
+
+    useEffect(() => {
+        // start watchdog
+        if (watchdogRef.current) cancelAnimationFrame(watchdogRef.current);
+        const tick = () => {
+            const ta = textareaRef.current;
+            const now = performance.now();
+            const delta = now - (lastReqAtRef.current || 0);
+            if (ta && ta === document.activeElement && suggestionsEnabled && delta > 400) {
+                // re-request using current caret
+                const pos = ta.selectionStart ?? 0;
+                setCursorPosition(pos);
+                const before = value.slice(0, pos);
+                const after = value.slice(pos);
+                requestSuggestion(before, after, pos);
+                markRequested();
+            }
+            watchdogRef.current = requestAnimationFrame(tick);
+        };
+        watchdogRef.current = requestAnimationFrame(tick);
+        return () => {
+            if (watchdogRef.current) cancelAnimationFrame(watchdogRef.current);
+            watchdogRef.current = null;
+        };
+    }, [suggestionsEnabled, value, requestSuggestion, markRequested]);
+
+    const requestFromCaret = useCallback(() => {
+        const ta = textareaRef.current;
+        if (!ta) return;
+        const pos = ta.selectionStart ?? 0;
+        setCursorPosition(pos);
+        const before = value.slice(0, pos);
+        const after = value.slice(pos);
+        requestSuggestion(before, after, pos);
+        // mark to watchdog
+        lastReqAtRef.current = performance.now();
     }, [value, requestSuggestion]);
 
     const handleTextareaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const newValue = e.target.value;
-        onChange(newValue);
-        
-        // Clear suggestions when user types over them
-        if (isVisible) {
-            clearSuggestion();
-        }
-        
-        // Update cursor position and potentially request new suggestions
-        setTimeout(() => {
-            updateCursorPosition();
-        }, 0);
-    }, [onChange, isVisible, clearSuggestion, updateCursorPosition]);
+        onChange(e.target.value);
+        // After value updates, re-request at next frame to pick up new caret
+        requestAnimationFrame(() => {
+            requestFromCaret();
+        });
+    }, [onChange, requestFromCaret]);
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        // Handle suggestion acceptance
+        // Accept / dismiss
         if (isVisible && currentSuggestion) {
-            switch (e.key) {
-                case 'Tab':
-                    e.preventDefault();
-                    acceptSuggestion(currentSuggestion);
-                    return;
-                case 'Escape':
-                    e.preventDefault();
-                    dismissSuggestion();
-                    return;
-                case 'ArrowRight':
-                    if (e.ctrlKey) {
-                        e.preventDefault();
-                        const words = currentSuggestion.split(' ');
-                        if (words.length > 0) {
-                            acceptSuggestion(words[0] + ' ');
-                        }
-                        return;
-                    }
-                    break;
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                acceptSuggestion(currentSuggestion);
+                // After accept, re-request to continue flow
+                requestAnimationFrame(requestFromCaret);
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                dismissSuggestion();
+                // After dismiss, re-request for the new context
+                requestAnimationFrame(requestFromCaret);
+                return;
+            }
+            if (e.key === 'ArrowRight' && e.ctrlKey) {
+                e.preventDefault();
+                const [first] = currentSuggestion.split(' ');
+                acceptSuggestion(first ? first + ' ' : currentSuggestion);
+                requestAnimationFrame(requestFromCaret);
+                return;
             }
         }
-        
-        // Clear suggestions on various navigation keys
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) {
-            clearSuggestion();
-        }
-        
-        // Call original onKeyDown if provided
-        if (onKeyDown) {
-            onKeyDown(e);
-        }
-        
-        // Update cursor position after key handling
-        setTimeout(() => {
-            updateCursorPosition();
-        }, 0);
-    }, [isVisible, currentSuggestion, acceptSuggestion, dismissSuggestion, clearSuggestion, onKeyDown, updateCursorPosition]);
+
+        // Keep parent handling
+        if (onKeyDown) onKeyDown(e);
+
+        // Always update caret and request on next frame to avoid stale value/caret races
+        requestAnimationFrame(() => {
+            const ta = textareaRef.current;
+            if (!ta) return;
+            setCursorPosition(ta.selectionStart ?? 0);
+            requestFromCaret();
+        });
+    }, [isVisible, currentSuggestion, acceptSuggestion, dismissSuggestion, onKeyDown, requestFromCaret]);
 
     const handleSelectionChange = useCallback(() => {
-        if (isVisible) {
-            clearSuggestion();
-        }
-        updateCursorPosition();
-    }, [isVisible, clearSuggestion, updateCursorPosition]);
+        // Moving selection should update caret and suggestion position
+        const ta = textareaRef.current;
+        if (!ta) return;
+        setCursorPosition(ta.selectionStart ?? 0);
+        requestFromCaret();
+    }, [requestFromCaret]);
 
-    // Calculate suggestion position to flow naturally to next line
-    const getSuggestionPosition = useCallback(() => {
-        if (!textareaRef.current) {
-            return { top: 0, left: 0 };
-        }
-
-        const textarea = textareaRef.current;
-        const styles = window.getComputedStyle(textarea);
-        
-        // Get text before cursor
-        const textBeforeCursor = value.slice(0, cursorPosition);
-        
-        // Count lines to estimate vertical position
-        const lines = textBeforeCursor.split('\n');
-        const currentLine = lines[lines.length - 1];
-        const lineHeight = parseInt(styles.lineHeight) || 24;
-        const fontSize = parseInt(styles.fontSize) || 14;
-        const padding = parseInt(styles.paddingLeft) || 16;
-        const paddingTop = parseInt(styles.paddingTop) || 16;
-
-        // More accurate character width estimation for monospace
-        const charWidth = fontSize * 0.6;
-        const textareaWidth = textarea.clientWidth - padding * 2;
-
-        // Calculate how many characters fit per line
-        const charsPerLine = Math.floor(textareaWidth / charWidth);
-
-        // Handle wrapping based on width
-        const wrapLines = Math.floor(currentLine.length / charsPerLine);
-        const currentLinePosition = currentLine.length % charsPerLine;
-        const wrapOffset = currentLinePosition * charWidth;
-        
-        // Check if we're near the end of the line and should wrap to next line
-        const remainingCharsOnLine = charsPerLine - currentLinePosition;
-        const shouldWrapToNextLine = remainingCharsOnLine < 15; // Less than 15 chars remaining
-        
-        if (shouldWrapToNextLine) {
-            // Move to next line
-            return {
-                top: ((lines.length - 1 + wrapLines + 1) * lineHeight) + paddingTop,
-                left: padding
-            };
-        }
-
-        return {
-            top: ((lines.length - 1 + wrapLines) * lineHeight) + paddingTop,
-            left: wrapOffset + padding
-        };
-    }, [value, cursorPosition]);
-
+    // Keep overlay scroll in sync
     useEffect(() => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-        
-        const handleClick = () => updateCursorPosition();
-        const handleFocus = () => updateCursorPosition();
-        
-        textarea.addEventListener('click', handleClick);
-        textarea.addEventListener('focus', handleFocus);
-        
-        return () => {
-            textarea.removeEventListener('click', handleClick);
-            textarea.removeEventListener('focus', handleFocus);
+        const ta = textareaRef.current;
+        const ov = overlayRef.current;
+        if (!ta || !ov) return;
+        const sync = () => {
+            ov.scrollTop = ta.scrollTop;
+            ov.scrollLeft = ta.scrollLeft;
         };
-    }, [updateCursorPosition]);
+        sync();
+        ta.addEventListener('scroll', sync, { passive: true });
+        return () => ta.removeEventListener('scroll', sync);
+    }, []);
 
-    const suggestionPosition = getSuggestionPosition();
+    // Fixed same-line inline ghost suggestion overlay
+    const SameLineOverlay: React.FC = () => {
+        const ta = textareaRef.current;
+        if (!ta || !isVisible || !currentSuggestion) return null;
+
+        const caretIndex = cursorPosition;
+        const textBefore = value.slice(0, caretIndex);
+        const textAfter = value.slice(caretIndex);
+
+        // Get computed styles from textarea
+        const cs = window.getComputedStyle(ta);
+        
+        // Base style to match textarea exactly
+        const baseStyle: React.CSSProperties = {
+            fontFamily: cs.fontFamily,
+            fontSize: cs.fontSize,
+            fontWeight: cs.fontWeight,
+            lineHeight: cs.lineHeight,
+            letterSpacing: cs.letterSpacing,
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
+            wordBreak: 'break-word',
+            margin: 0,
+            padding: 0,
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+        };
+
+        // Wrapper style
+        const wrapperStyle: React.CSSProperties = {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            overflow: 'hidden',
+            zIndex: 1,
+        };
+
+        // Inner container to match textarea padding
+        const innerStyle: React.CSSProperties = {
+            ...baseStyle,
+            paddingTop: cs.paddingTop,
+            paddingRight: cs.paddingRight,
+            paddingBottom: cs.paddingBottom,
+            paddingLeft: cs.paddingLeft,
+            width: '100%',
+            height: '100%',
+            boxSizing: 'border-box',
+        };
+
+        // Check if we need a visual gap
+        const lastChar = textBefore.slice(-1);
+        const firstSuggestionChar = currentSuggestion.charAt(0);
+        const needsGap = lastChar && !/\s/.test(lastChar) && firstSuggestionChar && !/\s/.test(firstSuggestionChar);
+
+        // Mobile tap-to-accept: clicking the ghost should accept suggestion
+        const handleGhostTap = (e: React.MouseEvent<HTMLSpanElement>) => {
+            // Only on small screens, keep desktop keyboard behavior intact
+            if (window.matchMedia && window.matchMedia('(max-width: 640px)').matches) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Call acceptSuggestion from outer scope via closure
+                if (currentSuggestion && textareaRef.current) {
+                    acceptSuggestion(currentSuggestion);
+                    // After accept, request next suggestion at new caret
+                    requestAnimationFrame(() => {
+                        const ta = textareaRef.current!;
+                        const pos = ta.selectionStart ?? 0;
+                        setCursorPosition(pos);
+                        const before = value.slice(0, pos);
+                        const after = value.slice(pos);
+                        requestSuggestion(before, after, pos);
+                    });
+                }
+            }
+        };
+
+        return (
+            <div style={wrapperStyle}>
+                <div style={innerStyle}>
+                    {/* Invisible text up to cursor position */}
+                    <span style={{
+                        ...baseStyle,
+                        color: 'transparent',
+                        userSelect: 'none',
+                        position: 'relative'
+                    }}>
+                        {textBefore}
+                    </span>
+                    {/* Ghost suggestion appears right after the cursor.
+                        On small screens, tapping selects (accepts) it silently without showing native selection handles. */}
+                    <span
+                        onTouchStart={(e) => {
+                            // prevent native selection / context menu / scroll
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleGhostTap(e as unknown as React.MouseEvent<HTMLSpanElement>);
+                        }}
+                        onMouseDown={(e) => {
+                            // also prevent selection on mouse interactions
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleGhostTap(e);
+                        }}
+                        style={{
+                            ...baseStyle,
+                            color: 'currentColor',
+                            opacity: 0.4,
+                            // prevent native selection highlight and callout bubbles on mobile
+                            userSelect: 'none',
+                            WebkitUserSelect: 'none',
+                            WebkitTouchCallout: 'none',
+                            // keep minimal visual gap if needed
+                            marginLeft: needsGap ? '1px' : '0',
+                            position: 'relative',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        {currentSuggestion}
+                    </span>
+                    {/* Invisible text after cursor to maintain layout */}
+                    <span style={{
+                        ...baseStyle,
+                        color: 'transparent',
+                        userSelect: 'none',
+                        position: 'relative'
+                    }}>
+                        {textAfter}
+                    </span>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="relative w-full h-full">
+            {/* Textarea */}
             <textarea
                 ref={textareaRef}
                 value={value}
@@ -235,86 +342,52 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
                 style={{
                     ...otherProps.style,
                     minHeight: '100%',
-                    height: '100%'
+                    height: '100%',
+                    position: 'relative',
+                    zIndex: 2,
+                    background: 'transparent',
                 }}
                 {...otherProps}
             />
-            
-            {/* Overlay for positioning suggestions */}
+
+            {/* Overlay for inline, same-line ghost suggestion */}
             <div
                 ref={overlayRef}
-                className="absolute top-0 left-0 pointer-events-none"
-                style={{
-                    width: '100%',
-                    minHeight: '100%',
-                    overflow: 'visible'
-                }}
+                className="pointer-events-none absolute inset-0 overflow-auto"
+                aria-hidden="true"
+                style={{ zIndex: 1 }}
             >
-                {isVisible && currentSuggestion && (
-                    <div
-                        className="absolute pointer-events-none"
-                        style={{
-                            top: suggestionPosition.top + 'px',
-                            left: suggestionPosition.left + 'px',
-                            fontSize: 'inherit',
-                            fontFamily: 'inherit',
-                            lineHeight: 'inherit',
-                            zIndex: 1000
-                        }}
-                    >
-                        <div 
-                            className="text-gray-400 dark:text-gray-500 font-mono"
-                            style={{
-                                width: `${(textareaRef.current?.clientWidth || 0) - suggestionPosition.left - 20}px`,
-                                wordWrap: 'break-word',
-                                whiteSpace: 'pre-wrap',
-                                overflow: 'visible'
-                            }}
-                        >
-                            {currentSuggestion}
-                        </div>
-                    </div>
-                )}
+                <SameLineOverlay />
             </div>
-            
-            {/* Mobile-friendly suggestion controls */}
-            {isVisible && currentSuggestion && (
-                <div className="absolute bottom-2 right-2 sm:hidden z-50 flex gap-2">
-                    <button
-                        onClick={() => acceptSuggestion(currentSuggestion)}
-                        className="px-3 py-2 bg-blue-500 text-white text-sm rounded-md shadow-lg hover:bg-blue-600 transition-colors touch-manipulation"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                        ✓ Accept
-                    </button>
-                    <button
-                        onClick={dismissSuggestion}
-                        className="px-3 py-2 bg-gray-500 text-white text-sm rounded-md shadow-lg hover:bg-gray-600 transition-colors touch-manipulation"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                        ✕ Dismiss
-                    </button>
-                </div>
-            )}
-            
-            {/* Desktop suggestion controls */}
-            <InlineSuggestion
-                suggestion={currentSuggestion}
-                isVisible={isVisible}
-                textareaRef={textareaRef}
-                cursorPosition={cursorPosition}
-                onAcceptSuggestion={acceptSuggestion}
-                onDismissSuggestion={dismissSuggestion}
-            />
-            
-            {/* Loading indicator */}
+
+            {/* Desktop controls remain for keyboard hints; hide on small screens for minimal mobile UI */}
+            <div className="hidden sm:block">
+                <InlineSuggestion
+                    suggestion={currentSuggestion}
+                    isVisible={isVisible}
+                    textareaRef={textareaRef}
+                    cursorPosition={cursorPosition}
+                    onAcceptSuggestion={(s: string) => {
+                        acceptSuggestion(s);
+                        requestAnimationFrame(requestFromCaret);
+                    }}
+                    onDismissSuggestion={() => {
+                        dismissSuggestion();
+                        requestAnimationFrame(requestFromCaret);
+                    }}
+                />
+            </div>
+
+            {/* Loading indicator - hide on small screens to keep UI minimal */}
             {isLoading && (
-                <div className="absolute top-2 right-2 pointer-events-none">
+                <div className="absolute top-2 right-2 pointer-events-none hidden sm:block" style={{ zIndex: 3 }}>
                     <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
                 </div>
             )}
         </div>
     );
 });
+
+SuggestionTextarea.displayName = 'SuggestionTextarea';
 
 export default SuggestionTextarea;

@@ -54,18 +54,10 @@ export const useSuggestions = ({
         cursorPosition: number
     ) => {
         if (!isEnabled) {
-            console.log('🤖 Suggestions disabled');
             return;
         }
 
-        console.log('🤖 Requesting suggestion...', { 
-            textBefore: textBefore.slice(-20), 
-            cursorPosition,
-            textBeforeLength: textBefore.trim().length,
-            isEnabled,
-            lastChar: textBefore.slice(-1),
-            nextChar: textAfter.slice(0, 1)
-        });
+        // debug logs removed
 
         // Clear any existing timeout
         if (debounceTimeoutRef.current) {
@@ -86,23 +78,15 @@ export const useSuggestions = ({
 
         // Basic validation
         if (textBefore.trim().length < MIN_CHARS_FOR_SUGGESTION) {
-            console.log('🤖 Skipping: not enough characters', textBefore.trim().length, 'need', MIN_CHARS_FOR_SUGGESTION);
             return;
         }
 
         // Don't suggest if we're in the middle of a word
         const lastChar = textBefore.slice(-1);
         const nextChar = textAfter.slice(0, 1);
-        console.log('🤖 Character analysis:', {
-            lastChar: `"${lastChar}"`,
-            nextChar: `"${nextChar}"`,
-            lastCharIsWord: /\w/.test(lastChar),
-            nextCharIsWord: /\w/.test(nextChar),
-            wouldSkipMiddleWord: lastChar && /\w/.test(lastChar) && nextChar && /\w/.test(nextChar)
-        });
+        // debug logs removed
         
         if (lastChar && /\w/.test(lastChar) && nextChar && /\w/.test(nextChar)) {
-            console.log('🤖 Skipping: cursor in middle of word');
             return;
         }
 
@@ -111,7 +95,6 @@ export const useSuggestions = ({
         const cachedSuggestion = getCachedSuggestion(cacheKey);
         
         if (cachedSuggestion) {
-            console.log('🤖 Using cached suggestion:', cachedSuggestion.slice(0, 30) + '...');
             setCurrentSuggestion(cachedSuggestion);
             setIsVisible(true);
             lastRequestRef.current = requestId;
@@ -119,10 +102,8 @@ export const useSuggestions = ({
         }
 
         // Debounce the API request
-        console.log('🤖 Starting debounced API request in', DEBOUNCE_DELAY, 'ms');
         debounceTimeoutRef.current = setTimeout(async () => {
             try {
-                console.log('🤖 Making API request now...');
                 setIsLoading(true);
                 
                 // Create abort controller for this request

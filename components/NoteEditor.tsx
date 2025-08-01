@@ -63,6 +63,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ activeNote, onUpdateNote, onDel
   const [textToModify, setTextToModify] = useState(''); // State to hold text for AI modification
   const [suggestionsEnabled, setSuggestionsEnabled] = useState(false); // Auto suggestions toggle - default OFF
 
+  // Mobile-only inline suggestion state
+  const [mobileGhostSuggestion, setMobileGhostSuggestion] = useState<string>('');
+  const mobileSuggestTimerRef = useRef<number | null>(null);
+
   // Undo/Redo state
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
@@ -400,6 +404,16 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
     setSuggestedTags([]);
     setIsSuggestingTags(false);
   }, [activeNote?.id]);
+
+  // Clear mobile suggestion timer on unmount
+  useEffect(() => {
+    return () => {
+      if (mobileSuggestTimerRef.current) {
+        window.clearTimeout(mobileSuggestTimerRef.current);
+        mobileSuggestTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Bug fix: Close contextual menu on any click outside of it.
   useEffect(() => {
@@ -1207,8 +1221,10 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                       placeholder="Add a tag..."
                       className="bg-transparent text-sm focus:outline-none text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-dark-text-muted"
                   />
+                  {/* Mobile ghost suggestion chip — removed to keep mobile minimal and avoid blue banner */}
+                  {/* Intentionally disabled. Inline ghost with tap-to-accept in SuggestionTextarea handles mobile UX. */}
+                </div>
               </div>
-          </div>
           <EditorToolbar
             textareaRef={editorRef as React.RefObject<HTMLTextAreaElement>}
             onUpdate={(v, newCursorPos) => {
@@ -1231,6 +1247,8 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
             suggestionsEnabled={suggestionsEnabled}
             onToggleSuggestions={(enabled) => {
               setSuggestionsEnabled(enabled);
+              // Clear mobile ghost when disabling
+              if (!enabled) setMobileGhostSuggestion('');
               addToast(
                 enabled ? 'Auto suggestions enabled! Start typing to see AI suggestions.' : 'Auto suggestions disabled.',
                 enabled ? 'success' : 'info'
@@ -1248,6 +1266,45 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                   onKeyDown={handleKeyDown}
                   onMouseUp={handleTextSelection}
                   onTouchEnd={handleTextSelection}
+                  onInput={(e: React.FormEvent<HTMLTextAreaElement>) => {
+                    // Mobile-only auto suggestion trigger using input events
+                    if (isDesktop || !suggestionsEnabled) return;
+                    const textarea = e.currentTarget;
+                    // Debounce
+                    if (mobileSuggestTimerRef.current) {
+                      window.clearTimeout(mobileSuggestTimerRef.current);
+                      mobileSuggestTimerRef.current = null;
+                    }
+                    mobileSuggestTimerRef.current = window.setTimeout(async () => {
+                      try {
+                        // Heuristics: derive a short context near caret
+                        const caret = textarea.selectionEnd;
+                        const contextWindow = 120; // small window for mobile perf
+                        const from = Math.max(0, caret - contextWindow);
+                        const context = textarea.value.slice(from, caret);
+                        // Basic guard: avoid empty contexts and extremely short tokens
+                        if (!context || context.trim().length < 3) {
+                          setMobileGhostSuggestion('');
+                          return;
+                        }
+                        // Reuse performTextAction with a suggest-like intent if available
+                        // Fallback to summarizeText as placeholder if suggest isn't present
+                        // Here we use 'modify-expand' with a concise prompt to "continue"
+                        const prompt = `Continue the text naturally. Suggest a short next phrase (max 6 words), no quotes. Context: "${context}"`;
+                        const suggestionRaw = await performTextAction(context, 'modify-expand', prompt);
+                        // Normalize suggestion
+                        const suggestion = (suggestionRaw || '').replace(/\s+/g, ' ').trim();
+                        // Filter out noisy or long responses
+                        if (!suggestion || suggestion.split(' ').length > 10) {
+                          setMobileGhostSuggestion('');
+                          return;
+                        }
+                        setMobileGhostSuggestion(suggestion);
+                      } catch {
+                        setMobileGhostSuggestion('');
+                      }
+                    }, 250); // 250ms debounce for mobile
+                  }}
                   onContextMenu={(e: React.MouseEvent<HTMLTextAreaElement>) => {
                     // Prevent default browser context menu on text selection
                     e.preventDefault();
@@ -1287,6 +1344,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                           handleSelectionChange();
                         }
                     }, 500);
+                    // Keep ghost suggestion visible on focus; no-op
                   }}
                   style={{
                     WebkitUserSelect: 'text',
@@ -1299,6 +1357,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
                   noteTitle={activeNote.title}
               />
           </div>
+          {/* Removed spacer for mobile chip since chip is disabled */}
           <footer className="flex-shrink-0 p-2 border-t border-gray-200 dark:border-dark-border-color text-xs text-gray-500 dark:text-dark-text-muted flex items-center justify-between">
               <span>{activeNote.content.split(/\s+/).filter(Boolean).length} words</span>
               <span>Last updated: {new Date(activeNote.updatedAt).toLocaleString()}</span>

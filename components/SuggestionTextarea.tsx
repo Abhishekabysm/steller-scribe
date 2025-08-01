@@ -68,8 +68,7 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
         isVisible,
         requestSuggestion,
         acceptSuggestion,
-        dismissSuggestion,
-        clearSuggestion
+        dismissSuggestion
     } = useSuggestions({
         isEnabled: suggestionsEnabled,
         noteTitle,

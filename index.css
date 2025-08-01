@@ -145,6 +145,32 @@ textarea.editor-textarea::selection,
   background-color: rgba(59, 130, 246, 0.3);
 }
 
+/* Styling for per-line code copy UX */
+.code-lines-container {
+  display: grid;
+  grid-auto-rows: minmax(1rem, auto);
+  gap: 0.125rem;
+}
+
+.code-line-row {
+  position: relative;
+}
+
+.code-line {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9em;
+}
+
+.line-copy-btn {
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  pre:hover .line-copy-btn {
+    display: flex !important;
+  }
+}
+
 /* Prevent horizontal overflow when sidebar opens */
 html, body, #root {
   width: 100%;

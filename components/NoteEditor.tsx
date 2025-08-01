@@ -130,76 +130,207 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
       link.classList.add('text-accent', 'dark:text-dark-accent', 'hover:underline');
     });
     
-    // Then, add copy buttons to code blocks
+    // Add one block-level copy button and enable per-line copy via click without extra buttons
     const codeBlocks = previewPane.querySelectorAll('pre');
     codeBlocks.forEach((preBlock) => {
-      // Check if a copy button already exists for this block
-      if (preBlock.querySelector('.copy-button-container')) {
-        return;
-      }
+      // Avoid duplicate setup
+      if ((preBlock as HTMLElement).dataset.enhanced === 'true') return;
 
       const codeElement = preBlock.querySelector('code');
-      if (!codeElement) {
-        return;
+      if (!codeElement) return;
+
+      (preBlock as HTMLElement).style.position = 'relative';
+      (preBlock as HTMLElement).dataset.enhanced = 'true';
+
+      // Create single top-right copy button
+      if (!preBlock.querySelector('.copy-button-container')) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'copy-button-container absolute top-2 right-2 z-60';
+  
+        const copyButton = document.createElement('button');
+        copyButton.className =
+          'p-1.5 rounded-md bg-bg-secondary dark:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors flex items-center justify-center gap-1 shadow-sm';
+        
+        const copyIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>`;
+        const checkIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path></svg>`;
+  
+        copyButton.innerHTML = copyIconSVG;
+        copyButton.title = 'Copy code';
+        copyButton.setAttribute('data-copy-button', 'true');
+  
+        copyButton.onclick = (e: MouseEvent) => {
+          e.stopPropagation();
+          const text = (codeElement as HTMLElement).innerText;
+          navigator.clipboard.writeText(text).then(() => {
+            copyButton.innerHTML = `<span class="text-green-500 dark:text-green-400">Copied!</span> ${checkIconSVG}`;
+            copyButton.title = 'Copied!';
+            copyButton.classList.remove('text-text-secondary', 'dark:text-dark-text-secondary');
+            copyButton.classList.add('text-green-500', 'dark:text-green-400');
+            setTimeout(() => {
+              if (copyButton.parentNode) {
+                copyButton.innerHTML = copyIconSVG;
+                copyButton.title = 'Copy code';
+                copyButton.classList.remove('text-green-500', 'dark:text-green-400');
+                copyButton.classList.add('text-text-secondary', 'dark:text-dark-text-secondary');
+              }
+            }, 1500);
+          }).catch(err => {
+            addToast('Failed to copy code: ' + err, 'error');
+            console.error('Failed to copy code: ', err);
+          });
+        };
+  
+        buttonContainer.appendChild(copyButton);
+        preBlock.appendChild(buttonContainer);
       }
 
-      const buttonContainer = document.createElement('div');
-      buttonContainer.className = 'copy-button-container absolute top-2 right-2 z-60'; // Increased z-index from z-10 to z-60
+      // Enable per-line copy without adding visual buttons:
+      // - On mouse move, track the hovered visual line by caret position
+      // - On click (not on the top-right button), copy the hovered line
+      let lastHoverLine = -1;
 
-     const copyButton = document.createElement('button');
-     copyButton.className = 'p-1.5 rounded-md bg-bg-secondary dark:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors flex items-center justify-center gap-1 shadow-sm';
-     
-     const copyIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>`;
-     const checkIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path></svg>`;
+      // removed unused getLineFromEvent (was causing TS warning)
 
-     copyButton.innerHTML = copyIconSVG;
-     copyButton.title = 'Copy code';
-     copyButton.setAttribute('data-copy-button', 'true'); // Marker to identify copy buttons
-     
-     copyButton.onclick = (e: MouseEvent) => {
-       e.stopPropagation(); // Prevent event bubbling
-       const codeToCopy = codeElement.innerText.replace(/\s/g, ''); // Remove all whitespace
-       navigator.clipboard.writeText(codeToCopy).then(() => {
-         // Change icon to tick and add text (icon to the right)
-         copyButton.innerHTML = `<span class="text-green-500 dark:text-green-400">Copied!</span> ${checkIconSVG}`;
-         copyButton.title = 'Copied!';
-         
-         // Adjust class for green color
-         copyButton.classList.remove('text-text-secondary', 'dark:text-dark-text-secondary');
-         copyButton.classList.add('text-green-500', 'dark:text-green-400');
-         
-         // Revert to copy icon after a delay
-         setTimeout(() => {
-           // Check if button still exists before reverting
-           if (copyButton.parentNode) {
-             copyButton.innerHTML = copyIconSVG;
-             copyButton.title = 'Copy code';
-             copyButton.classList.remove('text-green-500', 'dark:text-green-400');
-             copyButton.classList.add('text-text-secondary', 'dark:text-dark-text-secondary');
-           }
-         }, 1500); // 1.5 seconds
-       }).catch(err => {
-         addToast('Failed to copy code: ' + err, 'error');
-         console.error('Failed to copy code: ', err);
-       });
-     };
+      // New approach for precise indication without relying on line-height math:
+      // Show a left-gutter caret/indicator aligned to the actual DOM rect under the cursor.
+      preBlock.addEventListener('mousemove', (evt: MouseEvent) => {
+        const preEl = preBlock as HTMLElement;
+        const codeEl = codeElement as HTMLElement;
 
-      buttonContainer.appendChild(copyButton);
-      (preBlock as HTMLElement).style.position = 'relative'; // Ensure relative positioning for absolute button
-      preBlock.appendChild(buttonContainer);
+        // Change cursor to pointer when over code area
+        preEl.style.cursor = 'default';
+
+        // Remove prior indicator
+        const prev = preEl.querySelector('.code-line-hover-caret');
+        if (prev) prev.remove();
+
+        // Find the exact text rect under cursor using Range.getClientRects
+        const r = (document as any).caretRangeFromPoint
+          ? (document as any).caretRangeFromPoint(evt.clientX, evt.clientY)
+          : null;
+        if (!r || !codeEl.contains(r.startContainer)) return;
+
+        // Build a range that snaps to the current line fragment by expanding to the word boundary
+        const range = document.createRange();
+        try {
+          range.selectNodeContents(codeEl);
+          range.setEnd(r.startContainer, Math.min(r.startOffset, (r.startContainer as any).length ?? 0));
+        } catch {
+          return;
+        }
+
+        const rects = (r as Range).getClientRects ? (r as Range).getClientRects() : [];
+        const codeRect = codeEl.getBoundingClientRect();
+        const preRect = preEl.getBoundingClientRect();
+        if (!rects || rects.length === 0) return;
+
+        // Pick the fragment whose vertical span contains the pointer y
+        const y = evt.clientY;
+        let current: DOMRect | null = null;
+        for (let i = 0; i < rects.length; i++) {
+          const rr = rects[i] as DOMRect;
+          if (y >= rr.top && y <= rr.bottom) {
+            current = rr;
+            break;
+          }
+        }
+        // Fallback: pick the closest rect to the cursor Y
+        if (!current) {
+          let minDy = Number.POSITIVE_INFINITY;
+          for (let i = 0; i < rects.length; i++) {
+            const rr = rects[i] as DOMRect;
+            const dy = Math.min(Math.abs(y - rr.top), Math.abs(y - rr.bottom));
+            if (dy < minDy) {
+              minDy = dy;
+              current = rr;
+            }
+          }
+        }
+        if (!current) return;
+
+        // Draw a thin left gutter caret aligned with the exact fragment rect
+        const caret = document.createElement('div');
+        caret.className = 'code-line-hover-caret';
+        Object.assign(caret.style, {
+          position: 'absolute',
+          left: `${Math.max(4, codeRect.left - preRect.left - 6)}px`,
+          width: '3px',
+          borderRadius: '2px',
+          top: `${current.top - preRect.top}px`,
+          height: `${Math.max(12, Math.min(current.height, codeRect.height))}px`,
+          background: 'currentColor',
+          opacity: '0.35',
+          pointerEvents: 'none',
+          zIndex: '46',
+        } as CSSStyleDeclaration);
+
+        preEl.appendChild(caret);
+
+        // Also switch cursor to pointer only when actually over code text rect
+        if (evt.clientX >= codeRect.left && evt.clientX <= codeRect.right &&
+            evt.clientY >= codeRect.top && evt.clientY <= codeRect.bottom) {
+          preEl.style.cursor = 'pointer';
+        }
+      });
+
+      preBlock.addEventListener('mouseleave', () => {
+        const preEl = preBlock as HTMLElement;
+        preEl.style.cursor = 'default';
+        lastHoverLine = -1;
+
+        // Clean up hover indicator
+        const prevHover = preEl.querySelector('.code-line-hover-caret');
+        if (prevHover) prevHover.remove();
+      }, { passive: true });
+
+      // Hide gutter caret when pointer leaves the code element area as well
+      codeElement.addEventListener('mouseleave', () => {
+        const preEl = preBlock as HTMLElement;
+        preEl.style.cursor = 'default';
+        const prevHover = preEl.querySelector('.code-line-hover-caret');
+        if (prevHover) prevHover.remove();
+      }, { passive: true });
+
+      // Ensure hover indicator is cleared before placing click feedback overlays
+      preBlock.addEventListener('click', (evt: MouseEvent) => {
+        const prevHover = (preBlock as HTMLElement).querySelector('.code-line-hover-caret');
+        if (prevHover) prevHover.remove();
+        // Ignore clicks on the top-right copy button
+        if ((evt.target as HTMLElement).closest('.copy-button-container')) return;
+
+        const codeText = (codeElement as HTMLElement).innerText;
+        const lines = codeText.replace(/\r\n/g, '\n').split('\n');
+
+        // If a specific visual line was found, copy it; otherwise, fall back to entire block
+        const toCopy =
+          lastHoverLine >= 0 && lastHoverLine < lines.length ? lines[lastHoverLine] : codeText;
+
+        // Avoid copying empty string lines unless user actually clicked on them (still OK)
+        navigator.clipboard.writeText(toCopy).catch(err => {
+          addToast('Failed to copy: ' + err, 'error');
+          console.error('Failed to copy line/block: ', err);
+        });
+      });
     });
 
   }, [addToast]); // Add addToast to dependencies
 
-  // FIXED: Replace the existing useEffect with MutationObserver approach
+  // Ensure preview actions (highlighting + copy buttons) always run when:
+  // - markdown changes
+  // - preview tab becomes visible (view mode changes)
+  // - component mounts
   useEffect(() => {
-    if (typeof hljs !== 'undefined' && previewPaneRef.current) {
-      // Initial processing
+    // If preview pane isn't mounted yet, try again on next tick
+    const tryProcess = () => {
+      if (typeof hljs === 'undefined') return;
+      const container = previewPaneRef.current || document.querySelector('.preview-pane');
+      if (!container) return;
+
       const processContent = () => {
-        const blocks = document.querySelectorAll('pre code');
+        const blocks = container.querySelectorAll('pre code');
         blocks.forEach((block) => {
           if (!block.classList.contains('hljs')) {
-            hljs.highlightElement(block);
+            hljs.highlightElement(block as HTMLElement);
           }
         });
         processPreviewContent();
@@ -227,7 +358,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
       });
 
       // Start observing
-      mutationObserverRef.current.observe(previewPaneRef.current, {
+      mutationObserverRef.current.observe(container as Node, {
         childList: true,
         subtree: true,
         characterData: true
@@ -236,14 +367,31 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
       // Initial processing
       setTimeout(processContent, 100);
 
+      // Also re-run processing when the preview pane becomes visible after switching tabs
+      // Using an animation frame ensures the DOM for preview is mounted
+      requestAnimationFrame(processContent);
+
       // Cleanup
       return () => {
         if (mutationObserverRef.current) {
           mutationObserverRef.current.disconnect();
         }
       };
-    }
-  }, [renderedMarkdown, processPreviewContent]);
+    };
+
+    // Run once now (mount or dependency change)
+    tryProcess();
+
+    // Also run when window gains focus (e.g. after tab switches)
+    window.addEventListener('focus', tryProcess, { passive: true });
+
+    return () => {
+      window.removeEventListener('focus', tryProcess);
+      if (mutationObserverRef.current) {
+        mutationObserverRef.current.disconnect();
+      }
+    };
+  }, [renderedMarkdown, processPreviewContent, viewMode]);
 
 
   // Reset suggestions when activeNote changes
@@ -323,16 +471,7 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
     setRedoStack([]); // Clear redo stack on new action
   }, []);
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    if (activeNote && newValue !== activeNote.content) {
-      pushToUndoStack(activeNote.content);
-    }
-    setCurrentEditorContent(newValue); // Update local state immediately
-    onUpdateNote({ content: newValue }); // Propagate change to parent
-    // Hide menu when user starts typing
-    if (contextualMenu) setContextualMenu(null);
-  };
+  // Deprecated handler (kept here earlier) removed to avoid unused warning.
   
   const undo = useCallback(() => {
     if (undoStack.length === 0) return;
@@ -1191,23 +1330,25 @@ const previewPaneRef = useRef<HTMLDivElement>(null);
               onClose={() => setSelectionNavigator(null)}
             />
           )}
-          <div className="flex-grow overflow-y-auto p-4 sm:p-6 select-text preview-pane" onClick={(e) => {
-               // Clear navigator if clicking on the pane itself, but not on selected text
-               if (window.getSelection()?.toString().trim() === '') {
-                   setSelectionNavigator(null);
-               }
+          <div
+            className="flex-grow overflow-y-auto p-4 sm:p-6 select-text preview-pane"
+            onClick={(e) => {
+              // Clear navigator if clicking on the pane itself, but not on selected text
+              if ((window.getSelection()?.toString().trim() || '') === '') {
+                setSelectionNavigator(null);
+              }
 
-               const target = e.target as HTMLElement;
-               // Check if the clicked element is an inline <code> tag and not inside a <pre> tag
-               if (target.tagName === 'CODE' && !target.closest('pre')) {
-                 const originalText = target.textContent || ''; // Store original text before copying
-                 navigator.clipboard.writeText(originalText).then(() => {
-                   addToast('Copied to clipboard!', 'success'); // Only use toast for feedback
-                 }).catch(err => {
-                   console.error('Failed to copy inline code: ', err);
-                 });
-               }
-          }}>
+              const target = e.target as HTMLElement;
+              // Check if the clicked element is an inline <code> tag and not inside a <pre> tag
+              // Make inline-code copy silent (no toast), per user feedback.
+              if (target.tagName === 'CODE' && !target.closest('pre')) {
+                const originalText = target.textContent || '';
+                navigator.clipboard.writeText(originalText).catch(err => {
+                  console.error('Failed to copy inline code: ', err);
+                });
+              }
+            }}
+          >
             {/* Title Section */}
             <div className="mb-6 pb-4 border-b border-gray-200 dark:border-dark-border-color">
               <div className="flex items-center gap-3 mb-2">

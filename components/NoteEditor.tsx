@@ -155,6 +155,78 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     return "";
   }, [activeNote?.content]);
 
+  // Function to restore copy buttons in code blocks (for mobile view switching)
+  const restoreCopyButtons = useCallback(() => {
+    const previewPane =
+      previewPaneRef.current || document.querySelector(".preview-pane");
+    if (!previewPane) return;
+
+    const codeBlocks = previewPane.querySelectorAll("pre");
+    codeBlocks.forEach((preBlock) => {
+      const codeElement = preBlock.querySelector("code");
+      if (!codeElement) return;
+
+      // Ensure enhanced data attribute
+      (preBlock as HTMLElement).dataset.enhanced = "true";
+      (preBlock as HTMLElement).style.position = "relative";
+
+      // Create copy button if it doesn't exist
+      if (!preBlock.querySelector(".copy-button-container")) {
+        const buttonContainer = document.createElement("div");
+        buttonContainer.className =
+          "copy-button-container absolute top-2 right-2 z-60";
+
+        const copyButton = document.createElement("button");
+        copyButton.className =
+          "p-1.5 rounded-md bg-bg-secondary dark:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors flex items-center justify-center gap-1 shadow-sm";
+
+        const copyIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>`;
+        const checkIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path></svg>`;
+
+        copyButton.innerHTML = copyIconSVG;
+        copyButton.title = "Copy code";
+        copyButton.setAttribute("data-copy-button", "true");
+
+        copyButton.onclick = (e: MouseEvent) => {
+          e.stopPropagation();
+          const text = (codeElement as HTMLElement).innerText;
+          navigator.clipboard
+            .writeText(text)
+            .then(() => {
+              copyButton.innerHTML = `<span class="text-green-500 dark:text-green-400">Copied!</span> ${checkIconSVG}`;
+              copyButton.title = "Copied!";
+              copyButton.classList.remove(
+                "text-text-secondary",
+                "dark:text-dark-text-secondary"
+              );
+              copyButton.classList.add("text-green-500", "dark:text-green-400");
+              setTimeout(() => {
+                if (copyButton.parentNode) {
+                  copyButton.innerHTML = copyIconSVG;
+                  copyButton.title = "Copy code";
+                  copyButton.classList.remove(
+                    "text-green-500",
+                    "dark:text-green-400"
+                  );
+                  copyButton.classList.add(
+                    "text-text-secondary",
+                    "dark:text-dark-text-secondary"
+                  );
+                }
+              }, 1500);
+            })
+            .catch((err) => {
+              addToast("Failed to copy code: " + err, "error");
+              console.error("Failed to copy code: ", err);
+            });
+        };
+
+        buttonContainer.appendChild(copyButton);
+        preBlock.appendChild(buttonContainer);
+      }
+    });
+  }, [addToast]);
+
   // Function to process URLs and add copy buttons to code blocks
   const processPreviewContent = useCallback(() => {
     const previewPane =
@@ -177,8 +249,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     // Add one block-level copy button and enable per-line copy via click without extra buttons
     const codeBlocks = previewPane.querySelectorAll("pre");
     codeBlocks.forEach((preBlock) => {
-      // Avoid duplicate setup
-      if ((preBlock as HTMLElement).dataset.enhanced === "true") return;
+      // Check if already enhanced, but allow re-enhancement if missing copy button
+      const isEnhanced = (preBlock as HTMLElement).dataset.enhanced === "true";
+      const hasCopyButton = preBlock.querySelector(".copy-button-container");
+      
+      if (isEnhanced && hasCopyButton) return;
 
       const codeElement = preBlock.querySelector("code");
       if (!codeElement) return;
@@ -471,13 +546,28 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     // Also run when window gains focus (e.g. after tab switches)
     window.addEventListener("focus", tryProcess, { passive: true });
 
+    // Fix for mobile view switching: re-process when mobile view changes
+    const handleMobileViewChange = () => {
+      if (!isDesktop && mobileView === "preview") {
+        // Small delay to ensure DOM is stable after view switch
+        setTimeout(() => {
+          restoreCopyButtons();
+          tryProcess();
+        }, 200);
+      }
+    };
+
+    // Listen for mobile view changes
+    window.addEventListener("resize", handleMobileViewChange, { passive: true });
+
     return () => {
       window.removeEventListener("focus", tryProcess);
+      window.removeEventListener("resize", handleMobileViewChange);
       if (mutationObserverRef.current) {
         mutationObserverRef.current.disconnect();
       }
     };
-  }, [renderedMarkdown, processPreviewContent, viewMode]);
+  }, [renderedMarkdown, processPreviewContent, restoreCopyButtons, viewMode, isDesktop, mobileView]);
 
   // Reset suggestions when activeNote changes
   useEffect(() => {
@@ -1508,6 +1598,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
             WebkitUserSelect: "text",
             WebkitTouchCallout: "none", // Disable iOS callout menu
             WebkitTapHighlightColor: "transparent",
+            fontFamily: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace !important"
           }}
           className="w-full h-full bg-transparent text-gray-800 dark:text-dark-text-secondary focus:outline-none resize-none leading-relaxed font-mono editor-textarea"
           placeholder="Start writing..."

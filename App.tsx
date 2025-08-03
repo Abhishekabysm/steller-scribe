@@ -374,7 +374,7 @@ const AppContent: React.FC = () => {
   }, [viewMode, activeNote]); // activeNote added as dependency for initial render when it becomes available
 
   return (
-    <div className="h-screen w-screen flex flex-col font-sans antialiased">
+    <div className="h-screen w-screen flex flex-col font-mono antialiased">
 <style>{`
         input[type="search"]::-webkit-search-cancel-button {
           -webkit-appearance: none;

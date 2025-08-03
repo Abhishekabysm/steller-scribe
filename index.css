@@ -197,26 +197,113 @@ html, body, #root {
   opacity: 0.8;
 }
 
-/* Custom styles for smaller screens */
-@media (max-width: 480px) {
+/* Responsive text sizes for smaller screens */
+@media (max-width: 768px) {
   .prose {
-    font-size: 0.875rem; /* ~14px */
-    line-height: 1.4;
+    font-size: 1rem; /* 16px - increased base text */
+    line-height: 1.5;
   }
   .prose h1 {
-    font-size: 1.75rem; /* ~28px */
+    font-size: 1.75rem; /* 28px - increased h1 */
   }
   .prose h2 {
-    font-size: 1.5rem; /* ~24px */
+    font-size: 1.5rem; /* 24px - increased h2 */
   }
   .prose h3 {
-    font-size: 1.25rem; /* ~20px */
+    font-size: 1.25rem; /* 20px - increased h3 */
   }
   .prose h4 {
-    font-size: 1.125rem; /* ~18px */
+    font-size: 1.125rem; /* 18px - increased h4 */
   }
   .prose code {
-    font-size: 0.8125rem; /* Slightly smaller code font */
+    font-size: 0.875rem; /* 14px - increased inline code */
+  }
+  .prose p {
+    font-size: 1rem; /* 16px - increased paragraphs */
+    line-height: 1.5;
+  }
+  .prose pre {
+    font-size: 0.875rem; /* 14px - increased code blocks */
   }
 }
 
+@media (max-width: 480px) {
+  .prose {
+    font-size: 0.875rem; /* 14px - increased for mobile */
+    line-height: 1.5;
+  }
+  .prose h1 {
+    font-size: 1.5rem; /* 24px - increased h1 */
+  }
+  .prose h2 {
+    font-size: 1.25rem; /* 20px - increased h2 */
+  }
+  .prose h3 {
+    font-size: 1.125rem; /* 18px - increased h3 */
+  }
+  .prose h4 {
+    font-size: 1rem; /* 16px - increased h4 */
+  }
+  .prose code {
+    font-size: 0.75rem; /* 12px - increased inline code */
+  }
+  .prose p {
+    font-size: 0.875rem; /* 14px - increased paragraphs */
+    line-height: 1.5;
+  }
+  .prose pre {
+    font-size: 0.75rem; /* 12px - increased code blocks */
+  }
+  
+  /* Editor textarea font size adjustments for mobile */
+  .editor-textarea {
+    font-size: 0.875rem !important; /* 14px - increased editor text */
+    line-height: 1.5 !important;
+  }
+  
+  /* Title input adjustments for mobile */
+  input[type="text"].text-xl {
+    font-size: 1.25rem !important; /* 20px - increased title */
+  }
+  
+  /* Mobile tag adjustments */
+  .tag-mobile {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+}
+
+/* Enhanced mobile editor styles */
+@media (max-width: 640px) {
+  .editor-textarea {
+    font-size: 0.875rem !important; /* 14px - increased editor text */
+    line-height: 1.5 !important;
+    padding: 0.75rem !important;
+  }
+  
+  /* Increased title on small screens */
+  input[type="text"].text-xl {
+    font-size: 1.25rem !important; /* 20px - increased */
+  }
+  
+  /* Adjust button text sizes */
+  button .text-sm {
+    font-size: 0.875rem !important;
+  }
+  
+  /* Mobile-specific improvements */
+  .prose {
+    font-size: 0.875rem !important; /* 14px - increased for mobile */
+    line-height: 1.5 !important;
+  }
+  
+  /* Button text for mobile actions */
+  .preview-pane button {
+    font-size: 0.75rem !important; /* 12px - increased */
+  }
+  
+  /* Footer text */
+  footer {
+    font-size: 0.75rem !important; /* 12px - increased */
+  }
+}

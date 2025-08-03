@@ -412,7 +412,7 @@ const AppContent: React.FC = () => {
           </button>
           <div className="flex items-center space-x-2 min-w-0">
             <FaStar className="w-8 h-8 text-accent dark:text-dark-accent flex-shrink-0" />
-            <h1 className="text-xl font-bold text-text-primary dark:text-dark-text-primary hidden sm:block truncate">
+            <h1 className="text-lg sm:text-xl font-bold text-text-primary dark:text-dark-text-primary hidden sm:block truncate">
               Stellar Scribe
             </h1>
           </div>

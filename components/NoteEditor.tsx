@@ -1457,7 +1457,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
               value={activeNote.title}
               onChange={handleTitleChange}
               placeholder="Untitled Note"
-              className="flex-1 min-w-0 text-xl sm:text-2xl font-bold bg-transparent text-gray-900 dark:text-dark-text-primary focus:outline-none placeholder:text-gray-400"
+              className="flex-1 min-w-0 text-lg sm:text-xl md:text-2xl font-bold bg-transparent text-gray-900 dark:text-dark-text-primary focus:outline-none placeholder:text-gray-400"
             />
             <button
               onClick={handleGenerateTitle}
@@ -1695,7 +1695,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         {/* Title Section */}
         <div className="mb-6 pb-4 border-b border-gray-200 dark:border-dark-border-color">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-dark-text-primary break-words">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-dark-text-primary break-words">
               {activeNote.title || "Untitled Note"}
             </h1>
             {activeNote.isImported && (

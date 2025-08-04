@@ -11,10 +11,11 @@ import ImportModal from './components/ImportModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import SummaryModal from './components/SummaryModal'; 
 import CommandPalette from './components/CommandPalette'; 
+import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import FeatureAnnouncementManager from './components/FeatureAnnouncementExample';
 import { summarizeText } from './services/geminiService';
 import { FaBars, FaXmark } from 'react-icons/fa6';
-import { FaSun, FaMoon, FaSearch, FaStar } from 'react-icons/fa';
+import { FaSun, FaMoon, FaSearch, FaStar, FaQuestionCircle } from 'react-icons/fa';
 
 const AppContent: React.FC = () => {
   const [notes, setNotes] = useLocalStorage<Note[]>('stellar-scribe-notes-v2', []);
@@ -47,6 +48,7 @@ const AppContent: React.FC = () => {
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false); // New state for summary modal
   const [summaryContent, setSummaryContent] = useState(''); // New state for summary content
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false); // New state for command palette
+  const [isKeyboardShortcutsOpen, setIsKeyboardShortcutsOpen] = useState(false); // New state for keyboard shortcuts modal
   const { addToast } = useToasts();
   const [placeholderText, setPlaceholderText] = useState('Search notes...');
   const [showRecommendations, setShowRecommendations] = useState(false);
@@ -334,12 +336,20 @@ const AppContent: React.FC = () => {
     addToast('Summary added to note!', 'success');
   }, [activeNote, summaryContent, updateNote, addToast]);
  
-  // Effect to handle keyboard shortcut for command palette
+  // Effect to handle keyboard shortcuts for command palette and help modal
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
+      }
+      if (e.key === '?' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsKeyboardShortcutsOpen((prev) => !prev);
+      }
+      if (e.key === '/' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsKeyboardShortcutsOpen((prev) => !prev);
       }
     };
 
@@ -565,6 +575,14 @@ const AppContent: React.FC = () => {
   )}
   
   <button
+    onClick={() => setIsKeyboardShortcutsOpen(true)}
+    className="hidden md:flex p-2.5 rounded-lg hover:bg-gray-100/80 dark:hover:bg-gray-800/80 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-all duration-200 flex-shrink-0"
+    title="Keyboard shortcuts (Ctrl + ?)"
+  >
+    <FaQuestionCircle className="w-4 h-4" />
+  </button>
+  
+  <button
     onClick={toggleTheme}
     className="p-2.5 rounded-lg hover:bg-gray-100/80 dark:hover:bg-gray-800/80 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-all duration-200 flex-shrink-0"
     title="Toggle theme"
@@ -665,6 +683,11 @@ const AppContent: React.FC = () => {
         selectNote={selectNote}
         notes={notes}
         theme={theme}
+      />
+
+      <KeyboardShortcutsModal
+        isOpen={isKeyboardShortcutsOpen}
+        onClose={() => setIsKeyboardShortcutsOpen(false)}
       />
 
       {/* Feature Announcements */}

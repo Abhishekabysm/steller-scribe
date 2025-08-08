@@ -61,57 +61,69 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
   return (
     <li
       onClick={handleClick}
-      className={`group cursor-pointer p-3 rounded-md transition-all duration-200 ease-in-out relative mb-2 shadow-sm ${
+      className={`group cursor-pointer rounded-lg transition-all duration-200 ease-in-out relative mb-2 border shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:focus:ring-dark-accent/30 ${
         isActive
-          ? 'bg-blue-100 dark:bg-dark-accent/20 border border-blue-400 dark:border-dark-accent'
-          : 'bg-gray-100 dark:bg-dark-surface hover:bg-gray-200 dark:hover:bg-dark-surface-hover border border-gray-200 dark:border-dark-border-color'
+          ? 'bg-blue-50 dark:bg-dark-accent/15 border-blue-300 dark:border-dark-accent'
+          : 'bg-white/70 dark:bg-dark-surface border-gray-200 dark:border-dark-border-color hover:bg-gray-50 dark:hover:bg-dark-surface-hover'
       }`}
       aria-current={isActive}
+      aria-selected={isActive}
+      role="option"
     >
+      {/* Active/hover accent bar on the left */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg transition-opacity ${
+        isActive ? 'bg-blue-500 dark:bg-dark-accent opacity-100' : 'bg-blue-500/60 dark:bg-dark-accent/60 opacity-0 group-hover:opacity-100'
+      }`} />
+
       <div className="absolute top-2 right-2 flex items-center gap-1">
         <button 
           onClick={handlePinClick} 
-          className={`p-1.5 rounded-full text-text-muted/60 hover:text-accent dark:text-dark-text-muted/60 dark:hover:text-dark-accent transition-colors ${note.isPinned ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
+          className={`p-1.5 rounded-full text-text-muted/70 hover:text-accent dark:text-dark-text-muted/70 dark:hover:text-dark-accent transition-colors ${note.isPinned ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
           title={note.isPinned ? 'Unpin note' : 'Pin note'}
         >
           <FaThumbtack className={`w-4 h-4 sm:w-5 sm:h-5 ${note.isPinned ? 'text-accent dark:text-dark-accent' : ''}`} />
         </button>
         <button 
           onClick={handleDeleteClick} 
-          className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 shadow-sm"
+          className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full text-red-500/80 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200"
           title="Delete note"
         >
           <FaRegTrashCan className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
-      <h3 className={`font-bold truncate pr-16 flex items-center gap-2 ${
-        isActive 
-          ? 'text-blue-800 dark:text-dark-text-primary' 
-          : 'text-text-primary dark:text-dark-text-primary'
-      }`}>
-        <span className="truncate">{note.title || 'Untitled Note'}</span>
-        {note.isImported && (
-          <MdCloudDownload 
-            className="w-4 h-4 text-blue-500 dark:text-blue-400 flex-shrink-0" 
-            title="Imported note"
-          />
-        )}
-      </h3>
-      <div className="flex items-center mt-1.5">
-        <p className={`text-sm truncate ${
+
+      <div className="px-3 py-3 pr-16">
+        <h3 className={`font-semibold truncate flex items-center gap-2 ${
           isActive 
-            ? 'text-blue-700 dark:text-dark-text-secondary' 
-            : 'text-gray-500 dark:text-dark-text-muted'
+            ? 'text-blue-800 dark:text-dark-text-primary' 
+            : 'text-text-primary dark:text-dark-text-primary'
         }`}>
-          <span className="mr-2">{date}</span>
-          {(note.content || '').substring(0, 30).replace(/#|`|\*|\[|\]/g, '')}...
+          <span className="truncate">{note.title || 'Untitled Note'}</span>
+          {note.isImported && (
+            <MdCloudDownload 
+              className="w-4 h-4 text-blue-500 dark:text-blue-400 flex-shrink-0" 
+              title="Imported note"
+            />
+          )}
+        </h3>
+
+        <p className={`mt-1 text-xs sm:text-sm line-clamp-2 ${
+          isActive 
+            ? 'text-blue-700/80 dark:text-dark-text-secondary' 
+            : 'text-gray-600 dark:text-dark-text-muted'
+        }`}>
+          <span className="inline-flex items-center mr-2 text-[11px] sm:text-xs text-gray-500 dark:text-dark-text-muted">
+            {date}
+          </span>
+          {(note.content || '').replace(/#|`|\*|\[|\]/g, '').substring(0, 100)}
         </p>
-      </div>
-      {note.tags && note.tags.length > 0 && (
-          <div className="mt-2 flex flex-wrap items-center gap-y-1">
-              {note.tags.slice(0, 3).map(tag => <Tag key={tag} tag={tag} />)}
+
+        {note.tags && note.tags.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {note.tags.slice(0, 3).map(tag => <Tag key={tag} tag={tag} />)}
           </div>
-      )}
+        )}
+      </div>
     </li>
   );
 };

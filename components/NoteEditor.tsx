@@ -1631,7 +1631,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   );
 
   const previewPane = (
-    <div className="flex flex-col h-full bg-gray-100 dark:bg-dark-bg-primary relative">
+    <div className="flex flex-col h-full bg-gray-100 dark:bg-dark-bg-primary relative min-w-0">
       {selectionNavigator && (
         <SelectionNavigator
           top={selectionNavigator.top}
@@ -1644,7 +1644,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         />
       )}
       <div
-        className="flex-grow overflow-y-auto p-4 sm:p-6 select-text preview-pane"
+        className="flex-grow overflow-y-auto overflow-x-hidden p-4 sm:p-6 select-text preview-pane min-w-0"
         onClick={(e) => {
           // Clear navigator if clicking on the pane itself, but not on selected text
           if ((window.getSelection()?.toString().trim() || "") === "") {

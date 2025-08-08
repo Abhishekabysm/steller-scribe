@@ -307,3 +307,52 @@ html, body, #root {
     font-size: 0.75rem !important; /* 12px - increased */
   }
 }
+
+/* Contain content in preview pane to prevent horizontal scrolling */
+.preview-pane {
+  overflow-x: hidden; /* prevent pane-level horizontal scroll */
+}
+
+/* Ensure long content wraps and elements don't exceed container width */
+.preview-pane .prose,
+.preview-pane .prose * {
+  max-width: 100% !important;
+}
+
+/* Wrap long words/URLs in text and code inline */
+.preview-pane .prose p,
+.preview-pane .prose li,
+.preview-pane .prose h1,
+.preview-pane .prose h2,
+.preview-pane .prose h3,
+.preview-pane .prose h4,
+.preview-pane .prose h5,
+.preview-pane .prose h6,
+.preview-pane .prose code,
+.preview-pane .prose a,
+.preview-pane .prose blockquote {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Keep code blocks scrollable within themselves without expanding layout */
+.preview-pane .prose pre {
+  max-width: 100% !important;
+  overflow-x: auto;
+}
+
+/* Make tables and media responsive inside preview */
+.preview-pane .prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.preview-pane .prose img,
+.preview-pane .prose video,
+.preview-pane .prose svg,
+.preview-pane .prose iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}

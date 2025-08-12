@@ -141,6 +141,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
   const { addToast } = useToasts();
   const editorRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const lastCursorPosRef = useRef(0);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const previewPaneRef = useRef<HTMLDivElement>(null);
@@ -258,7 +259,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     links.forEach((link) => {
       link.setAttribute("target", "_blank");
       link.setAttribute("rel", "noopener noreferrer");
-      // Add styling classes
+      // MDE rendering logic
       link.classList.add(
         "text-accent",
         "dark:text-dark-accent",
@@ -1469,6 +1470,38 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     );
   }
 
+  useEffect(() => {
+    const editor = editorRef.current;
+    const preview = previewRef.current;
+
+    if (!editor || !preview || viewMode !== 'split') return;
+
+    let isSyncing = false;
+
+    const syncScroll = (source: HTMLElement, target: HTMLElement) => {
+      if (isSyncing) return;
+      isSyncing = true;
+
+      const sourceScrollRatio = source.scrollTop / (source.scrollHeight - source.clientHeight);
+      target.scrollTop = sourceScrollRatio * (target.scrollHeight - target.clientHeight);
+      
+      requestAnimationFrame(() => {
+        isSyncing = false;
+      });
+    };
+
+    const handleEditorScroll = () => syncScroll(editor, preview);
+    const handlePreviewScroll = () => syncScroll(preview, editor);
+
+    editor.addEventListener('scroll', handleEditorScroll);
+    preview.addEventListener('scroll', handlePreviewScroll);
+
+    return () => {
+      editor.removeEventListener('scroll', handleEditorScroll);
+      preview.removeEventListener('scroll', handlePreviewScroll);
+    };
+  }, [viewMode, activeNote?.id, currentEditorContent, renderedMarkdown]);
+
   const editorPane = (
     <div
       className="flex flex-col h-full bg-gray-50 dark:bg-dark-surface relative"
@@ -1672,80 +1705,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           onClose={() => setSelectionNavigator(null)}
         />
       )}
-      <div
-        className="flex-grow overflow-y-auto overflow-x-hidden p-4 sm:p-6 select-text preview-pane min-w-0"
-        onClick={(e) => {
-          // Clear navigator if clicking on the pane itself, but not on selected text
-          if ((window.getSelection()?.toString().trim() || "") === "") {
-            setSelectionNavigator(null);
-          }
-
-          const target = e.target as HTMLElement;
-
-          // Ignore clicks on the block copy button inside pre blocks
-          if (target.closest(".copy-button-container")) return;
-
-          // Robust inline-code click-to-copy (outside of PRE)
-          if (target.tagName === "CODE" && !target.closest("pre")) {
-            const codeEl = target.closest("code");
-            if (codeEl) {
-              const text = (codeEl.textContent || "").trim();
-              if (text.length > 0) {
-                const notify = () => addToast("Copied to clipboard", "success");
-                const flash = () => {
-                  codeEl.classList.add("inline-code-copied");
-                  setTimeout(() => codeEl.classList.remove("inline-code-copied"), 300);
-                };
-                const onSuccess = () => {
-                  flash();
-                  notify();
-                };
-                const fallback = () => {
-                  try {
-                    const r = document.createRange();
-                    r.selectNodeContents(codeEl);
-                    const sel = window.getSelection();
-                    sel?.removeAllRanges();
-                    sel?.addRange(r);
-                    const ok = document.execCommand("copy");
-                    sel?.removeAllRanges();
-                    if (ok) onSuccess();
-                  } catch (err) {
-                    console.error("Failed to copy inline code via fallback:", err);
-                    addToast("Failed to copy", "error");
-                  }
-                };
-                navigator.clipboard.writeText(text).then(onSuccess).catch(fallback);
-              }
-            }
-          }
-        }}
-      >
+      <div ref={previewRef} className="flex-grow overflow-y-auto overflow-x-hidden p-4 sm:p-6 select-text preview-pane min-w-0">
         {/* Title Section */}
         <div className="mb-6 pb-4 border-b border-gray-200 dark:border-dark-border-color">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-dark-text-primary break-words">
-              {activeNote.title || "Untitled Note"}
-            </h1>
-            {activeNote.isImported && (
-              <div className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100 dark:bg-blue-900/20 rounded-full border border-blue-300 dark:border-blue-800 flex-shrink-0">
-                <MdCloudDownload
-                  className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400"
-                  title="This note was imported from a shared link"
-                />
-                <span className="text-xs sm:text-sm text-blue-700 dark:text-blue-400 font-medium">
-                  <span className="hidden sm:inline">Imported</span>
-                  <span className="sm:hidden">Imported</span>
-                  {activeNote.importedAt && (
-                    <span className="ml-1 text-xs opacity-75 hidden sm:inline">
-                      on {new Date(activeNote.importedAt).toLocaleDateString()}
-                    </span>
-                  )}
-                </span>
-              </div>
-            )}
-          </div>
-          {activeNote && activeNote.tags && activeNote.tags.length > 0 && (
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-dark-text-primary break-words">
+            {activeNote.title || "Untitled Note"}
+          </h1>
+          {activeNote.tags && activeNote.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {activeNote.tags.map((tag) => (
                 <span
@@ -1760,8 +1726,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         </div>
         {/* Content Section */}
         <div
-          ref={previewPaneRef} // Attach ref to the preview pane
-          className="prose prose-xs sm:prose-sm md:prose-base dark:prose-invert max-w-none"
+          id="preview-content"
+          className="prose prose-sm sm:prose-base lg:prose-lg dark:prose-invert max-w-none w-full"
           dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
           style={{ userSelect: "text", cursor: "text" }}
           onMouseUp={handlePreviewSelection}

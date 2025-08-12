@@ -101,8 +101,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
 
   // Undo/Redo state
-  const [undoStack, setUndoStack] = useState<string[]>([]);
-  const [redoStack, setRedoStack] = useState<string[]>([]);
+  const [undoStack, setUndoStack] = useState<{content: string, cursorPos: number}[]>([]);
+  const [redoStack, setRedoStack] = useState<{content: string, cursorPos: number}[]>([]);
   const [currentEditorContent, setCurrentEditorContent] = useState(
     activeNote?.content || ""
   );
@@ -118,10 +118,30 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   } | null>(null);
 
   const isDesktop = useMediaQuery("(min-width: 768px)");
+
+  // Effect to track cursor position reliably
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const updateCursorPos = () => {
+      lastCursorPosRef.current = editor.selectionStart;
+    };
+
+    // These events fire before the onChange event, capturing the cursor position pre-change.
+    editor.addEventListener('keyup', updateCursorPos);
+    editor.addEventListener('mousedown', updateCursorPos);
+
+    return () => {
+      editor.removeEventListener('keyup', updateCursorPos);
+      editor.removeEventListener('mousedown', updateCursorPos);
+    };
+  }, [activeNote]); // Re-attach listeners if the note/editor changes
   const [mobileView, setMobileView] = useState<"editor" | "preview">("preview");
 
   const { addToast } = useToasts();
   const editorRef = useRef<HTMLTextAreaElement>(null);
+  const lastCursorPosRef = useRef(0);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const previewPaneRef = useRef<HTMLDivElement>(null);
   const mutationObserverRef = useRef<MutationObserver | null>(null);
@@ -637,8 +657,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   }, [activeNote?.id]); // Only re-run when the note ID changes
 
   const pushToUndoStack = useCallback((oldContent: string) => {
+
     setUndoStack((prev) => {
-      const newStack = [...prev, oldContent];
+      const newStack = [...prev, {content: oldContent, cursorPos: lastCursorPosRef.current}];
       // Trim history if it exceeds MAX_HISTORY_LENGTH
       if (newStack.length > MAX_HISTORY_LENGTH) {
         return newStack.slice(newStack.length - MAX_HISTORY_LENGTH);
@@ -653,22 +674,22 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const undo = useCallback(() => {
     if (undoStack.length === 0) return;
 
-    const previousContent = undoStack[undoStack.length - 1];
+    const previousState = undoStack[undoStack.length - 1];
+    const currentCursorPos = editorRef.current?.selectionStart || 0;
+    
     setUndoStack((prev) => prev.slice(0, -1)); // Remove last item
-    setRedoStack((prev) => [...prev, currentEditorContent]); // Add current to redo stack
+    setRedoStack((prev) => [...prev, {content: currentEditorContent, cursorPos: currentCursorPos}]); // Add current to redo stack
 
-    setCurrentEditorContent(previousContent);
-    onUpdateNote({ content: previousContent });
+    setCurrentEditorContent(previousState.content);
+    onUpdateNote({ content: previousState.content });
 
-    // Restore cursor position if possible, or just set to end
+    // Restore cursor position
     setTimeout(() => {
       const textarea = editorRef.current;
       if (textarea) {
         textarea.focus();
-        textarea.setSelectionRange(
-          previousContent.length,
-          previousContent.length
-        );
+        const pos = Math.min(previousState.cursorPos, previousState.content.length);
+        textarea.setSelectionRange(pos, pos);
       }
     }, 0);
   }, [undoStack, redoStack, currentEditorContent, onUpdateNote]);
@@ -676,19 +697,22 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const redo = useCallback(() => {
     if (redoStack.length === 0) return;
 
-    const nextContent = redoStack[redoStack.length - 1];
+    const nextState = redoStack[redoStack.length - 1];
+    const currentCursorPos = editorRef.current?.selectionStart || 0;
+    
     setRedoStack((prev) => prev.slice(0, -1)); // Remove last item
-    setUndoStack((prev) => [...prev, currentEditorContent]); // Add current to undo stack
+    setUndoStack((prev) => [...prev, {content: currentEditorContent, cursorPos: currentCursorPos}]); // Add current to undo stack
 
-    setCurrentEditorContent(nextContent);
-    onUpdateNote({ content: nextContent });
+    setCurrentEditorContent(nextState.content);
+    onUpdateNote({ content: nextState.content });
 
-    // Restore cursor position if possible, or just set to end
+    // Restore cursor position
     setTimeout(() => {
       const textarea = editorRef.current;
       if (textarea) {
         textarea.focus();
-        textarea.setSelectionRange(nextContent.length, nextContent.length);
+        const pos = Math.min(nextState.cursorPos, nextState.content.length);
+        textarea.setSelectionRange(pos, pos);
       }
     }, 0);
   }, [undoStack, redoStack, currentEditorContent, onUpdateNote]);
@@ -1315,19 +1339,20 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     const textarea = editorRef.current;
 
     // Handle Undo/Redo
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
-      e.preventDefault();
-      undo();
-      return;
-    }
-    if (
-      (e.ctrlKey || e.metaKey) &&
-      (e.key.toLowerCase() === "y" ||
-        (e.shiftKey && e.key.toLowerCase() === "z"))
-    ) {
-      e.preventDefault();
-      redo();
-      return;
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (undoStack.length > 0) {
+          undo();
+        }
+        return;
+      } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
+        e.preventDefault();
+        if (redoStack.length > 0) {
+          redo();
+        }
+        return;
+      }
     }
 
     const start = textarea.selectionStart;
@@ -1539,6 +1564,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           ref={editorRef}
           value={currentEditorContent} // Use local state for controlled component
           onChange={(val: string) => {
+            // Push current content to undo stack before changing
+            if (val !== currentEditorContent) {
+              pushToUndoStack(currentEditorContent);
+            }
             setCurrentEditorContent(val);
             onUpdateNote({ content: val });
           }}

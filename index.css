@@ -165,9 +165,43 @@ textarea.editor-textarea::selection,
   cursor: pointer;
 }
 
+/* Enhanced copy button styling */
+.copy-button-container {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
 @media (hover: hover) and (pointer: fine) {
   pre:hover .line-copy-btn {
     display: flex !important;
+  }
+  
+  pre:hover .copy-button-container {
+    opacity: 1 !important;
+  }
+}
+
+/* Always show copy buttons on mobile/touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .copy-button-container {
+    opacity: 1 !important;
+  }
+}
+
+/* Ensure copy buttons are visible when preview pane is active */
+.preview-pane pre .copy-button-container {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.preview-pane pre:hover .copy-button-container {
+  opacity: 1 !important;
+}
+
+/* Force visibility on mobile */
+@media (max-width: 768px) {
+  .preview-pane pre .copy-button-container {
+    opacity: 1 !important;
   }
 }
 
@@ -188,6 +222,9 @@ html, body, #root {
 .prose code:not(pre > code) {
   cursor: pointer;
   position: relative;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
   /* Additional styling to visually indicate it's clickable, e.g., a subtle underline or background change */
   /* text-decoration: underline dotted; */
 }
@@ -341,6 +378,19 @@ html, body, #root {
   overflow-x: auto;
 }
 
+/* Light mode code styling */
+html:not(.dark) .prose pre {
+  background-color: #f3f4f6; /* slightly darker gray for better contrast */
+  border: 1px solid #9ca3af; /* darker border for clearer visibility */
+  color: #1f2937; /* neutral dark text */
+}
+html:not(.dark) .prose code:not(pre > code) {
+  background-color: #f2f2f3; /* slightly darker for inline */
+  border: 1px solid #e5e7eb;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+  color: #c7254e; /* accent for inline code */
+}
 /* Make tables and media responsive inside preview */
 .preview-pane .prose table {
   display: block;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaXmark, FaStar, FaArrowRight } from 'react-icons/fa6';
+import { FaStar, FaArrowRight } from 'react-icons/fa6';
 
 interface FeatureAnnouncementModalProps {
   isOpen: boolean;
@@ -202,21 +202,13 @@ const FeatureAnnouncementModal: React.FC<FeatureAnnouncementModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with close button */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border-color dark:border-dark-border-color">
+        <div className="flex items-center justify-center p-4 sm:p-6 border-b border-border-color dark:border-dark-border-color">
           <h2
             id="feature-announcement-title"
-            className="text-lg sm:text-xl font-semibold text-text-primary dark:text-dark-text-primary"
+            className="text-lg sm:text-xl font-semibold text-text-primary dark:text-dark-text-primary whitespace-nowrap"
           >
             {title || `Introducing ${featureName}`}
           </h2>
-          <button
-            ref={closeButtonRef}
-            onClick={handleClose}
-            className="p-2 rounded-lg hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary text-text-muted dark:text-dark-text-muted hover:text-text-primary dark:hover:text-dark-text-primary transition-colors"
-            aria-label="Close announcement"
-          >
-            <FaXmark className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
         </div>
 
         {/* Content */}

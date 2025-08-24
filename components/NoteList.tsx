@@ -92,7 +92,7 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
         </button>
       </div>
 
-      <div className="px-3 py-3 pr-16">
+      <div className="px-3 py-3 pr-20 sm:pr-24">
         <h3 className={`font-semibold truncate flex items-center gap-2 ${
           isActive 
             ? 'text-blue-800 dark:text-dark-text-primary' 

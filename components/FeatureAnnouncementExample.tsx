@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaLightbulb } from 'react-icons/fa6';
+import { FaWandMagicSparkles } from 'react-icons/fa6';
 import FeatureAnnouncementModal from './FeatureAnnouncementModal';
 import { useToasts } from '../hooks/useToasts';
 
@@ -61,12 +61,12 @@ const FeatureAnnouncementManager: React.FC = () => {
     {
       featureId: 'code-line-copy-v1',
       featureName: 'Line copy in code blocks',
-      title: '🔖 Click-to-copy a single code line',
+      title: '✨ Sleek new look & smooth feel',
       description:
-        'Hover a code line to see a subtle gutter caret. Click to copy just that line. Inline code copies on click. Use the top-right button to copy the whole block.',
+        'Enjoy our refreshed minimal UI and buttery-smooth interactions. Explore the new experience now.',
       visual: {
         type: 'icon',
-        iconComponent: FaLightbulb,
+        iconComponent: FaWandMagicSparkles,
       },
       primaryAction: {
         label: 'Try it now',

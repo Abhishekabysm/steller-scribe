@@ -16,8 +16,11 @@ import FeatureAnnouncementManager from './components/FeatureAnnouncementExample'
 import { summarizeText } from './services/geminiService';
 import { FaBars, FaXmark } from 'react-icons/fa6';
 import { FaSun, FaMoon, FaSearch, FaStar, FaQuestionCircle } from 'react-icons/fa';
+import FullScreenLoader from './components/FullScreenLoader';
 
 const AppContent: React.FC = () => {
+  const [isAppLoading, setIsAppLoading] = useState(true);
+
   const [notes, setNotes] = useLocalStorage<Note[]>('stellar-scribe-notes-v2', []);
   const [activeNoteId, setActiveNoteId] = useLocalStorage<string | null>('stellar-scribe-active-note-id', null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,6 +65,13 @@ const AppContent: React.FC = () => {
   // State for the active indicator position and width
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
+  // Simulate brief splash loader once
+  useEffect(() => {
+    const t = setTimeout(() => setIsAppLoading(false), 1500);
+    return () => clearTimeout(t);
+  }, []);
+
+  
   // Effect to check for shared notes on app load
   useEffect(() => {
     const importNote = async () => {
@@ -382,6 +392,8 @@ const AppContent: React.FC = () => {
     // Update when viewMode changes to ensure smooth transition
     return () => window.removeEventListener('resize', updateIndicator);
   }, [viewMode, activeNote]); // activeNote added as dependency for initial render when it becomes available
+
+  if (isAppLoading) return <FullScreenLoader />;
 
   return (
     <div className="h-screen w-screen flex flex-col font-mono antialiased">

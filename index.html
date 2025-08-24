@@ -16,6 +16,11 @@
     <meta name="keywords" content="notes, markdown, AI, text editor, productivity">
     <meta name="author" content="Stellar Scribe">
     <meta name="theme-color" content="#0ea5e9">
+    <!-- Suppress console output globally before any external scripts -->
+    <script>
+      /* eslint-disable no-console */
+      console.log = console.info = console.debug = console.warn = function () {};
+    </script>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>

@@ -84,12 +84,27 @@ const FeatureAnnouncementManager: React.FC = () => {
   ];
 
   const STORAGE_KEY = 'stellar-scribe-dismissed-features-v2';
+// Global version flag – bump to clear dismissals whenever announcements are updated
+const VERSION_KEY  = 'stellar-scribe-feature-version';
+const ANNOUNCEMENTS_VERSION = 1; // ← increment to force re-show
+
 
   const [dismissedFeatures, setDismissedFeatures] = useState<string[]>(
     () => safeGetLocalStorageItem<string[]>(STORAGE_KEY, [])
   );
   const [activeAnnouncement, setActiveAnnouncement] = useState<FeatureAnnouncementConfig | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Reset local storage dismissals when version changes
+  useEffect(() => {
+    const storedVersion = Number(localStorage.getItem(VERSION_KEY) || 0);
+    if (storedVersion !== ANNOUNCEMENTS_VERSION) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(VERSION_KEY, String(ANNOUNCEMENTS_VERSION));
+      setDismissedFeatures([]);
+    }
+  }, []);
+
 
   // Persist to localStorage whenever list changes
   useEffect(() => {

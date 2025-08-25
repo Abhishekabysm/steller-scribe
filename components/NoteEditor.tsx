@@ -68,9 +68,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const { addToast } = useToasts();
   
   // Refs
-  const editorRef = useRef<HTMLTextAreaElement>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null!);
+  const previewRef = useRef<HTMLDivElement>(null!);
+  const editorContainerRef = useRef<HTMLDivElement>(null!);
 
   // Custom hooks
   const modalStates = useModalStates();
@@ -210,6 +210,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     onUpdateNote({ content: activeNote.content + summarySection });
     addToast("Summary added to note!", "success");
   }, [activeNote, summaryContent, onUpdateNote, addToast]);
+
+  const handleCopyAll = useCallback(() => {
+    if (!activeNote) return;
+    navigator.clipboard.writeText(activeNote.content).then(() => {
+      addToast("Copied note content to clipboard!", "success");
+    }).catch(() => {
+      addToast("Failed to copy content.", "error");
+    });
+  }, [activeNote, addToast]);
 
   const handleSuggestTags = useCallback(async () => {
     if (!activeNote) return;
@@ -580,6 +589,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       onSummarize={handleSummarize}
       onShare={() => modalStates.setIsShareModalOpen(true)}
       onDownload={() => modalStates.setIsDownloadModalOpen(true)}
+      onCopyAll={handleCopyAll}
       onDelete={() => modalStates.setIsDeleteModalOpen(true)}
     />
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaWandMagicSparkles } from 'react-icons/fa6';
+import { FaCopy } from 'react-icons/fa6';
 import FeatureAnnouncementModal from './FeatureAnnouncementModal';
 import { useToasts } from '../hooks/useToasts';
 
@@ -59,26 +59,23 @@ const FeatureAnnouncementManager: React.FC = () => {
   // Define all announcements in the order they should appear.
   const ANNOUNCEMENT_QUEUE: FeatureAnnouncementConfig[] = [
     {
-      featureId: 'code-line-copy-v1',
-      featureName: 'Line copy in code blocks',
-      title: '✨ Sleek new look & smooth feel',
+      featureId: 'copy-all-button-v1',
+      featureName: 'Copy All button',
+      title: '📋 Copy entire note in one click',
       description:
-        'Enjoy our refreshed minimal UI and buttery-smooth interactions. Explore the new experience now.',
+        'Use the new “Copy All” button in the preview footer to instantly copy your whole note to the clipboard.',
       visual: {
         type: 'icon',
-        iconComponent: FaWandMagicSparkles,
+        iconComponent: FaCopy,
       },
       primaryAction: {
         label: 'Try it now',
         onClick: () => {
-          addToast('Tip: Hover a code line to see the gutter caret, then click to copy that line.', 'success');
+          addToast('Open any note preview and hit Copy All!', 'success');
         },
       },
       dismissAction: {
         label: 'Later',
-        onClick: () => {
-          addToast('You can use the gutter caret anytime to copy a single line from code blocks.', 'info');
-        },
       },
     },
   ];
@@ -86,7 +83,7 @@ const FeatureAnnouncementManager: React.FC = () => {
   const STORAGE_KEY = 'stellar-scribe-dismissed-features-v2';
 // Global version flag – bump to clear dismissals whenever announcements are updated
 const VERSION_KEY  = 'stellar-scribe-feature-version';
-const ANNOUNCEMENTS_VERSION = 1; // ← increment to force re-show
+const ANNOUNCEMENTS_VERSION = 2; // ← increment to force re-show
 
 
   const [dismissedFeatures, setDismissedFeatures] = useState<string[]>(
@@ -131,7 +128,7 @@ const ANNOUNCEMENTS_VERSION = 1; // ← increment to force re-show
     setIsInitialized(true);
   }, [dismissedFeatures, isInitialized]);
 
-  const handleClose = (shouldShowNext: boolean = true) => {
+  const handleClose = (shouldShowNext: boolean = false) => {
     if (!activeAnnouncement) return;
 
     const dismissedId = activeAnnouncement.featureId;
@@ -165,14 +162,13 @@ const ANNOUNCEMENTS_VERSION = 1; // ← increment to force re-show
       activeAnnouncement.primaryAction.onClick();
     }
     // When user clicks primary action, don't show next modal (they're engaged!)
-    handleClose(false);
+    handleClose();
   };
 
   // --- Development Controls ---
   const handleForceShowLatest = () => {
-    // This will show the latest feature modal even if dismissed, but only if no other modal is active
     if (!activeAnnouncement) {
-      const latestConfig = ANNOUNCEMENT_QUEUE.find(a => a.featureId === 'code-line-copy-v1');
+      const latestConfig = ANNOUNCEMENT_QUEUE[0];
       if (latestConfig) setActiveAnnouncement(latestConfig);
     }
   };

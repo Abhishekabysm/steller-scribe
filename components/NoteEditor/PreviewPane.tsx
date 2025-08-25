@@ -3,6 +3,7 @@ import {
   FaTag,
   FaDownload,
   FaRegTrashCan,
+  FaCopy,
 } from "react-icons/fa6";
 import { FaMagic } from "react-icons/fa";
 import { MdShare } from "react-icons/md";
@@ -26,6 +27,7 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({
   onSummarize,
   onShare,
   onDownload,
+  onCopyAll,
   onDelete,
 }) => {
   // Compact footer when pane becomes narrow
@@ -162,6 +164,14 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({
           >
             <FaDownload className="w-4 h-4 text-blue-600 dark:text-dark-accent" />
             {!compact && <span className="text-xs font-medium">Download</span>}
+          </button>
+
+          <button
+            onClick={onCopyAll}
+            className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-dark-bg-secondary text-sm font-semibold rounded-md hover:bg-gray-200 dark:hover:bg-dark-border-color transition-colors"
+          >
+            <FaCopy className="w-4 h-4 text-blue-600 dark:text-dark-accent" />
+            {!compact && <span className="text-xs font-medium">Copy All</span>}
           </button>
           
           <button

@@ -43,6 +43,7 @@ export interface PreviewPaneProps {
   onSummarize: () => Promise<void>;
   onShare: () => void;
   onDownload: () => void;
+  onCopyAll: () => void;
   onDelete: () => void;
 }
 

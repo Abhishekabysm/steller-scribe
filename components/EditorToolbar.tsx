@@ -1,7 +1,7 @@
 /// <reference path="../types/speechRecognition.d.ts" />
 import React, { useState } from 'react';
-import { FaBold, FaItalic, FaUnderline, FaLink, FaCode, FaListUl, FaStrikethrough, FaQuoteRight, FaListCheck, FaMinus, FaEllipsis, FaWandMagicSparkles, FaHeading, FaMicrophone, FaStop, FaLightbulb } from 'react-icons/fa6';
-import { FaRegStar } from 'react-icons/fa';
+import { FaBold, FaItalic, FaUnderline, FaLink, FaCode, FaListUl, FaStrikethrough, FaQuoteRight, FaListCheck, FaMinus, FaEllipsis, FaWandMagicSparkles, FaHeading, FaMicrophone, FaStop, FaLightbulb, FaClock } from 'react-icons/fa6';
+import { FaRegStar, FaSave } from 'react-icons/fa';
 import ConfirmationModal from './ConfirmationModal';
 import { performTextAction } from '../services/geminiService';
 import { AITextAction } from '../types';
@@ -13,6 +13,11 @@ interface EditorToolbarProps {
   onGenerateClick: () => void;
   suggestionsEnabled: boolean;
   onToggleSuggestions: (enabled: boolean) => void;
+  // Version control props
+  onOpenVersionHistory?: () => void;
+  onCreateVersion?: () => void;
+  hasUnsavedChanges?: boolean;
+  versionCount?: number;
 }
 
 const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; title: string; disabled?: boolean; className?: string }> = ({ onClick, children, title, disabled, className }) => (
@@ -27,7 +32,17 @@ const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; 
   </button>
 );
 
-const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, onGenerateClick, suggestionsEnabled, onToggleSuggestions }) => {
+const EditorToolbar: React.FC<EditorToolbarProps> = ({ 
+  textareaRef, 
+  onUpdate, 
+  onGenerateClick, 
+  suggestionsEnabled, 
+  onToggleSuggestions,
+  onOpenVersionHistory,
+  onCreateVersion,
+  hasUnsavedChanges = false,
+  versionCount = 0
+}) => {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [originalText, setOriginalText] = useState('');
   const [beautifiedText, setBeautifiedText] = useState('');
@@ -336,6 +351,25 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ textareaRef, onUpdate, on
             </div>
           </div>
           <div className="flex items-center space-x-1">
+            {/* Version Control Buttons */}
+            {onOpenVersionHistory && (
+              <ToolbarButton
+                onClick={onOpenVersionHistory}
+                title={versionCount > 0 ? `Version History (${versionCount} versions)` : "Version History (Ready to start from v1)"}
+                className="text-blue-600 dark:text-blue-400"
+              >
+                <FaClock className="w-5 h-5" />
+              </ToolbarButton>
+            )}
+            {onCreateVersion && (
+              <ToolbarButton
+                onClick={onCreateVersion}
+                title={hasUnsavedChanges ? "Save Version (unsaved changes)" : "Save Version"}
+                className={hasUnsavedChanges ? "text-orange-600 dark:text-orange-400" : "text-green-600 dark:text-green-400"}
+              >
+                <FaSave className="w-5 h-5" />
+              </ToolbarButton>
+            )}
             <ToolbarButton
               onClick={() => onToggleSuggestions(!suggestionsEnabled)}
               title={suggestionsEnabled ? "Disable Auto Suggestions" : "Enable Auto Suggestions"}

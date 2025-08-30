@@ -257,6 +257,25 @@ const AppContent: React.FC = () => {
       return updateNotesState(updatedNotes, prevNotes);
     });
   }, [activeNoteId, setNotes]);
+
+  // Handle version restoration
+  const handleRestoreVersion = useCallback((restoredNote: Note) => {
+    console.log('App: Restoring note with version:', restoredNote.version);
+    setNotes(prevNotes => {
+      const updatedNotes = prevNotes.map(note =>
+        note.id === activeNoteId
+          ? { 
+              ...note, 
+              ...restoredNote,
+              version: restoredNote.version, // Ensure version number is updated
+              updatedAt: Date.now()
+            }
+          : note
+      );
+      console.log('App: Updated notes:', updatedNotes.find(n => n.id === activeNoteId));
+      return updateNotesState(updatedNotes, prevNotes);
+    });
+  }, [activeNoteId, setNotes]);
   
   const togglePinNote = useCallback((id: string) => {
       setNotes(prevNotes => {
@@ -645,6 +664,7 @@ const AppContent: React.FC = () => {
             onDeleteNote={deleteNote}
             onAddNote={addNote}
             viewMode={viewMode}
+            onRestoreVersion={handleRestoreVersion}
           />
         </section>
       </main>
@@ -666,15 +686,13 @@ const AppContent: React.FC = () => {
         title="Delete Pinned Note"
         message={
           <>
-            Are you sure you want to delete the pinned note "<strong>{noteToDelete?.title}</strong>"?
-            <br />
-            <br />
-            This action cannot be undone.
+            Are you sure you want to delete the pinned note "<strong className="text-gray-900 dark:text-gray-100">{noteToDelete?.title}</strong>"?
           </>
         }
         confirmText="Delete"
         cancelText="Cancel"
         confirmVariant="danger"
+        icon="danger"
       />
 
       <SummaryModal

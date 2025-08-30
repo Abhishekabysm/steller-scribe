@@ -16,6 +16,32 @@ export interface Note {
     removed: string;
     origin: string;
   };
+  // Version control fields
+  version?: number; // Current version number
+  lastVersionedAt?: number; // Timestamp of last version creation
+}
+
+export interface NoteVersion {
+  id: string;
+  noteId: string;
+  version: number;
+  title: string;
+  content: string;
+  createdAt: number;
+  changeDescription?: string; // Optional description of what changed
+  changeType?: 'auto' | 'manual' | 'restore'; // Type of version creation
+  diffStats?: {
+    addedLines: number;
+    removedLines: number;
+    changedChars: number;
+  };
+}
+
+export interface VersionControlState {
+  versions: NoteVersion[];
+  currentVersion: number;
+  lastSavedVersion: number;
+  hasUnsavedChanges: boolean;
 }
 
 export type SortOption = 'updatedAt' | 'createdAt' | 'title';

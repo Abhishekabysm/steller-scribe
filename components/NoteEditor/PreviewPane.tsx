@@ -10,6 +10,7 @@ import { MdShare } from "react-icons/md";
 import { PreviewPaneProps } from "./types";
 import { LoadingSpinner } from "./UIElements";
 import SelectionNavigator from "../SelectionNavigator";
+import { versionControlService } from "../../services/versionControlService";
 
 const PreviewPane: React.FC<PreviewPaneProps> = ({
   activeNote,
@@ -76,9 +77,23 @@ const PreviewPane: React.FC<PreviewPaneProps> = ({
       >
         {/* Title Section */}
         <div className="mb-6 pb-4 border-b border-gray-200 dark:border-dark-border-color">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-dark-text-primary break-words">
-            {activeNote.title || "Untitled Note"}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-dark-text-primary break-words flex-1">
+              {activeNote.title || "Untitled Note"}
+            </h1>
+            {/* Version indicator */}
+            {(() => {
+              // Use the note's version property instead of calculating from version history
+              const currentVersion = activeNote.version || 0;
+              return currentVersion > 0 ? (
+                <div className="flex items-center gap-2 text-xs flex-shrink-0">
+                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md font-mono font-semibold border border-blue-200 dark:border-blue-700">
+                    v{currentVersion}
+                  </span>
+                </div>
+              ) : null;
+            })()}
+          </div>
           {activeNote.tags && activeNote.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {activeNote.tags.map((tag) => (

@@ -6,6 +6,7 @@ import { LoadingSpinner, Tag } from "./UIElements";
 import EditorToolbar from "../EditorToolbar";
 import SuggestionTextarea from "../SuggestionTextarea";
 import ContextualMenu from "../ContextualMenu";
+import { versionControlService } from "../../services/versionControlService";
 
 const EditorPane: React.FC<EditorPaneProps> = ({
   activeNote,
@@ -24,6 +25,11 @@ const EditorPane: React.FC<EditorPaneProps> = ({
   setSuggestionsEnabled,
   onGenerateClick,
   pushToUndoStack,
+  // Version control props
+  onOpenVersionHistory,
+  onCreateVersion,
+  hasUnsavedChanges,
+  versionCount,
 }) => {
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdateNote({ title: e.target.value });
@@ -81,6 +87,23 @@ const EditorPane: React.FC<EditorPaneProps> = ({
               )}
             </button>
           </div>
+          {/* Version indicator */}
+          {(() => {
+            // Use the note's version property instead of calculating from version history
+            const currentVersion = activeNote.version || 0;
+            return currentVersion > 0 ? (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md font-mono font-semibold border border-blue-200 dark:border-blue-700">
+                  v{currentVersion}
+                </span>
+                {hasUnsavedChanges && (
+                  <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-md font-semibold border border-orange-200 dark:border-orange-700">
+                    Unsaved
+                  </span>
+                )}
+              </div>
+            ) : null;
+          })()}
           {activeNote.isImported && (
             <div className="flex items-center gap-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 rounded-full border border-blue-300 dark:border-blue-800 flex-shrink-0 self-start sm:self-center">
               <MdCloudDownload
@@ -132,6 +155,11 @@ const EditorPane: React.FC<EditorPaneProps> = ({
         onToggleSuggestions={(enabled) => {
           setSuggestionsEnabled(enabled);
         }}
+        // Version control props
+        onOpenVersionHistory={onOpenVersionHistory}
+        onCreateVersion={onCreateVersion}
+        hasUnsavedChanges={hasUnsavedChanges}
+        versionCount={versionCount}
       />
       
       <div className="flex-grow overflow-y-auto p-4 editor-textarea-wrapper">

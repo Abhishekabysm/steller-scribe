@@ -6,6 +6,7 @@ export interface NoteEditorProps {
   onDeleteNote: (id: string) => void;
   onAddNote: (note: Note) => void;
   viewMode?: "split" | "editor" | "preview";
+  onRestoreVersion?: (restoredNote: Note) => void;
 }
 
 export interface EditorPaneProps {
@@ -25,6 +26,11 @@ export interface EditorPaneProps {
   setSuggestionsEnabled: (enabled: boolean) => void;
   onGenerateClick: () => void;
   pushToUndoStack: (content: string) => void;
+  // Version control props
+  onOpenVersionHistory?: () => void;
+  onCreateVersion?: () => void;
+  hasUnsavedChanges?: boolean;
+  versionCount?: number;
 }
 
 export interface PreviewPaneProps {

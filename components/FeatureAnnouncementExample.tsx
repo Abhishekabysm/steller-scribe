@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaCopy } from 'react-icons/fa6';
+import { FaClock } from 'react-icons/fa6';
 import FeatureAnnouncementModal from './FeatureAnnouncementModal';
 import { useToasts } from '../hooks/useToasts';
 
@@ -59,19 +59,18 @@ const FeatureAnnouncementManager: React.FC = () => {
   // Define all announcements in the order they should appear.
   const ANNOUNCEMENT_QUEUE: FeatureAnnouncementConfig[] = [
     {
-      featureId: 'copy-all-button-v1',
-      featureName: 'Copy All button',
-      title: '📋 Copy entire note in one click',
-      description:
-        'Use the new “Copy All” button in the preview footer to instantly copy your whole note to the clipboard.',
+      featureId: 'version-history-v1',
+      featureName: 'Version History',
+      title: '🕒 Version History',
+      description: 'See and restore previous note versions.',
       visual: {
         type: 'icon',
-        iconComponent: FaCopy,
+        iconComponent: FaClock,
       },
       primaryAction: {
-        label: 'Try it now',
+        label: 'Open',
         onClick: () => {
-          addToast('Open any note preview and hit Copy All!', 'success');
+          addToast('Click the clock icon to open Version History.', 'success');
         },
       },
       dismissAction: {
@@ -83,7 +82,7 @@ const FeatureAnnouncementManager: React.FC = () => {
   const STORAGE_KEY = 'stellar-scribe-dismissed-features-v2';
 // Global version flag – bump to clear dismissals whenever announcements are updated
 const VERSION_KEY  = 'stellar-scribe-feature-version';
-const ANNOUNCEMENTS_VERSION = 2; // ← increment to force re-show
+const ANNOUNCEMENTS_VERSION = 3; // ← increment to force re-show
 
 
   const [dismissedFeatures, setDismissedFeatures] = useState<string[]>(

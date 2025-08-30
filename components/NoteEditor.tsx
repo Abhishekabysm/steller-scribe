@@ -4,7 +4,7 @@ import React, {
   useRef,
   useEffect,
 } from "react";
-import { Note, AITextAction } from "../types";
+import { Note, AITextAction, NoteVersion } from "../types";
 import {
   summarizeText,
   suggestTagsForText,
@@ -15,6 +15,8 @@ import {
 import { getWordMeaning } from "../services/dictionaryService";
 import { useToasts } from "../hooks/useToasts";
 import { useMediaQuery } from "../hooks/useMediaQuery";
+import { useVersionControl } from "../hooks/useVersionControl";
+import { versionControlService } from "../services/versionControlService";
 
 import {
   FaPencil,
@@ -28,6 +30,7 @@ import DownloadModal from "./DownloadModal";
 import SummaryModal from "./SummaryModal";
 import ShareModal from "./ShareModal";
 import AIModifyModal from "./AIModifyModal";
+import VersionHistoryModal from "./VersionHistory/VersionHistoryModal";
 
 // Import refactored components and hooks
 import { NoteEditorProps } from "./NoteEditor/types";
@@ -48,6 +51,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   onDeleteNote,
   onAddNote,
   viewMode = "split",
+  onRestoreVersion,
 }) => {
   // Basic state
   const [isSummarizing, setIsSummarizing] = useState(false);
@@ -63,6 +67,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     activeNote?.content || ""
   );
   const [mobileView, setMobileView] = useState<"editor" | "preview">("preview");
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
 
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const { addToast } = useToasts();
@@ -93,10 +98,75 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     editorRef
   );
 
+  // Version control hook
+  const {
+    hasUnsavedChanges,
+    lastSavedVersion,
+    versionCount,
+    createManualVersion,
+    restoreVersion,
+    deleteVersion,
+    getVersions,
+    enableAutoSave,
+    disableAutoSave,
+    isAutoSaveEnabled,
+  } = useVersionControl({
+    note: activeNote || null,
+    onUpdateNote,
+  });
+
   // Initialize markdown processing
   useEffect(() => {
     initializeMarkdownProcessing();
   }, []);
+
+  // Version control handlers
+  const handleOpenVersionHistory = useCallback(() => {
+    setIsVersionHistoryOpen(true);
+  }, []);
+
+  const handleCreateVersion = useCallback(async () => {
+    if (activeNote) {
+      await createManualVersion();
+    }
+  }, [activeNote, createManualVersion]);
+
+  const handleRestoreVersion = useCallback((version: NoteVersion) => {
+    console.log('Restoring to version:', version.version, 'Current note version:', activeNote?.version);
+    
+    // Temporarily disable auto-save to prevent new version creation during restore
+    if (activeNote) {
+      versionControlService.clearAutoSaveTimer(activeNote.id);
+    }
+    
+    // First, update the local editor content to immediately reflect the change
+    setCurrentEditorContent(version.content);
+    
+    // Also force a re-render by updating the editor ref if available
+    if (editorRef.current) {
+      editorRef.current.value = version.content;
+    }
+    
+    // Update the note immediately in the parent to ensure sync
+    if (onRestoreVersion && activeNote) {
+      const restoredNote = {
+        ...activeNote,
+        title: version.title,
+        content: version.content,
+        version: version.version, // Update the version number to the restored version
+        updatedAt: Date.now(),
+      };
+      console.log('Restored note:', restoredNote);
+      onRestoreVersion(restoredNote);
+    }
+    
+    // Force a re-render after a short delay to ensure sync
+    setTimeout(() => {
+      setCurrentEditorContent(version.content);
+    }, 0);
+    
+    addToast(`Restored to version ${version.version}`, 'success');
+  }, [onRestoreVersion, activeNote, setCurrentEditorContent, addToast, editorRef]);
 
   // Update editor content when active note changes
   useEffect(() => {
@@ -104,7 +174,24 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       setCurrentEditorContent(activeNote.content);
       clearStacks();
     }
-  }, [activeNote?.id, clearStacks]);
+  }, [activeNote?.id, activeNote?.content, clearStacks]);
+
+  // Additional effect to ensure editor content stays in sync with note content
+  useEffect(() => {
+    if (activeNote && currentEditorContent !== activeNote.content) {
+      setCurrentEditorContent(activeNote.content);
+    }
+  }, [activeNote?.content, currentEditorContent]);
+
+  // Force sync editor content when note is restored
+  useEffect(() => {
+    if (activeNote && activeNote.lastVersionedAt) {
+      // If the note was recently versioned (restored), ensure editor content is in sync
+      if (currentEditorContent !== activeNote.content) {
+        setCurrentEditorContent(activeNote.content);
+      }
+    }
+  }, [activeNote?.lastVersionedAt, activeNote?.content, currentEditorContent]);
 
   // Reset suggestions when activeNote changes
   useEffect(() => {
@@ -568,6 +655,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         }}
         onGenerateClick={() => modalStates.setIsAIGenerateModalOpen(true)}
         pushToUndoStack={pushToUndoStack}
+        // Version control props
+        onOpenVersionHistory={handleOpenVersionHistory}
+        onCreateVersion={handleCreateVersion}
+        hasUnsavedChanges={hasUnsavedChanges}
+        versionCount={versionCount}
       />
     </div>
   );
@@ -696,6 +788,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         onClose={() => modalStates.setIsShareModalOpen(false)}
         note={activeNote}
         onToast={addToast}
+      />
+
+      <VersionHistoryModal
+        isOpen={isVersionHistoryOpen}
+        onClose={() => setIsVersionHistoryOpen(false)}
+        note={activeNote || null}
+        onRestoreVersion={handleRestoreVersion}
       />
     </>
   );

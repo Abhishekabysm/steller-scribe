@@ -24,6 +24,9 @@ interface UseVersionControlReturn {
   enableAutoSave: () => void;
   disableAutoSave: () => void;
   isAutoSaveEnabled: boolean;
+  
+  // Utility methods
+  getNextVersionNumber: () => number;
 }
 
 export const useVersionControl = ({ 
@@ -34,19 +37,21 @@ export const useVersionControl = ({
   const [lastSavedVersion, setLastSavedVersion] = useState(0);
   const [versionCount, setVersionCount] = useState(0);
   const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(true);
+  // Tracks last observed content (for change detection) and last saved baseline
   const lastContentRef = useRef<string>('');
+  const savedContentRef = useRef<string>('');
   const { addToast } = useToasts();
 
   // Initialize version control state when note changes
   useEffect(() => {
     if (note) {
       const versions = versionControlService.getNoteVersions(note.id);
-      const nextVersionNumber = versionControlService.getNextVersionNumber(note.id);
       
       setLastSavedVersion(versions.length > 0 ? versions[0].version : 0);
       setVersionCount(versions.length);
       setHasUnsavedChanges(false);
       lastContentRef.current = note.content;
+      savedContentRef.current = note.content; // establish baseline on load
       
       // Enable auto-save for the new note
       if (isAutoSaveEnabled) {
@@ -57,6 +62,7 @@ export const useVersionControl = ({
       setVersionCount(0);
       setHasUnsavedChanges(false);
       lastContentRef.current = '';
+      savedContentRef.current = '';
     }
 
     // Cleanup auto-save timer when note changes
@@ -67,15 +73,15 @@ export const useVersionControl = ({
     };
   }, [note?.id, isAutoSaveEnabled]);
 
-  // Track content changes
+  // Track content changes vs last saved baseline
   useEffect(() => {
     if (note && lastContentRef.current !== note.content) {
-      // Check if there are meaningful changes (not just whitespace)
-      const hasMeaningfulChanges = versionControlService.checkMeaningfulChanges(
-        lastContentRef.current, 
+      // Compare against last saved baseline so undo back to saved clears the dirty state
+      const { hasMeaningfulChanges } = versionControlService.checkMeaningfulChanges(
+        savedContentRef.current,
         note.content
-      ).hasMeaningfulChanges;
-      
+      );
+
       setHasUnsavedChanges(hasMeaningfulChanges);
       
       if (hasMeaningfulChanges && isAutoSaveEnabled) {
@@ -105,6 +111,7 @@ export const useVersionControl = ({
         setLastSavedVersion(newVersion.version);
         setVersionCount(prev => prev + 1);
         setHasUnsavedChanges(false);
+        savedContentRef.current = note.content; // update baseline to newly saved content
         
         addToast(`Version ${newVersion.version} saved`, 'success');
         return newVersion;
@@ -138,6 +145,7 @@ export const useVersionControl = ({
         // Update local state
         setHasUnsavedChanges(false);
         lastContentRef.current = restoredVersion.content;
+        savedContentRef.current = restoredVersion.content; // baseline becomes restored content
         setLastSavedVersion(restoredVersion.version);
         
         // If a new version was created, update version count

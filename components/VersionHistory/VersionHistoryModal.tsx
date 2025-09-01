@@ -26,7 +26,6 @@ const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
   const [compareVersion, setCompareVersion] = useState<NoteVersion | null>(null);
   const [showDiff, setShowDiff] = useState(false);
   const [diffView, setDiffView] = useState<'side-by-side' | 'unified'>('side-by-side');
-  const [showCharDiff, setShowCharDiff] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ version: NoteVersion; isOpen: boolean }>({ version: null!, isOpen: false });
 
   useEffect(() => {
@@ -43,6 +42,23 @@ const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
       setShowDiff(false);
     }
   }, [isOpen, note]);
+
+  // Listen for cleanup event to refresh versions without full reload
+  useEffect(() => {
+    const onCleanup = () => {
+      if (note) {
+        const updatedVersions = versionControlService.getNoteVersions(note.id);
+        setVersions(updatedVersions);
+        // Keep selection safe
+        if (selectedVersion) {
+          const stillExists = updatedVersions.find(v => v.version === selectedVersion.version);
+          setSelectedVersion(stillExists || updatedVersions[0] || null);
+        }
+      }
+    };
+    window.addEventListener('versions:cleanup', onCleanup as EventListener);
+    return () => window.removeEventListener('versions:cleanup', onCleanup as EventListener);
+  }, [note, selectedVersion]);
 
   const handleDeleteVersion = useCallback((version: NoteVersion) => {
     setDeleteConfirmation({ version, isOpen: true });
@@ -89,7 +105,7 @@ const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-7xl w-full h-[90vh] flex flex-col border border-gray-100 dark:border-gray-800">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-7xl w-full h-[90vh] flex flex-col border border-gray-100 dark:border-gray-800 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center space-x-3">
@@ -116,7 +132,7 @@ const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex min-h-0">
+        <div className="flex-1 flex min-h-0 overflow-hidden">
           {/* Left Sidebar */}
           <VersionSidebar
             versions={versions}
@@ -130,7 +146,7 @@ const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
           />
 
           {/* Right Content Area */}
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {compareMode && compareVersion && selectedVersion ? (
               <VersionCompareView
                 compareVersion={compareVersion}
@@ -140,8 +156,6 @@ const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                 diffView={diffView}
                 setDiffView={setDiffView}
                 onRestoreVersion={handleRestoreVersion}
-                showCharDiff={showCharDiff}
-                setShowCharDiff={setShowCharDiff}
                 currentNoteVersion={note?.version}
               />
             ) : selectedVersion ? (

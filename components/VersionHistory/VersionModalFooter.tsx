@@ -1,6 +1,7 @@
 import React from 'react';
 import { NoteVersion } from '../../types';
 import { versionControlService } from '../../services/versionControlService';
+import { useToasts } from '../../hooks/useToasts';
 
 interface VersionModalFooterProps {
   versions: NoteVersion[];
@@ -11,8 +12,10 @@ const VersionModalFooter: React.FC<VersionModalFooterProps> = ({
   versions,
   onClose
 }) => {
+  const { addToast } = useToasts();
   const storageInfo = versionControlService.getStorageSize();
   const storageStatus = versionControlService.checkStorageQuota();
+  const maxBytes = versionControlService.getMaxStorageSize();
   
   const formatBytes = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -38,13 +41,13 @@ const VersionModalFooter: React.FC<VersionModalFooterProps> = ({
     <div className="flex items-center justify-between p-4 border-t border-gray-100 dark:border-gray-800">
       <div className="flex items-center space-x-4">
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          {versions.length} total versions • {formatBytes(storageInfo.totalSize)} used
+          {versions.length} total versions • {formatBytes(storageInfo.totalSize)} of {formatBytes(maxBytes)} used
         </div>
         
         {/* Storage Status Indicator */}
         <div className={`flex items-center space-x-1 text-xs ${getStorageStatusColor()}`}>
           <span>{getStorageStatusIcon()}</span>
-          <span>{Math.round(storageStatus.usagePercent * 100)}% storage used</span>
+          <span>{(storageStatus.usagePercent * 100).toFixed(1)}% storage used</span>
         </div>
         
         {/* Storage Warning */}
@@ -60,9 +63,12 @@ const VersionModalFooter: React.FC<VersionModalFooterProps> = ({
           onClick={() => {
             const cleanedCount = versionControlService.cleanupOldVersions(20);
             if (cleanedCount > 0) {
-              // Refresh the modal to show updated versions
-              window.location.reload();
+              addToast(`Removed ${cleanedCount} old version${cleanedCount > 1 ? 's' : ''}.`, 'success');
+            } else {
+              addToast('No old versions to clean up.', 'info');
             }
+            // Notify modal to refresh its data without a full reload
+            window.dispatchEvent(new CustomEvent('versions:cleanup'));
           }}
           className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
         >

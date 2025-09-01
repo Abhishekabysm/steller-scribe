@@ -52,7 +52,7 @@ const VersionSidebar: React.FC<VersionSidebarProps> = ({
   };
 
   return (
-    <div className="w-72 border-r border-gray-100 dark:border-gray-800 bg-gradient-to-b from-gray-50/80 to-gray-100/40 dark:from-gray-800/80 dark:to-gray-900/40">
+    <div className="w-72 border-r border-gray-100 dark:border-gray-800 bg-gradient-to-b from-gray-50/80 to-gray-100/40 dark:from-gray-800/80 dark:to-gray-900/40 overflow-y-auto min-h-0">
       <div className="p-5">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">

@@ -24,9 +24,9 @@ let isRestoring = false;
 // Configuration for content comparison
 const CONTENT_COMPARISON_CONFIG = {
   ignoreTrailingWhitespace: true,    // Ignore trailing spaces/tabs
-  ignoreLeadingWhitespace: false,    // Keep leading spaces (important for markdown)
+  ignoreLeadingWhitespace: true,     // Ignore leading spaces as user requested
   ignoreEmptyLines: true,            // Ignore empty lines at the end
-  ignoreWhitespaceOnlyLines: false,  // Keep lines with only spaces (important for formatting)
+  ignoreWhitespaceOnlyLines: true,   // Ignore lines that are only whitespace
   minMeaningfulChanges: 1,           // Minimum meaningful changes to create version
 } as const;
 
@@ -765,6 +765,13 @@ export class VersionControlService {
     }
     
     return { totalSize, noteCount, versionCount };
+  }
+
+  /**
+   * Get the configured maximum total storage size for versions
+   */
+  getMaxStorageSize(): number {
+    return STORAGE_CONFIG.maxTotalSize;
   }
 
   /**

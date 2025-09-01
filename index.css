@@ -406,3 +406,44 @@ html:not(.dark) .prose code:not(pre > code) {
   height: auto;
   display: block;
 }
+
+/* cmdk keyboard navigation styles - CRITICAL for up/down arrow navigation */
+[cmdk-item] {
+  outline: none;
+  cursor: pointer;
+}
+
+[cmdk-item][data-selected="true"] {
+  background-color: rgb(243 244 246) !important; /* gray-100 - very subtle */
+}
+
+.dark [cmdk-item][data-selected="true"] {
+  background-color: rgb(55 65 81 / 0.3) !important; /* gray-700/30 - very subtle */
+}
+
+/* Alternative selectors for cmdk */
+[data-selected="true"] {
+  background-color: rgb(243 244 246) !important; /* gray-100 - very subtle */
+}
+
+.dark [data-selected="true"] {
+  background-color: rgb(55 65 81 / 0.3) !important; /* gray-700/30 - very subtle */
+}
+
+/* Ensure Command.Item has proper focus and selection styles */
+[cmdk-item]:focus {
+  outline: none; /* Remove outline */
+}
+
+/* Force the selected state to be visible but minimal */
+[cmdk-item][data-selected="true"],
+[data-selected="true"] {
+  background-color: rgb(243 244 246) !important; /* gray-100 */
+  border: none !important; /* Remove border */
+}
+
+.dark [cmdk-item][data-selected="true"],
+.dark [data-selected="true"] {
+  background-color: rgb(55 65 81 / 0.3) !important; /* gray-700/30 */
+  border: none !important; /* Remove border */
+}

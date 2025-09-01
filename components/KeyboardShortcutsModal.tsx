@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaXmark, FaKeyboard, FaPlus, FaBold, FaItalic, FaUnderline } from 'react-icons/fa6';
-import { FaSearch, FaSun, FaMoon, FaStickyNote } from 'react-icons/fa';
+import { FaSearch, FaSun, FaStickyNote, FaClock } from 'react-icons/fa';
 
 interface KeyboardShortcutsModalProps {
   isOpen: boolean;
@@ -97,6 +97,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
       shortcuts: [
         { keys: ["Ctrl", "N"], description: "Create new note", icon: <FaPlus /> },
         { keys: ["Ctrl", "S"], description: "Generate AI summary", icon: <FaStickyNote /> },
+        { keys: ["Ctrl", "H"], description: "Open version history", icon: <FaClock /> },
         { keys: ["↑", "↓"], description: "Navigate between notes" },
         { keys: ["Enter"], description: "Select note" },
       ]
@@ -117,7 +118,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
       title: "Interface",
       icon: <FaSun />,
       shortcuts: [
-        { keys: ["Ctrl", "T"], description: "Toggle theme", icon: <FaSun /> },
+        { keys: ["Ctrl", ";"], description: "Toggle theme", icon: <FaSun /> },
       ]
     }
   ];

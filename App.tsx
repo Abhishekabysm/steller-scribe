@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { Note, SortOption } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTheme } from './hooks/useTheme';
@@ -12,6 +12,7 @@ import ConfirmationModal from './components/ConfirmationModal';
 import SummaryModal from './components/SummaryModal'; 
 import CommandPalette from './components/CommandPalette'; 
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
+import VersionHistoryModal from './components/VersionHistory/VersionHistoryModal';
 import FeatureAnnouncementManager from './components/FeatureAnnouncementExample';
 import { summarizeText } from './services/geminiService';
 import { FaBars, FaXmark } from 'react-icons/fa6';
@@ -52,6 +53,7 @@ const AppContent: React.FC = () => {
   const [summaryContent, setSummaryContent] = useState(''); // New state for summary content
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false); // New state for command palette
   const [isKeyboardShortcutsOpen, setIsKeyboardShortcutsOpen] = useState(false); // New state for keyboard shortcuts modal
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false); // New state for version history modal
   const { addToast } = useToasts();
   const [placeholderText, setPlaceholderText] = useState('Search notes...');
   const [showRecommendations, setShowRecommendations] = useState(false);
@@ -380,37 +382,67 @@ const AppContent: React.FC = () => {
         e.preventDefault();
         setIsKeyboardShortcutsOpen((prev) => !prev);
       }
+      if (e.key === 'h' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsVersionHistoryOpen((prev) => !prev);
+      }
+      // Toggle theme: Ctrl + ; (avoid browser-reserved keys)
+      if (e.key === ';' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        toggleTheme();
+      }
     };
 
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
   }, []);
 
-  // Effect to update the indicator's position and width
-  useEffect(() => {
-    const updateIndicator = () => {
-      let targetRef: React.MutableRefObject<HTMLButtonElement | null> | null = null;
-      if (viewMode === 'editor') {
-        targetRef = editorButtonRef;
-      } else if (viewMode === 'split') {
-        targetRef = splitButtonRef;
-      } else if (viewMode === 'preview') {
-        targetRef = previewButtonRef;
-      }
+  // Helper to compute indicator position/size
+  const computeIndicator = useCallback(() => {
+    let targetRef: React.MutableRefObject<HTMLButtonElement | null> | null = null;
+    if (viewMode === 'editor') {
+      targetRef = editorButtonRef;
+    } else if (viewMode === 'split') {
+      targetRef = splitButtonRef;
+    } else if (viewMode === 'preview') {
+      targetRef = previewButtonRef;
+    }
 
-      if (targetRef?.current) {
-        setIndicatorStyle({
-          left: targetRef.current.offsetLeft,
-          width: targetRef.current.offsetWidth,
-        });
-      }
+    if (targetRef?.current) {
+      const button = targetRef.current;
+      const left = button.offsetLeft;
+      const width = button.offsetWidth;
+      setIndicatorStyle({ left, width });
+    }
+  }, [viewMode]);
+
+  // Initialize after layout (fix refresh invisibility)
+  useLayoutEffect(() => {
+    if (!activeNote || window.innerWidth <= 768) return;
+    // Wait for layout, then measure twice to be safe
+    const raf1 = requestAnimationFrame(() => {
+      computeIndicator();
+      const raf2 = requestAnimationFrame(() => computeIndicator());
+      // Store second id on element for cleanup
+      (computeIndicator as any)._raf2 = raf2;
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      if ((computeIndicator as any)._raf2) cancelAnimationFrame((computeIndicator as any)._raf2);
     };
+  }, [activeNote, isAppLoading, computeIndicator]);
 
-    updateIndicator(); // Initial update
-    window.addEventListener('resize', updateIndicator); // Update on resize
-    // Update when viewMode changes to ensure smooth transition
-    return () => window.removeEventListener('resize', updateIndicator);
-  }, [viewMode, activeNote]); // activeNote added as dependency for initial render when it becomes available
+  // Update on viewMode change and on resize
+  useEffect(() => {
+    if (!activeNote || window.innerWidth <= 768) return;
+    computeIndicator();
+    const timer = setTimeout(computeIndicator, 100);
+    window.addEventListener('resize', computeIndicator);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', computeIndicator);
+    };
+  }, [viewMode, activeNote, computeIndicator]);
 
   if (isAppLoading) return <FullScreenLoader />;
 
@@ -459,25 +491,22 @@ const AppContent: React.FC = () => {
           </div>
         </div>
         
-<div className="flex items-center space-x-3 flex-grow max-w-md ml-4">
+<div className="flex items-center space-x-3 flex-grow max-w-sm sm:max-w-md lg:max-w-lg ml-2 sm:ml-4">
   <div className="relative flex-grow">
-    {/* Search container with minimal glass effect */}
+    {/* Minimal search container */}
     <div className="relative group">
-      {/* Subtle hover glow */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400/10 to-indigo-400/10 rounded-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 blur-sm transition-all duration-300"></div>
-      
       {/* Main search input */}
       <div className="relative">
         {/* Search icon */}
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-          <FaSearch className="w-4 h-4 text-gray-800 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors duration-200" />
+          <FaSearch className="w-4 h-4 text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors duration-200" />
         </div>
         
         {/* Input field */}
         <input
           type="search"
           id="search-input"
-          placeholder={placeholderText}
+          placeholder={isSmallScreen ? "Search..." : placeholderText}
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -485,24 +514,23 @@ const AppContent: React.FC = () => {
           }}
           onFocus={() => setShowRecommendations(searchTerm.length > 0)}
           onBlur={() => setTimeout(() => setShowRecommendations(false), 150)}
-          className="w-full pl-10 pr-10 sm:pr-20 py-2.5 bg-white rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-700 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:border-blue-400 dark:focus:border-blue-400 focus:bg-white/90 dark:focus:bg-gray-900/70 transition-all duration-200 hover:bg-gray-100/80 dark:hover:bg-gray-900/60 hover:border-gray-300/70 dark:hover:border-gray-700/60 dark:bg-gray-900/50 dark:placeholder-gray-500 dark:border-gray-800/50"
+          className="w-full pl-10 pr-8 sm:pr-16 py-2 sm:py-2.5 bg-white dark:bg-gray-900/80 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 focus:bg-white dark:focus:bg-gray-900 focus:border-blue-400 dark:focus:border-blue-400 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800/90 hover:border-gray-300 dark:hover:border-gray-600"
         />
         
         {/* Right-aligned content: Clear button or CtrlK */}
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center space-x-2">
-          {searchTerm && isSmallScreen && (
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+          {searchTerm ? (
             <button
               type="button"
               onClick={() => setSearchTerm('')}
-              className="text-text-muted/60 dark:text-dark-text-muted/60 hover:text-text-primary dark:hover:text-dark-text-primary focus:outline-none"
+              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
               title="Clear search"
             >
-              <FaXmark className="w-5 h-5" />
+              <FaXmark className="w-4 h-4" />
             </button>
-          )}
-          {!isSmallScreen && (
-            <div className="hidden sm:flex items-center text-xs text-gray-500 dark:text-gray-400">
-              <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">CtrlK</kbd>
+          ) : (
+            <div className="hidden sm:flex items-center">
+              <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-mono text-gray-500 dark:text-gray-400">⌘K</kbd>
             </div>
           )}
         </div>
@@ -511,7 +539,7 @@ const AppContent: React.FC = () => {
     
     {/* Search recommendations dropdown */}
     {showRecommendations && searchTerm.length > 0 && (
-      <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg border border-gray-200/60 dark:border-gray-700/50 shadow-lg shadow-gray-900/5 dark:shadow-gray-900/20 z-50 max-h-64 overflow-y-auto">
+      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl z-50 max-h-64 overflow-y-auto">
         {notes.filter(note =>
           note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -519,8 +547,8 @@ const AppContent: React.FC = () => {
         ).slice(0, 5).map((note, index) => (
           <div
             key={note.id}
-            className={`px-4 py-3 hover:bg-blue-50/80 dark:hover:bg-blue-900/20 cursor-pointer transition-colors duration-150 ${
-              index !== 0 ? 'border-t border-gray-100 dark:border-gray-700/50' : ''
+            className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors duration-150 ${
+              index !== 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''
             }`}
             onMouseDown={() => {
               selectNote(note.id);
@@ -529,7 +557,7 @@ const AppContent: React.FC = () => {
             }}
           >
             <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-2 h-2 bg-blue-400 dark:bg-blue-500 rounded-full mt-2"></div>
+              <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
               <div className="flex-grow min-w-0">
                 <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
                   {note.title}
@@ -564,7 +592,10 @@ const AppContent: React.FC = () => {
       {/* Sliding active indicator */}
       <div
         className="absolute top-1 bottom-1 bg-blue-200 dark:bg-gray-800 rounded-md shadow-sm border border-blue-400 dark:border-gray-700/60 transition-all duration-300 ease-in-out"
-        style={indicatorStyle}
+        style={{
+          left: `${indicatorStyle.left}px`,
+          width: `${indicatorStyle.width}px`,
+        }}
       ></div>
       <button
         ref={editorButtonRef}
@@ -718,6 +749,24 @@ const AppContent: React.FC = () => {
       <KeyboardShortcutsModal
         isOpen={isKeyboardShortcutsOpen}
         onClose={() => setIsKeyboardShortcutsOpen(false)}
+      />
+
+      <VersionHistoryModal
+        isOpen={isVersionHistoryOpen}
+        onClose={() => setIsVersionHistoryOpen(false)}
+        note={activeNote || null}
+        onRestoreVersion={(version) => {
+          if (activeNote) {
+            const restoredNote: Note = {
+              ...activeNote,
+              title: version.title,
+              content: version.content,
+              version: version.version,
+              updatedAt: Date.now()
+            };
+            handleRestoreVersion(restoredNote);
+          }
+        }}
       />
 
       {/* Feature Announcements */}

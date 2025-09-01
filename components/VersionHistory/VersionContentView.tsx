@@ -22,14 +22,7 @@ const VersionContentView: React.FC<VersionContentViewProps> = ({
     });
   };
 
-  const getChangeTypeLabel = (changeType: string) => {
-    switch (changeType) {
-      case 'auto': return 'Auto-save';
-      case 'manual': return 'Manual save';
-      case 'restore': return 'Restored';
-      default: return 'Unknown';
-    }
-  };
+  // Removed change type label from header per request
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -40,7 +33,7 @@ const VersionContentView: React.FC<VersionContentViewProps> = ({
               v{selectedVersion.version} - {selectedVersion.title}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {formatDate(selectedVersion.createdAt)} • {getChangeTypeLabel(selectedVersion.changeType || 'auto')}
+              {formatDate(selectedVersion.createdAt)}
             </p>
           </div>
           <div className="flex space-x-3">

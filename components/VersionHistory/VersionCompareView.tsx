@@ -12,8 +12,6 @@ interface VersionCompareViewProps {
   diffView: 'side-by-side' | 'unified';
   setDiffView: (view: 'side-by-side' | 'unified') => void;
   onRestoreVersion: (version: NoteVersion) => void;
-  showCharDiff?: boolean;
-  setShowCharDiff?: (show: boolean) => void;
   currentNoteVersion?: number; // Add this prop to identify the current version
 }
 
@@ -25,8 +23,6 @@ const VersionCompareView: React.FC<VersionCompareViewProps> = ({
   diffView,
   setDiffView,
   onRestoreVersion,
-  showCharDiff,
-  setShowCharDiff,
   currentNoteVersion
 }) => {
   const formatDate = (timestamp: number) => {
@@ -52,47 +48,145 @@ const VersionCompareView: React.FC<VersionCompareViewProps> = ({
     return currentNoteVersion && version.version === currentNoteVersion;
   };
 
-  // Function to render content with diff highlighting
+  // Smarter line-diff to avoid highlighting everything after an insertion/deletion
+  const calculateLineDiff = (oldLines: string[], newLines: string[]): Array<{
+    type: 'added' | 'removed' | 'unchanged';
+    oldLine?: string;
+    newLine?: string;
+    oldIndex?: number;
+    newIndex?: number;
+  }> => {
+    const result: Array<{
+      type: 'added' | 'removed' | 'unchanged';
+      oldLine?: string;
+      newLine?: string;
+      oldIndex?: number;
+      newIndex?: number;
+    }> = [];
+
+    const oldLineMap = new Map<string, number[]>();
+    const newLineMap = new Map<string, number[]>();
+
+    oldLines.forEach((line, index) => {
+      if (!oldLineMap.has(line)) oldLineMap.set(line, []);
+      oldLineMap.get(line)!.push(index);
+    });
+    newLines.forEach((line, index) => {
+      if (!newLineMap.has(line)) newLineMap.set(line, []);
+      newLineMap.get(line)!.push(index);
+    });
+
+    const matches: Array<{ oldIndex: number; newIndex: number }> = [];
+    const usedOld = new Set<number>();
+    const usedNew = new Set<number>();
+
+    for (const [line, oldIndices] of oldLineMap) {
+      if (newLineMap.has(line)) {
+        const newIndices = newLineMap.get(line)!;
+        const minCount = Math.min(oldIndices.length, newIndices.length);
+        for (let i = 0; i < minCount; i++) {
+          const oldIndex = oldIndices[i];
+          const newIndex = newIndices[i];
+          if (!usedOld.has(oldIndex) && !usedNew.has(newIndex)) {
+            matches.push({ oldIndex, newIndex });
+            usedOld.add(oldIndex);
+            usedNew.add(newIndex);
+          }
+        }
+      }
+    }
+
+    matches.sort((a, b) => a.oldIndex - b.oldIndex);
+
+    let oldIndex = 0,
+      newIndex = 0,
+      matchIndex = 0;
+
+    while (oldIndex < oldLines.length || newIndex < newLines.length) {
+      const currentMatch =
+        matchIndex < matches.length &&
+        matches[matchIndex].oldIndex === oldIndex &&
+        matches[matchIndex].newIndex === newIndex;
+
+      if (currentMatch) {
+        result.push({
+          type: 'unchanged',
+          oldLine: oldLines[oldIndex],
+          newLine: newLines[newIndex],
+          oldIndex,
+          newIndex,
+        });
+        oldIndex++;
+        newIndex++;
+        matchIndex++;
+      } else if (newIndex < newLines.length && !usedNew.has(newIndex)) {
+        result.push({ type: 'added', newLine: newLines[newIndex], newIndex });
+        newIndex++;
+      } else if (oldIndex < oldLines.length && !usedOld.has(oldIndex)) {
+        result.push({ type: 'removed', oldLine: oldLines[oldIndex], oldIndex });
+        oldIndex++;
+      } else {
+        oldIndex++;
+        newIndex++;
+      }
+    }
+
+    return result;
+  };
+
+  // Function to render content with diff highlighting using aligned indices
   const renderHighlightedContent = (content: string, isOldVersion: boolean) => {
     const oldLines = compareVersion.content.split('\n');
     const newLines = selectedVersion.content.split('\n');
     const contentLines = content.split('\n');
-    const otherLines = isOldVersion ? newLines : oldLines;
-    
-    return contentLines.map((line, index) => {
-      const otherLine = otherLines[index];
-      const isDifferent = line !== otherLine;
-      const lineNumber = index + 1;
-      
-      // Skip empty lines to reduce spacing
-      if (line.trim() === '') {
-        return null;
+
+    // Build a set of indices to highlight based on diff
+    const diff = calculateLineDiff(oldLines, newLines);
+    const highlightIndices = new Set<number>();
+    if (isOldVersion) {
+      for (const change of diff) {
+        if (change.type === 'removed' && change.oldIndex !== undefined) {
+          highlightIndices.add(change.oldIndex);
+        }
       }
-      
-      if (isDifferent) {
-        const highlightClass = isOldVersion 
-          ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-l-4 border-red-400 dark:border-red-600'
-          : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-l-4 border-green-400 dark:border-green-600';
-        
-        return (
-          <div key={index} className={`${highlightClass} px-1 py-0.5 flex items-start`}>
-            <span className="text-gray-400 dark:text-gray-500 mr-2 text-xs font-mono flex-shrink-0 w-8">
-              {lineNumber}
-            </span>
-            <span className="flex-1">{line}</span>
-          </div>
-        );
-      } else {
+    } else {
+      for (const change of diff) {
+        if (change.type === 'added' && change.newIndex !== undefined) {
+          highlightIndices.add(change.newIndex);
+        }
+      }
+    }
+
+    return contentLines
+      .map((line, index) => {
+        const lineNumber = index + 1;
+
+        if (line.trim() === '') {
+          return null;
+        }
+
+        const isHighlighted = highlightIndices.has(index);
+        if (isHighlighted) {
+          const highlightClass = isOldVersion
+            ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-l-4 border-red-400 dark:border-red-600'
+            : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-l-4 border-green-400 dark:border-green-600';
+
+          return (
+            <div key={index} className={`${highlightClass} px-1 py-0.5 flex items-start`}>
+              <span className="text-gray-400 dark:text-gray-500 mr-2 text-xs font-mono flex-shrink-0 w-8">{lineNumber}</span>
+              <span className="flex-1">{line}</span>
+            </div>
+          );
+        }
+
         return (
           <div key={index} className="px-1 py-0.5 flex items-start">
-            <span className="text-gray-400 dark:text-gray-500 mr-2 text-xs font-mono flex-shrink-0 w-8">
-              {lineNumber}
-            </span>
+            <span className="text-gray-400 dark:text-gray-500 mr-2 text-xs font-mono flex-shrink-0 w-8">{lineNumber}</span>
             <span className="flex-1">{line}</span>
           </div>
         );
-      }
-    }).filter(Boolean); // Remove null entries (empty lines)
+      })
+      .filter(Boolean);
   };
 
   const getDiffStats = () => {
@@ -163,8 +257,6 @@ const VersionCompareView: React.FC<VersionCompareViewProps> = ({
           selectedVersion={selectedVersion}
           diffView={diffView}
           setDiffView={setDiffView}
-          showCharDiff={showCharDiff}
-          setShowCharDiff={setShowCharDiff}
         />
       ) : (
         <div className="flex-1 flex min-h-0 h-full">

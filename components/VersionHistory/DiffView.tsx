@@ -6,17 +6,13 @@ interface DiffViewProps {
   selectedVersion: NoteVersion;
   diffView: 'side-by-side' | 'unified';
   setDiffView: (view: 'side-by-side' | 'unified') => void;
-  showCharDiff?: boolean;
-  setShowCharDiff?: (show: boolean) => void;
 }
 
 const DiffView: React.FC<DiffViewProps> = ({
   compareVersion,
   selectedVersion,
   diffView,
-  setDiffView,
-  showCharDiff = false,
-  setShowCharDiff
+  setDiffView
 }) => {
   const generateDiffView = (oldContent: string, newContent: string) => {
     const oldLines = oldContent.split('\n');
@@ -81,8 +77,7 @@ const DiffView: React.FC<DiffViewProps> = ({
     return diffLines;
   };
 
-  // Helper function to highlight character differences within lines
-
+  // Character diff removed per request
 
   // Helper function for line diff calculation (same as in service)
   const calculateLineDiff = (oldLines: string[], newLines: string[]): Array<{
@@ -215,18 +210,7 @@ const DiffView: React.FC<DiffViewProps> = ({
         >
           Unified
         </button>
-        {setShowCharDiff && (
-          <button
-            onClick={() => setShowCharDiff(!showCharDiff)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-              showCharDiff
-                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            {showCharDiff ? 'Hide' : 'Show'} Character Diff
-          </button>
-        )}
+        {/* Character diff toggle removed */}
       </div>
       
       <div className="flex-1 min-h-0">

@@ -447,3 +447,5 @@ html:not(.dark) .prose code:not(pre > code) {
   background-color: rgb(55 65 81 / 0.3) !important; /* gray-700/30 */
   border: none !important; /* Remove border */
 }
+
+

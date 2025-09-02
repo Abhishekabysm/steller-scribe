@@ -124,139 +124,192 @@ export const addPerLineClickFunctionality = (
   onToast: (message: string, type: "error" | "success" | "info") => void
 ) => {
   let lastHoverLine = -1;
+  
+  // Remove any existing event listeners to prevent duplicates
+  const newPreBlock = preBlock.cloneNode(true) as Element;
+  preBlock.parentNode?.replaceChild(newPreBlock, preBlock);
+  
+  // Re-get references after cloning
+  const preEl = newPreBlock as HTMLElement;
+  const codeEl = newPreBlock.querySelector('code') || codeElement;
 
-  preBlock.addEventListener("mousemove", (evt: Event) => {
+  preEl.addEventListener("mousemove", (evt: Event) => {
     const mouseEvent = evt as MouseEvent;
-        const preEl = preBlock as HTMLElement;
-    const codeEl = codeElement as HTMLElement;
-
-    preEl.style.cursor = "default";
-
+    
+    // Remove previous hover indicator
     const prev = preEl.querySelector(".code-line-hover-caret");
     if (prev) prev.remove();
 
-    const r = (document as any).caretRangeFromPoint
-      ? (document as any).caretRangeFromPoint(mouseEvent.clientX, mouseEvent.clientY)
-      : null;
-    if (!r || !codeEl.contains(r.startContainer)) return;
-
-    try {
-      const tempRange = document.createRange();
-      tempRange.selectNodeContents(codeEl);
-      tempRange.setEnd(
-        r.startContainer,
-        Math.min(r.startOffset, (r.startContainer as any).length ?? 0)
-      );
-      const upToCaret = tempRange.toString();
-      lastHoverLine = upToCaret.replace(/\r\n/g, "\n").split("\n").length - 1;
-    } catch {
-      lastHoverLine = -1;
-    }
-
-    const rects = (r as Range).getClientRects ? (r as Range).getClientRects() : [];
-    const codeRect = codeEl.getBoundingClientRect();
+    // Get the text content and split into lines
+    const codeText = (codeEl as HTMLElement).innerText || (codeEl as HTMLElement).textContent || '';
+    const lines = codeText.replace(/\r\n/g, "\n").split("\n");
+    
+    // Calculate which line the mouse is hovering over
+    const codeRect = (codeEl as HTMLElement).getBoundingClientRect();
     const preRect = preEl.getBoundingClientRect();
-    if (!rects || rects.length === 0) return;
+    
+    if (codeRect.height === 0) return;
+    
+    // Calculate line height and current line
+    const lineHeight = codeRect.height / lines.length;
+    const relativeY = mouseEvent.clientY - codeRect.top;
+    const currentLine = Math.floor(relativeY / lineHeight);
+    
+    console.log('Mouse Y:', mouseEvent.clientY, 'Code top:', codeRect.top, 'Relative Y:', relativeY, 'Line height:', lineHeight, 'Current line:', currentLine);
+    
+    // Ensure line index is within bounds
+    if (currentLine >= 0 && currentLine < lines.length) {
+      lastHoverLine = currentLine;
+      console.log('Setting lastHoverLine to:', currentLine, 'Line content:', lines[currentLine]);
+      
+      // Create visual indicator for the hovered line
+      const caret = document.createElement("div");
+      caret.className = "code-line-hover-caret";
+      Object.assign(caret.style, {
+        position: "absolute",
+        left: `${Math.max(4, codeRect.left - preRect.left - 6)}px`,
+        width: `${codeRect.width - 8}px`,
+        borderRadius: "4px",
+        top: `${codeRect.top - preRect.top + (currentLine * lineHeight)}px`,
+        height: `${Math.max(16, lineHeight - 2)}px`,
+        background: "transparent",
+        pointerEvents: "none",
+        zIndex: "46",
+      } as CSSStyleDeclaration);
 
-    const y = mouseEvent.clientY;
-    let current: DOMRect | null = null;
-    for (let i = 0; i < rects.length; i++) {
-      const rr = rects[i] as DOMRect;
-      if (y >= rr.top && y <= rr.bottom) {
-        current = rr;
-        break;
-      }
-    }
-
-    if (!current) {
-      let minDy = Number.POSITIVE_INFINITY;
-      for (let i = 0; i < rects.length; i++) {
-        const rr = rects[i] as DOMRect;
-        const dy = Math.min(Math.abs(y - rr.top), Math.abs(y - rr.bottom));
-        if (dy < minDy) {
-          minDy = dy;
-          current = rr;
-        }
-      }
-    }
-    if (!current) return;
-
-    const caret = document.createElement("div");
-    caret.className = "code-line-hover-caret";
-    Object.assign(caret.style, {
-      position: "absolute",
-      left: `${Math.max(4, codeRect.left - preRect.left - 6)}px`,
-      width: "3px",
-      borderRadius: "2px",
-      top: `${current.top - preRect.top}px`,
-      height: `${Math.max(12, Math.min(current.height, codeRect.height))}px`,
-      background: "currentColor",
-      opacity: "0.35",
-      pointerEvents: "none",
-      zIndex: "46",
-    } as CSSStyleDeclaration);
-
-    preEl.appendChild(caret);
-
-    if (
-      mouseEvent.clientX >= codeRect.left &&
-      mouseEvent.clientX <= codeRect.right &&
-      mouseEvent.clientY >= codeRect.top &&
-      mouseEvent.clientY <= codeRect.bottom
-    ) {
+      preEl.appendChild(caret);
       preEl.style.cursor = "pointer";
+    } else {
+      lastHoverLine = -1;
+      preEl.style.cursor = "default";
     }
   });
 
-  preBlock.addEventListener(
+  preEl.addEventListener(
     "mouseleave",
     () => {
-      const preEl = preBlock as HTMLElement;
       preEl.style.cursor = "default";
       lastHoverLine = -1;
+      console.log('Mouse left, resetting lastHoverLine to -1');
       const prevHover = preEl.querySelector(".code-line-hover-caret");
       if (prevHover) prevHover.remove();
     },
     { passive: true }
   );
 
-  codeElement.addEventListener(
-    "mouseleave",
-    () => {
-      const preEl = preBlock as HTMLElement;
-      preEl.style.cursor = "default";
-      lastHoverLine = -1;
-      const prevHover = preEl.querySelector(".code-line-hover-caret");
-      if (prevHover) prevHover.remove();
-    },
-    { passive: true }
-  );
-
-  preBlock.addEventListener("click", (evt: Event) => {
-        const prevHover = (preBlock as HTMLElement).querySelector(".code-line-hover-caret");
+  preEl.addEventListener("click", (evt: Event) => {
+    console.log('Click event! lastHoverLine:', lastHoverLine);
+    
+    const prevHover = preEl.querySelector(".code-line-hover-caret");
     if (prevHover) prevHover.remove();
 
     if ((evt.target as HTMLElement).closest(".copy-button-container")) return;
 
-    const codeText = (codeElement as HTMLElement).innerText;
+    const codeText = (codeEl as HTMLElement).innerText || (codeEl as HTMLElement).textContent || '';
     const lines = codeText.replace(/\r\n/g, "\n").split("\n");
+    
+    console.log('Total lines:', lines.length, 'Lines:', lines);
 
-    const toCopy =
-      lastHoverLine >= 0 && lastHoverLine < lines.length
-        ? lines[lastHoverLine]
-        : codeText;
+    let toCopy: string;
+    let message: string;
+
+    if (lastHoverLine >= 0 && lastHoverLine < lines.length) {
+      // Copy specific line
+      let lineContent = lines[lastHoverLine].trim();
+      
+      // Remove comments from the line
+      // Handle different comment styles: //, /* */, #, <!-- -->, --, REM, etc.
+      
+      // Handle single-line comments (//, #, --, REM)
+      if (lineContent.includes('//')) {
+        // Remove single-line comment (C, C++, Java, JavaScript, C#, etc.)
+        lineContent = lineContent.split('//')[0].trim();
+      }
+      if (lineContent.includes('#')) {
+        // Remove hash comment (Python, Ruby, Shell, Perl, etc.)
+        lineContent = lineContent.split('#')[0].trim();
+      }
+      if (lineContent.includes('--')) {
+        // Remove double dash comment (SQL, Lua, etc.)
+        // But be careful not to remove valid operators like x--
+        const dashIndex = lineContent.indexOf('--');
+        if (dashIndex > 0 && !lineContent[dashIndex - 1].match(/[a-zA-Z0-9_]/)) {
+          lineContent = lineContent.substring(0, dashIndex).trim();
+        }
+      }
+      
+      // Handle multi-line comment blocks
+      if (lineContent.includes('/*')) {
+        // Remove multi-line comment start (C, C++, Java, JavaScript, CSS, etc.)
+        lineContent = lineContent.split('/*')[0].trim();
+      }
+      if (lineContent.includes('*/')) {
+        // Remove multi-line comment end
+        const parts = lineContent.split('*/');
+        lineContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+      }
+      
+      // Handle HTML/XML comments
+      if (lineContent.includes('<!--')) {
+        lineContent = lineContent.split('<!--')[0].trim();
+      }
+      if (lineContent.includes('-->')) {
+        const parts = lineContent.split('-->');
+        lineContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+      }
+      
+      // Handle special comment styles
+      if (lineContent.toUpperCase().includes('REM ')) {
+        // Remove REM comments (BASIC, Batch files)
+        const remIndex = lineContent.toUpperCase().indexOf('REM ');
+        if (remIndex === 0) {
+          lineContent = ''; // Line is just a comment
+        } else if (remIndex > 0) {
+          lineContent = lineContent.substring(0, remIndex).trim();
+        }
+      }
+      
+      // Handle assembly-style comments (;)
+      if (lineContent.includes(';')) {
+        // Remove semicolon comment (Assembly, INI files, etc.)
+        // But be careful with valid semicolons in code
+        const semicolonIndex = lineContent.indexOf(';');
+        if (semicolonIndex > 0) {
+          // Check if it's not inside quotes
+          const beforeSemicolon = lineContent.substring(0, semicolonIndex);
+          const quoteCount = (beforeSemicolon.match(/"/g) || []).length;
+          if (quoteCount % 2 === 0) { // Even number of quotes means semicolon is outside quotes
+            lineContent = beforeSemicolon.trim();
+          }
+        }
+      }
+      
+      // If after removing comments the line is empty, copy the original line
+      if (!lineContent) {
+        lineContent = lines[lastHoverLine].trim();
+      }
+      
+      toCopy = lineContent;
+      message = `Copied line ${lastHoverLine + 1}: "${toCopy}"`;
+      console.log('Copying specific line:', lastHoverLine, 'Content:', toCopy);
+    } else {
+      // Copy entire code block
+      toCopy = codeText;
+      message = "Copied entire code block";
+      console.log('Copying entire block because lastHoverLine is:', lastHoverLine);
+    }
 
     navigator.clipboard.writeText(toCopy)
       .then(() => {
-        onToast("Copied!", "success");
-                // Flash visual feedback on successful copy
-        (preBlock as HTMLElement).classList.add("flash-copied");
-        setTimeout(() => (preBlock as HTMLElement).classList.remove("flash-copied"), 600);
+        onToast(message, "success");
+        // Flash visual feedback on successful copy
+        preEl.classList.add("flash-copied");
+        setTimeout(() => preEl.classList.remove("flash-copied"), 600);
       })
       .catch((err) => {
-      onToast("Failed to copy: " + err, "error");
-      console.error("Failed to copy line/block: ", err);
-    });
+        onToast("Failed to copy: " + err, "error");
+        console.error("Failed to copy line/block: ", err);
+      });
   });
 };
 

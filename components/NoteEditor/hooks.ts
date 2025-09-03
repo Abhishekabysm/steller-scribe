@@ -462,12 +462,12 @@ export const useMarkdownProcessing = (
           existingButton.remove();
         }
         
-        // Add new copy button
+        // Add per-line functionality first (before copy button to avoid cloning issues)
+        addPerLineClickFunctionality(preBlock, codeElement, onToast);
+        
+        // Then add copy button (after per-line setup to avoid event listener conflicts)
         const buttonContainer = createCopyButton(codeElement, onToast);
         preBlock.appendChild(buttonContainer);
-        
-        // Add per-line functionality (this handles event listeners properly)
-        addPerLineClickFunctionality(preBlock, codeElement, onToast);
       }
     });
 
@@ -484,9 +484,10 @@ export const useMarkdownProcessing = (
         e.stopPropagation();
         const text = (codeElement as HTMLElement).innerText;
         navigator.clipboard.writeText(text).then(() => {
-          onToast(`Copied: ${text}`, "success");
+          // Show toast with copied inline code text
+          const preview = text.length > 100 ? text.slice(0, 97) + '...' : text;
+          onToast(`Copied: ${preview}`, "success");
         }).catch((err) => {
-          onToast("Failed to copy code: " + err, "error");
           console.error("Failed to copy inline code: ", err);
         });
       };

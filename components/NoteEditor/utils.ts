@@ -57,14 +57,16 @@ export const processLinks = (previewPane: Element) => {
  */
 export const createCopyButton = (
   codeElement: Element,
-  onToast: (message: string, type: "error" | "success" | "info") => void
+  _onToast: (message: string, type: "error" | "success" | "info") => void
 ): HTMLDivElement => {
+  console.log('Creating copy button for element:', codeElement);
+  
   const buttonContainer = document.createElement("div");
-  buttonContainer.className = "copy-button-container absolute top-2 right-2 z-60";
+  buttonContainer.className = "copy-button-container absolute top-2 right-2 z-[70]";
 
   const copyButton = document.createElement("button");
   copyButton.className =
-    "p-1.5 rounded-md bg-bg-secondary dark:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors flex items-center justify-center gap-1 shadow-sm";
+    "p-1.5 rounded-md bg-bg-secondary dark:bg-dark-bg-secondary text-text-secondary dark:text-dark-text-secondary hover:bg-border-color dark:hover:bg-dark-border-color transition-colors flex items-center justify-center gap-1 shadow-sm cursor-pointer border border-transparent hover:border-border-color dark:hover:border-dark-border-color";
 
   const copyIconSVG = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>`;
 
@@ -74,42 +76,81 @@ export const createCopyButton = (
   copyButton.title = "Copy code";
   copyButton.setAttribute("data-copy-button", "true");
 
-  copyButton.onclick = (e: MouseEvent) => {
+  // Add both onclick and addEventListener to ensure the event is captured
+  const handleCopyClick = (e: MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-        const text = (codeElement as HTMLElement).innerText;
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        onToast("Copied!", "success");
-                copyButton.innerHTML = `<span class="flex items-center gap-1 text-green-500 dark:text-green-400"><span>Copied</span><span>✓</span></span>`;
-        // Expand width to fit new content and shift left so it stays inside pre
-        const expandedWidth = copyButton.scrollWidth;
-        copyButton.style.width = `${expandedWidth}px`;
-        copyButton.title = "Copied!";
-        copyButton.classList.remove(
-          "text-text-secondary",
-          "dark:text-dark-text-secondary"
-        );
-        copyButton.classList.add("text-green-500", "dark:text-green-400");
-        setTimeout(() => {
-          if (copyButton.parentNode) {
-            copyButton.innerHTML = copyIconSVG;
-            copyButton.style.width = "";
-            copyButton.style.transform = "";
-            copyButton.title = "Copy code";
-            copyButton.classList.remove("text-green-500", "dark:text-green-400");
-            copyButton.classList.add(
-              "text-text-secondary",
-              "dark:text-dark-text-secondary"
-            );
-          }
-        }, 1500);
-      })
-      .catch((err) => {
-        onToast("Failed to copy code: " + err, "error");
-        console.error("Failed to copy code: ", err);
+    console.log('Copy button clicked!', e);
+    console.log('Code element:', codeElement);
+    
+    const text = (codeElement as HTMLElement).innerText || (codeElement as HTMLElement).textContent || '';
+    console.log('Text to copy:', text);
+    
+    if (!text.trim()) {
+      console.log('No text to copy');
+      return;
+    }
+    
+    // Try modern clipboard API first, fallback to older methods
+    const copyToClipboard = async (text: string) => {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          // Fallback for older browsers or non-HTTPS contexts
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-999999px';
+          textArea.style.top = '-999999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          document.execCommand('copy');
+          textArea.remove();
+        }
+        return true;
+      } catch (err) {
+        console.error('Copy failed:', err);
+        return false;
+      }
+    };
+    
+    copyToClipboard(text)
+      .then((success) => {
+        if (success) {
+          copyButton.innerHTML = `<span class="flex items-center gap-1 text-green-500 dark:text-green-400"><span>Copied</span><span>✓</span></span>`;
+          // Expand width to fit new content and shift left so it stays inside pre
+          const expandedWidth = copyButton.scrollWidth;
+          copyButton.style.width = `${expandedWidth}px`;
+          copyButton.title = "Copied!";
+          copyButton.classList.remove(
+            "text-text-secondary",
+            "dark:text-dark-text-secondary"
+          );
+          copyButton.classList.add("text-green-500", "dark:text-green-400");
+          setTimeout(() => {
+            if (copyButton.parentNode) {
+              copyButton.innerHTML = copyIconSVG;
+              copyButton.style.width = "";
+              copyButton.style.transform = "";
+              copyButton.title = "Copy code";
+              copyButton.classList.remove("text-green-500", "dark:text-green-400");
+              copyButton.classList.add(
+                "text-text-secondary",
+                "dark:text-dark-text-secondary"
+              );
+            }
+          }, 3000);
+        }
       });
   };
+  
+  // Attach event handlers
+  copyButton.onclick = handleCopyClick;
+  copyButton.addEventListener('click', handleCopyClick);
+  
+  console.log('Copy button created and event handlers attached');
 
   buttonContainer.appendChild(copyButton);
   return buttonContainer;
@@ -123,15 +164,69 @@ export const addPerLineClickFunctionality = (
   codeElement: Element,
   onToast: (message: string, type: "error" | "success" | "info") => void
 ) => {
+  console.log('Adding per-line click functionality to:', preBlock);
   let lastHoverLine = -1;
   
-  // Remove any existing event listeners to prevent duplicates
-  const newPreBlock = preBlock.cloneNode(true) as Element;
-  preBlock.parentNode?.replaceChild(newPreBlock, preBlock);
+  // Check if this block already has per-line functionality to avoid duplicates
+  const isAlreadyEnhanced = (preBlock as HTMLElement).dataset.perLineEnhanced === "true";
+  let preEl: HTMLElement;
+  let codeEl: Element;
   
-  // Re-get references after cloning
-  const preEl = newPreBlock as HTMLElement;
-  const codeEl = newPreBlock.querySelector('code') || codeElement;
+  if (isAlreadyEnhanced) {
+    console.log('Per-line functionality already exists, skipping');
+    return;
+  }
+  
+  // Mark as enhanced for per-line functionality
+  (preBlock as HTMLElement).dataset.perLineEnhanced = "true";
+  
+  // Work directly with the element (don't clone to preserve any existing functionality)
+  preEl = preBlock as HTMLElement;
+  codeEl = preBlock.querySelector('code') || codeElement;
+
+  // Shared line-index computation that accounts for padding and scroll
+  const computeLineIndex = (
+    evt: MouseEvent,
+    pre: HTMLElement,
+    code: Element,
+    lines: string[]
+  ) => {
+    const preRect = pre.getBoundingClientRect();
+    const preStyles = window.getComputedStyle(pre);
+    const paddingTop = parseFloat(preStyles.paddingTop || "0") || 0;
+    const paddingBottom = parseFloat(preStyles.paddingBottom || "0") || 0;
+    const contentHeight = Math.max(1, (pre.clientHeight || preRect.height) - paddingTop - paddingBottom);
+
+    const codeStyles = window.getComputedStyle(code as HTMLElement);
+    let computedLineHeight = parseFloat(codeStyles.lineHeight);
+    if (!isFinite(computedLineHeight) || computedLineHeight <= 0) {
+      computedLineHeight = contentHeight / Math.max(1, lines.length);
+    }
+    const lineHeight = Math.max(1, computedLineHeight);
+
+    // Adjust for the code element's own top spacing to improve accuracy
+    const codePaddingTop = parseFloat(codeStyles.paddingTop || "0") || 0;
+    const codeMarginTop = parseFloat(codeStyles.marginTop || "0") || 0;
+    const codeTopAdjustment = Math.max(0, codePaddingTop + codeMarginTop);
+
+    // Position within the visible content area, factoring scroll and adjustments
+    const rawY = evt.clientY - preRect.top + pre.scrollTop - paddingTop - codeTopAdjustment;
+    const relativeY = Math.max(0, rawY);
+
+    // Start with the natural band using floor, then apply a small top-edge bias
+    let index = Math.min(
+      lines.length - 1,
+      Math.max(0, Math.floor(relativeY / lineHeight))
+    );
+
+    // If the pointer is within the top 20% of the current band, bias to previous line
+    const posInBand = relativeY - index * lineHeight;
+    if (posInBand < lineHeight * 0.2) {
+      index = Math.max(0, index - 1);
+    }
+
+    return { index, lineHeight, paddingTop, preStyles, codeTopAdjustment, relativeY } as const;
+  };
 
   preEl.addEventListener("mousemove", (evt: Event) => {
     const mouseEvent = evt as MouseEvent;
@@ -143,19 +238,20 @@ export const addPerLineClickFunctionality = (
     // Get the text content and split into lines
     const codeText = (codeEl as HTMLElement).innerText || (codeEl as HTMLElement).textContent || '';
     const lines = codeText.replace(/\r\n/g, "\n").split("\n");
+    if (lines.length === 0) {
+      preEl.style.cursor = "default";
+      lastHoverLine = -1;
+      return;
+    }
     
-    // Calculate which line the mouse is hovering over
-    const codeRect = (codeEl as HTMLElement).getBoundingClientRect();
-    const preRect = preEl.getBoundingClientRect();
+    const { index: currentLine, lineHeight, paddingTop, preStyles, codeTopAdjustment } = computeLineIndex(
+      mouseEvent,
+      preEl,
+      codeEl,
+      lines
+    );
     
-    if (codeRect.height === 0) return;
-    
-    // Calculate line height and current line
-    const lineHeight = codeRect.height / lines.length;
-    const relativeY = mouseEvent.clientY - codeRect.top;
-    const currentLine = Math.floor(relativeY / lineHeight);
-    
-    console.log('Mouse Y:', mouseEvent.clientY, 'Code top:', codeRect.top, 'Relative Y:', relativeY, 'Line height:', lineHeight, 'Current line:', currentLine);
+    console.log('Hover line:', currentLine);
     
     // Ensure line index is within bounds
     if (currentLine >= 0 && currentLine < lines.length) {
@@ -165,23 +261,36 @@ export const addPerLineClickFunctionality = (
       // Create visual indicator for the hovered line
       const caret = document.createElement("div");
       caret.className = "code-line-hover-caret";
+
+      // Minimal vertical pipe indicator at the left
+      const barHeight = Math.max(10, Math.round(Number(lineHeight) * 0.6));
+      const barTopOffset = Math.round(
+        paddingTop + codeTopAdjustment - preEl.scrollTop + currentLine * Number(lineHeight) + Math.max(0, (Number(lineHeight) - barHeight) / 2)
+      );
+      const paddingLeft = parseFloat(preStyles.paddingLeft || "0") || 0;
+      const barLeft = Math.max(2, Math.round(paddingLeft * 0.35));
+
       Object.assign(caret.style, {
         position: "absolute",
-        left: `${Math.max(4, codeRect.left - preRect.left - 6)}px`,
-        width: `${codeRect.width - 8}px`,
-        borderRadius: "4px",
-        top: `${codeRect.top - preRect.top + (currentLine * lineHeight)}px`,
-        height: `${Math.max(16, lineHeight - 2)}px`,
-        background: "transparent",
+        left: `${barLeft}px`,
+        width: `3px`,
+        top: `${barTopOffset}px`,
+        height: `${barHeight}px`,
+        background: "currentColor",
+        opacity: "0.85",
+        borderRadius: "2px",
         pointerEvents: "none",
         zIndex: "46",
+        boxShadow: "0 0 0 1px rgba(0,0,0,0.12)",
       } as CSSStyleDeclaration);
 
       preEl.appendChild(caret);
       preEl.style.cursor = "pointer";
+      preEl.classList.add("hover-copy");
     } else {
       lastHoverLine = -1;
       preEl.style.cursor = "default";
+      preEl.classList.remove("hover-copy");
     }
   });
 
@@ -189,6 +298,7 @@ export const addPerLineClickFunctionality = (
     "mouseleave",
     () => {
       preEl.style.cursor = "default";
+      preEl.classList.remove("hover-copy");
       lastHoverLine = -1;
       console.log('Mouse left, resetting lastHoverLine to -1');
       const prevHover = preEl.querySelector(".code-line-hover-caret");
@@ -203,7 +313,13 @@ export const addPerLineClickFunctionality = (
     const prevHover = preEl.querySelector(".code-line-hover-caret");
     if (prevHover) prevHover.remove();
 
-    if ((evt.target as HTMLElement).closest(".copy-button-container")) return;
+    // Check if click is on copy button or its container - if so, don't handle here
+    const clickedElement = evt.target as HTMLElement;
+    if (clickedElement.closest(".copy-button-container") || 
+        clickedElement.hasAttribute("data-copy-button") ||
+        clickedElement.closest("[data-copy-button]")) {
+      return;
+    }
 
     const codeText = (codeEl as HTMLElement).innerText || (codeEl as HTMLElement).textContent || '';
     const lines = codeText.replace(/\r\n/g, "\n").split("\n");
@@ -211,11 +327,19 @@ export const addPerLineClickFunctionality = (
     console.log('Total lines:', lines.length, 'Lines:', lines);
 
     let toCopy: string;
-    let message: string;
+    let copiedLineMode = false;
 
-    if (lastHoverLine >= 0 && lastHoverLine < lines.length) {
+    // Compute precise index at click time to avoid off-by-one
+    const { index: clickedIndex } = computeLineIndex(evt as MouseEvent, preEl, codeEl, lines);
+    if (clickedIndex >= 0 && clickedIndex < lines.length) {
       // Copy specific line
-      let lineContent = lines[lastHoverLine].trim();
+      const selectedIndex = clickedIndex;
+      let lineContent = lines[selectedIndex];
+      if (lineContent !== undefined) {
+        lineContent = lineContent.trim();
+      } else {
+        lineContent = "";
+      }
       
       // Remove comments from the line
       // Handle different comment styles: //, /* */, #, <!-- -->, --, REM, etc.
@@ -290,24 +414,25 @@ export const addPerLineClickFunctionality = (
       }
       
       toCopy = lineContent;
-      message = `Copied line ${lastHoverLine + 1}: "${toCopy}"`;
-      console.log('Copying specific line:', lastHoverLine, 'Content:', toCopy);
+      copiedLineMode = true;
+      console.log('Copying specific line:', selectedIndex, 'Content:', toCopy);
     } else {
       // Copy entire code block
       toCopy = codeText;
-      message = "Copied entire code block";
       console.log('Copying entire block because lastHoverLine is:', lastHoverLine);
     }
 
     navigator.clipboard.writeText(toCopy)
       .then(() => {
-        onToast(message, "success");
         // Flash visual feedback on successful copy
         preEl.classList.add("flash-copied");
         setTimeout(() => preEl.classList.remove("flash-copied"), 600);
+        if (copiedLineMode && typeof onToast === 'function') {
+          const preview = toCopy.length > 140 ? toCopy.slice(0, 137) + '…' : toCopy;
+          onToast(`Copied: ${preview}`, "success");
+        }
       })
       .catch((err) => {
-        onToast("Failed to copy: " + err, "error");
         console.error("Failed to copy line/block: ", err);
       });
   });

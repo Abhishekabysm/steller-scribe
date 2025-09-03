@@ -167,8 +167,10 @@ textarea.editor-textarea::selection,
 
 /* Enhanced copy button styling */
 .copy-button-container {
-  opacity: 0;
+  opacity: 0.3;
   transition: opacity 0.2s ease-in-out;
+  pointer-events: auto;
+  z-index: 70;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -201,6 +203,16 @@ textarea.editor-textarea::selection,
 /* Force visibility on mobile */
 @media (max-width: 768px) {
   .preview-pane pre .copy-button-container {
+    opacity: 1 !important;
+  }
+  
+  /* Ensure copy buttons are always clickable on mobile */
+  .copy-button-container {
+    opacity: 0.7 !important;
+  }
+  
+  .copy-button-container:hover,
+  .copy-button-container:focus-within {
     opacity: 1 !important;
   }
 }

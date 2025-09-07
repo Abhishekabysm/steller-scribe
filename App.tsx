@@ -370,7 +370,7 @@ const AppContent: React.FC = () => {
   // Effect to handle keyboard shortcuts for command palette and help modal
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
       }
@@ -382,7 +382,7 @@ const AppContent: React.FC = () => {
         e.preventDefault();
         setIsKeyboardShortcutsOpen((prev) => !prev);
       }
-      if (e.key === 'h' && (e.metaKey || e.ctrlKey)) {
+      if (e.key.toLowerCase() === 'h' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setIsVersionHistoryOpen((prev) => !prev);
       }

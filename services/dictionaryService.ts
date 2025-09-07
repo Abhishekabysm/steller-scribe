@@ -1,12 +1,20 @@
 // Using Google Gemini for dictionary/translation functionality
 import { GoogleGenAI } from "@google/genai";
 
+let ai: GoogleGenAI | null = null;
+
 // Lazy-initialize the AI client to avoid crashing on load
 const getAiClient = () => {
-  if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set. Please configure it to use AI features.");
+  if (!ai) {
+    if (!import.meta.env.VITE_GEMINI_API_KEY) {
+      // Match the rest of the app's AI features env var handling
+      throw new Error(
+        "VITE_GEMINI_API_KEY environment variable not set. Please configure it to use AI features."
+      );
+    }
+    ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   }
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  return ai;
 };
 
 export const getWordMeaning = async (word: string, targetLanguage: string): Promise<string> => {

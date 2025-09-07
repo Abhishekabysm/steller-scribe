@@ -174,7 +174,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       setCurrentEditorContent(activeNote.content);
       clearStacks();
     }
-  }, [activeNote?.id, activeNote?.content, clearStacks]);
+  }, [activeNote?.id, clearStacks]);
 
   // Additional effect to ensure editor content stays in sync with note content
   useEffect(() => {
@@ -496,13 +496,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
     // Handle Undo/Redo
     if (e.ctrlKey || e.metaKey) {
-      if (e.key === 'z' && !e.shiftKey) {
+      if (e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
         if (undoStack.length > 0) {
           undo();
         }
         return;
-      } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
+      } else if (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey)) {
         e.preventDefault();
         if (redoStack.length > 0) {
           redo();

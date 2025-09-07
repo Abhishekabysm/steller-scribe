@@ -89,7 +89,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
       // Handle ⌘K or Ctrl+K to toggle command palette
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         onClose();
         return;
@@ -99,21 +99,21 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
       if (!isOpen) return;
 
      // Handle ⌘N or Ctrl+N for new note
-     if (e.key === 'n' && (e.metaKey || e.ctrlKey)) {
+     if (e.key.toLowerCase() === 'n' && (e.metaKey || e.ctrlKey)) {
        e.preventDefault();
        handleAddNote();
        return;
      }
 
      // Handle ⌘T or Ctrl+T for theme toggle
-     if (e.key === 't' && (e.metaKey || e.ctrlKey)) {
+     if (e.key.toLowerCase() === 't' && (e.metaKey || e.ctrlKey)) {
        e.preventDefault();
        handleToggleTheme();
        return;
      }
 
      // Handle ⌘S or Ctrl+S for summarize
-     if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
+     if (e.key.toLowerCase() === 's' && (e.metaKey || e.ctrlKey)) {
        e.preventDefault();
        handleSummarizeNote();
        return;

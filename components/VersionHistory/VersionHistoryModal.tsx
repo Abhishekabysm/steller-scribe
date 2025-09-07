@@ -195,6 +195,7 @@ const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
         {/* Footer */}
         <VersionModalFooter
           versions={versions}
+          note={note}
           onClose={onClose}
         />
       </div>

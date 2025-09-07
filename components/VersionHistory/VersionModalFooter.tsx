@@ -1,15 +1,17 @@
 import React from 'react';
-import { NoteVersion } from '../../types';
+import { NoteVersion, Note } from '../../types';
 import { versionControlService } from '../../services/versionControlService';
 import { useToasts } from '../../hooks/useToasts';
 
 interface VersionModalFooterProps {
   versions: NoteVersion[];
+  note: Note | null;
   onClose: () => void;
 }
 
 const VersionModalFooter: React.FC<VersionModalFooterProps> = ({
   versions,
+  note,
   onClose
 }) => {
   const { addToast } = useToasts();
@@ -59,11 +61,28 @@ const VersionModalFooter: React.FC<VersionModalFooterProps> = ({
       </div>
       
       <div className="flex space-x-3">
+        {note && (
+          <button
+            onClick={() => {
+              const cleanedCount = versionControlService.cleanupNoteVersions(note.id, 10);
+              if (cleanedCount > 0) {
+                addToast(`Removed ${cleanedCount} old version${cleanedCount > 1 ? 's' : ''} for this note.`, 'success');
+              } else {
+                addToast('No old versions to clean up for this note.', 'info');
+              }
+              // Notify modal to refresh its data without a full reload
+              window.dispatchEvent(new CustomEvent('versions:cleanup'));
+            }}
+            className="px-4 py-2 bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-xl text-sm font-medium hover:bg-orange-200 dark:hover:bg-orange-800/30 transition-all duration-200"
+          >
+            Cleanup This Note ({versions.length} versions)
+          </button>
+        )}
         <button
           onClick={() => {
             const cleanedCount = versionControlService.cleanupOldVersions(20);
             if (cleanedCount > 0) {
-              addToast(`Removed ${cleanedCount} old version${cleanedCount > 1 ? 's' : ''}.`, 'success');
+              addToast(`Removed ${cleanedCount} old version${cleanedCount > 1 ? 's' : ''} across all notes.`, 'success');
             } else {
               addToast('No old versions to clean up.', 'info');
             }
@@ -72,7 +91,7 @@ const VersionModalFooter: React.FC<VersionModalFooterProps> = ({
           }}
           className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
         >
-          Cleanup Old Versions
+          Cleanup All Notes
         </button>
         <button
           onClick={onClose}

@@ -459,6 +459,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       if (textarea) {
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
+        
+        pushToUndoStack(textarea.value);
+        
         textarea.focus();
         textarea.setSelectionRange(start, end);
         document.execCommand("insertText", false, modifiedText);

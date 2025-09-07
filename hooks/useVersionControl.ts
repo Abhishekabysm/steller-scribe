@@ -36,7 +36,7 @@ export const useVersionControl = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSavedVersion, setLastSavedVersion] = useState(0);
   const [versionCount, setVersionCount] = useState(0);
-  const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(true);
+  const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(false);
   // Tracks last observed content (for change detection) and last saved baseline
   const lastContentRef = useRef<string>('');
   const savedContentRef = useRef<string>('');
@@ -65,7 +65,7 @@ export const useVersionControl = ({
       savedContentRef.current = '';
     }
 
-    // Cleanup auto-save timer when note changes
+    // Always cleanup auto-save timer when note changes (auto-save is disabled by default)
     return () => {
       if (note) {
         versionControlService.clearAutoSaveTimer(note.id);
@@ -238,4 +238,18 @@ export const useVersionControl = ({
     // Utility methods
     getNextVersionNumber: () => note ? versionControlService.getNextVersionNumber(note.id) : 1,
   };
+
+  // Cleanup all auto-save timers when component unmounts
+  useEffect(() => {
+    return () => {
+      versionControlService.clearAllAutoSaveTimers();
+    };
+  }, []);
+
+  // Show initial notification that auto-save is disabled
+  useEffect(() => {
+    if (note) {
+      addToast('Auto-save is disabled. Use the save button (💾) to create versions manually.', 'info');
+    }
+  }, [note?.id, addToast]);
 };

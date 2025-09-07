@@ -2,7 +2,8 @@ import { Note, NoteVersion, VersionControlState } from '../types';
 
 const VERSION_STORAGE_KEY = 'stellar-scribe-note-versions';
 const MAX_VERSIONS_PER_NOTE = 50; // Keep last 50 versions per note
-const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
+const AUTO_SAVE_INTERVAL = 300000; // 5 minutes (300 seconds)
+const MIN_TIME_BETWEEN_SAVES = 60000; // Minimum 1 minute between saves
 const MIN_CHANGE_THRESHOLD = 10; // Minimum characters changed to create a version
 const MAX_CONTENT_SIZE = 1024 * 1024; // 1MB max content size per version
 
@@ -344,6 +345,7 @@ export class VersionControlService {
   private static instance: VersionControlService;
   private autoSaveTimers: Map<string, NodeJS.Timeout> = new Map();
   private versionCache: Map<string, NoteVersion[]> = new Map();
+  private lastSaveTimes: Map<string, number> = new Map();
 
   static getInstance(): VersionControlService {
     if (!VersionControlService.instance) {
@@ -431,6 +433,16 @@ export class VersionControlService {
       return null;
     }
     
+    // Check minimum time between saves for auto-saves
+    if (changeType === 'auto') {
+      const lastSaveTime = this.lastSaveTimes.get(note.id) || 0;
+      const timeSinceLastSave = Date.now() - lastSaveTime;
+      if (timeSinceLastSave < MIN_TIME_BETWEEN_SAVES) {
+        console.log('Skipping auto-save - too soon since last save');
+        return null;
+      }
+    }
+    
     // Check storage quota before saving
     const storageStatus = this.checkStorageQuota();
     if (storageStatus.needsCleanup) {
@@ -508,6 +520,9 @@ export class VersionControlService {
       
       // Update cache
       this.versionCache.set(note.id, versions);
+      
+      // Update last save time
+      this.lastSaveTimes.set(note.id, Date.now());
 
       return newVersion;
     } catch (error) {
@@ -886,6 +901,28 @@ export class VersionControlService {
   }
 
   /**
+   * Clean up old versions for a specific note
+   */
+  cleanupNoteVersions(noteId: string, maxVersions: number = 10): number {
+    const versions = this.getNoteVersions(noteId);
+    if (versions.length <= maxVersions) {
+      return 0;
+    }
+    
+    const cleanedVersions = versions.slice(0, maxVersions);
+    const storageKey = `${VERSION_STORAGE_KEY}-${noteId}`;
+    
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(cleanedVersions));
+      this.versionCache.set(noteId, cleanedVersions);
+      return versions.length - cleanedVersions.length;
+    } catch (error) {
+      console.error('Error cleaning up note versions:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Clean up old versions to free storage space
    */
   cleanupOldVersions(maxVersionsPerNote: number = 20): number {
@@ -915,6 +952,27 @@ export class VersionControlService {
     }
     
     return cleanedCount;
+  }
+
+  /**
+   * Get auto-save configuration info
+   */
+  getAutoSaveConfig() {
+    return {
+      interval: AUTO_SAVE_INTERVAL,
+      minTimeBetweenSaves: MIN_TIME_BETWEEN_SAVES,
+      minChangeThreshold: MIN_CHANGE_THRESHOLD
+    };
+  }
+
+  /**
+   * Clean up all auto-save timers (useful for disabling auto-save globally)
+   */
+  clearAllAutoSaveTimers(): void {
+    this.autoSaveTimers.forEach((timer) => {
+      clearTimeout(timer);
+    });
+    this.autoSaveTimers.clear();
   }
 }
 

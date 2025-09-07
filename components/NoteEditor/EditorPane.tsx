@@ -224,9 +224,14 @@ const EditorPane: React.FC<EditorPaneProps> = ({
       </div>
       
       <footer className="flex-shrink-0 p-2 border-t border-gray-200 dark:border-dark-border-color text-xs text-gray-500 dark:text-dark-text-muted flex items-center justify-between">
-        <span>
-          {activeNote.content.split(/\s+/).filter(Boolean).length} words
-        </span>
+        <div className="flex items-center gap-3">
+          <span>
+            {activeNote.content.split(/\s+/).filter(Boolean).length} words
+          </span>
+          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-md">
+            Manual Save Only
+          </span>
+        </div>
         <span>
           Last updated: {new Date(activeNote.updatedAt).toLocaleString()}
         </span>

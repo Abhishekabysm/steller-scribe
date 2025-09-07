@@ -364,7 +364,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             {onCreateVersion && (
               <ToolbarButton
                 onClick={onCreateVersion}
-                title={hasUnsavedChanges ? "Save Version (unsaved changes)" : "Save Version"}
+                title={hasUnsavedChanges ? "Save Version (unsaved changes) - Auto-save disabled" : "Save Version - Auto-save disabled"}
                 className={hasUnsavedChanges ? "text-orange-600 dark:text-orange-400" : "text-green-600 dark:text-green-400"}
               >
                 <FaSave className="w-5 h-5" />

@@ -393,21 +393,6 @@ export const addPerLineClickFunctionality = (
         }
       }
       
-      // Handle assembly-style comments (;)
-      if (lineContent.includes(';')) {
-        // Remove semicolon comment (Assembly, INI files, etc.)
-        // But be careful with valid semicolons in code
-        const semicolonIndex = lineContent.indexOf(';');
-        if (semicolonIndex > 0) {
-          // Check if it's not inside quotes
-          const beforeSemicolon = lineContent.substring(0, semicolonIndex);
-          const quoteCount = (beforeSemicolon.match(/"/g) || []).length;
-          if (quoteCount % 2 === 0) { // Even number of quotes means semicolon is outside quotes
-            lineContent = beforeSemicolon.trim();
-          }
-        }
-      }
-      
       // If after removing comments the line is empty, copy the original line
       if (!lineContent) {
         lineContent = lines[lastHoverLine].trim();

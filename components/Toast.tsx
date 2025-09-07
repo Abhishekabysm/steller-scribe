@@ -43,7 +43,7 @@ const Toast: React.FC<ToastProps> = ({ toast, removeToast }) => {
     >
       <div className="flex items-center p-4">
         <FaRegStar className="w-6 h-6 mr-3 flex-shrink-0" />
-        <p className="flex-grow text-sm font-medium">{toast.message}</p>
+        <p className="flex-grow text-sm font-medium break-all whitespace-pre-wrap leading-snug">{toast.message}</p>
         <button
           onClick={handleRemove}
           className="ml-4 p-1 rounded-full hover:bg-black/20 focus:outline-none focus:ring-2 focus:ring-white/50"

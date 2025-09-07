@@ -399,6 +399,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     if (!selectedText) return;
 
     setIsAiActionLoading(true);
+
     try {
       if (action === "dictionary") {
         const meaning = await getWordMeaning(selectedText, language || "en");
@@ -422,12 +423,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         setCurrentEditorContent(textarea.value);
         onUpdateNote({ content: textarea.value });
 
-        const editorWrapper = document.querySelector(".editor-textarea-wrapper");
-        if (editorWrapper) {
-          editorWrapper.classList.add("flash-glow");
-          setTimeout(() => editorWrapper.classList.remove("flash-glow"), 600);
-        }
-
         setTimeout(() => {
           textarea.focus();
           textarea.setSelectionRange(start, start + modifiedText.length);
@@ -443,6 +438,22 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       setContextualMenu(null);
     }
   };
+
+  // Listen for AI text action events from keyboard shortcuts
+  useEffect(() => {
+    const handleAiTextActionEvent = (event: CustomEvent) => {
+      const { action } = event.detail;
+      if (action && typeof action === 'string') {
+        handleAiTextAction(action as AITextAction);
+      }
+    };
+
+    document.addEventListener('aiTextAction', handleAiTextActionEvent as EventListener);
+    
+    return () => {
+      document.removeEventListener('aiTextAction', handleAiTextActionEvent as EventListener);
+    };
+  }, [handleAiTextAction]);
 
   const handleModifyTextWithAI = async (
     selectedText: string,

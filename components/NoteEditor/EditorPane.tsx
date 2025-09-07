@@ -160,6 +160,8 @@ const EditorPane: React.FC<EditorPaneProps> = ({
         onCreateVersion={onCreateVersion}
         hasUnsavedChanges={hasUnsavedChanges}
         versionCount={versionCount}
+        // AI loading state
+        isAiActionLoading={isAiActionLoading}
       />
       
       <div className="flex-grow overflow-y-auto p-4 editor-textarea-wrapper">

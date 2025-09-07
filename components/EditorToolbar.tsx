@@ -18,6 +18,8 @@ interface EditorToolbarProps {
   onCreateVersion?: () => void;
   hasUnsavedChanges?: boolean;
   versionCount?: number;
+  // AI loading state
+  isAiActionLoading?: boolean;
 }
 
 const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; title: string; disabled?: boolean; className?: string }> = ({ onClick, children, title, disabled, className }) => (
@@ -41,7 +43,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onOpenVersionHistory,
   onCreateVersion,
   hasUnsavedChanges = false,
-  versionCount = 0
+  versionCount = 0,
+  isAiActionLoading = false
 }) => {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [originalText, setOriginalText] = useState('');
@@ -402,6 +405,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             <ToolbarButton onClick={onGenerateClick} title="Generate Note with AI">
               <FaWandMagicSparkles className="w-5 h-5 text-accent dark:text-dark-accent" />
             </ToolbarButton>
+            {/* AI Processing Indicator */}
+            {isAiActionLoading && (
+              <div className="flex items-center gap-2 px-2 py-1 text-sm text-accent dark:text-dark-accent">
+                <div className="w-4 h-4 border-2 border-accent/30 border-t-accent dark:border-dark-accent/30 dark:border-t-dark-accent rounded-full animate-spin"></div>
+                <span className="hidden sm:inline">AI Processing...</span>
+              </div>
+            )}
           </div>
         </div>
         {showAllTools && (

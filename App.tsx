@@ -12,6 +12,8 @@ import ConfirmationModal from './components/ConfirmationModal';
 import SummaryModal from './components/SummaryModal'; 
 import CommandPalette from './components/CommandPalette'; 
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
+import { keyboardShortcutsService } from './services/keyboardShortcutsService';
+import { useEnhancedKeyboardShortcuts } from './hooks/useEnhancedKeyboardShortcuts';
 import VersionHistoryModal from './components/VersionHistory/VersionHistoryModal';
 import FeatureAnnouncementManager from './components/FeatureAnnouncementExample';
 import { summarizeText } from './services/geminiService';
@@ -66,6 +68,164 @@ const AppContent: React.FC = () => {
 
   // State for the active indicator position and width
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+
+  // Register keyboard shortcuts
+  const { getAllShortcuts } = useEnhancedKeyboardShortcuts({
+    // Navigation
+    toggleSidebar: () => setIsSidebarOpen(prev => !prev),
+    focusSearch: () => {
+      const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+      if (searchInput) searchInput.focus();
+    },
+    nextNote: () => {
+      if (notes.length > 0) {
+        const currentIndex = notes.findIndex(note => note.id === activeNote?.id);
+        const nextIndex = currentIndex < notes.length - 1 ? currentIndex + 1 : 0;
+        selectNote(notes[nextIndex]);
+      }
+    },
+    previousNote: () => {
+      if (notes.length > 0) {
+        const currentIndex = notes.findIndex(note => note.id === activeNote?.id);
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : notes.length - 1;
+        selectNote(notes[prevIndex]);
+      }
+    },
+    goToTop: () => {
+      const editor = document.querySelector('.note-editor textarea, .note-editor [contenteditable]');
+      if (editor) {
+        editor.scrollTop = 0;
+        if (editor instanceof HTMLElement) editor.focus();
+      }
+    },
+    goToBottom: () => {
+      const editor = document.querySelector('.note-editor textarea, .note-editor [contenteditable]');
+      if (editor) {
+        editor.scrollTop = editor.scrollHeight;
+        if (editor instanceof HTMLElement) editor.focus();
+      }
+    },
+    
+    // File Operations
+    newNote: () => createNewNote(),
+    duplicateNote: () => activeNote && duplicateNote(activeNote),
+    deleteNote: () => activeNote && handleDeleteNote(activeNote),
+    saveNote: () => activeNote && saveNote(activeNote),
+    exportNote: () => activeNote && handleExport(activeNote),
+    importNotes: () => setIsImportModalOpen(true),
+    
+    // View & Display
+    togglePreview: () => setViewMode(viewMode === 'preview' ? 'editor' : 'preview'),
+    toggleEditor: () => setViewMode(viewMode === 'editor' ? 'preview' : 'editor'),
+    toggleSplitView: () => setViewMode('split'),
+    toggleFullscreen: () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    },
+    zoomIn: () => {
+      const editor = document.querySelector('.note-editor');
+      if (editor) {
+        const currentZoom = parseFloat(getComputedStyle(editor).fontSize) || 16;
+        editor.style.fontSize = `${Math.min(currentZoom + 2, 24)}px`;
+      }
+    },
+    zoomOut: () => {
+      const editor = document.querySelector('.note-editor');
+      if (editor) {
+        const currentZoom = parseFloat(getComputedStyle(editor).fontSize) || 16;
+        editor.style.fontSize = `${Math.max(currentZoom - 2, 12)}px`;
+      }
+    },
+    resetZoom: () => {
+      const editor = document.querySelector('.note-editor');
+      if (editor) {
+        editor.style.fontSize = '16px';
+      }
+    },
+    
+    // AI Features
+    summarizeNote: () => activeNote && handleSummarizeNote(activeNote),
+    improveText: () => {
+      // Check if text is selected
+      const selection = window.getSelection();
+      if (!selection || !selection.toString().trim()) {
+        return;
+      }
+      
+      const event = new CustomEvent('aiTextAction', { 
+        detail: { action: 'improve' } 
+      });
+      document.dispatchEvent(event);
+    },
+    fixGrammar: () => {
+      // Check if text is selected
+      const selection = window.getSelection();
+      if (!selection || !selection.toString().trim()) {
+        return;
+      }
+      
+      const event = new CustomEvent('aiTextAction', { 
+        detail: { action: 'fix-grammar' } 
+      });
+      document.dispatchEvent(event);
+    },
+    shortenText: () => {
+      // Check if text is selected
+      const selection = window.getSelection();
+      if (!selection || !selection.toString().trim()) {
+        return;
+      }
+      
+      const event = new CustomEvent('aiTextAction', { 
+        detail: { action: 'shorten' } 
+      });
+      document.dispatchEvent(event);
+    },
+    expandText: () => {
+      // Check if text is selected
+      const selection = window.getSelection();
+      if (!selection || !selection.toString().trim()) {
+        return;
+      }
+      
+      const event = new CustomEvent('aiTextAction', { 
+        detail: { action: 'modify-expand' } 
+      });
+      document.dispatchEvent(event);
+    },
+    generateTitle: () => activeNote && generateTitle(activeNote),
+    suggestTags: () => activeNote && suggestTags(activeNote),
+    
+    // Search & Find
+    findInNote: () => {
+      const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    },
+    findAndReplace: () => {
+      // This would open a find and replace dialog
+      console.log('Find and replace');
+    },
+    findNext: () => {
+      // This would find next occurrence
+      console.log('Find next');
+    },
+    findPrevious: () => {
+      // This would find previous occurrence
+      console.log('Find previous');
+    },
+    
+    // Help & Info
+    showShortcuts: () => setIsKeyboardShortcutsOpen(true),
+    showCommandPalette: () => setIsCommandPaletteOpen(true),
+    showVersionHistory: () => setIsVersionHistoryOpen(true),
+    toggleTheme: () => setTheme(theme === 'light' ? 'dark' : 'light')
+  });
 
   // Simulate brief splash loader once
   useEffect(() => {
@@ -749,6 +909,7 @@ const AppContent: React.FC = () => {
       <KeyboardShortcutsModal
         isOpen={isKeyboardShortcutsOpen}
         onClose={() => setIsKeyboardShortcutsOpen(false)}
+        shortcuts={getAllShortcuts()}
       />
 
       <VersionHistoryModal

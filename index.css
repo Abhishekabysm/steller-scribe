@@ -173,6 +173,7 @@ textarea.editor-textarea::selection,
   z-index: 70;
 }
 
+
 @media (hover: hover) and (pointer: fine) {
   pre:hover .line-copy-btn {
     display: flex !important;

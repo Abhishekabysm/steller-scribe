@@ -228,9 +228,6 @@ const EditorPane: React.FC<EditorPaneProps> = ({
           <span>
             {activeNote.content.split(/\s+/).filter(Boolean).length} words
           </span>
-          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-md">
-            Manual Save Only
-          </span>
         </div>
         <span>
           Last updated: {new Date(activeNote.updatedAt).toLocaleString()}

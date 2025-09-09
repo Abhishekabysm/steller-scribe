@@ -420,6 +420,64 @@ html:not(.dark) .prose code:not(pre > code) {
   display: block;
 }
 
+/* Mermaid diagrams: responsive and readable in both themes */
+.preview-pane .mermaid {
+  max-width: 100% !important;
+  overflow-x: auto;
+  display: block;
+  margin: 1rem 0;
+}
+.preview-pane .mermaid > svg {
+  width: 100% !important;
+  height: auto !important;
+}
+.preview-pane .mermaid .nodeLabel, 
+.preview-pane .mermaid .edgeLabel, 
+.preview-pane .mermaid .label {
+  color: inherit !important;
+  fill: currentColor !important;
+}
+
+/* Improve readability of edge labels (text that sits on connectors) */
+.dark .preview-pane .prose .mermaid g.edgeLabel rect,
+.dark .preview-pane .prose .mermaid .labelBkg {
+  fill: #4b5563 !important; /* gray-600 solid */
+  stroke: #6b7280 !important; /* gray-500/600 border */
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
+  rx: 0 !important;
+  ry: 0 !important;
+}
+.dark .preview-pane .mermaid .edgeLabel text,
+.dark .preview-pane .mermaid .edgeLabel tspan {
+  fill: #e5e7eb !important; /* gray-200 */
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .preview-pane .prose .mermaid g.edgeLabel rect,
+html:not(.dark) .preview-pane .prose .mermaid .labelBkg {
+  fill: #f3f4f6 !important; /* gray-100 solid */
+  stroke: #d1d5db !important; /* gray-300 */
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
+  rx: 0 !important;
+  ry: 0 !important;
+}
+html:not(.dark) .preview-pane .mermaid .edgeLabel text,
+html:not(.dark) .preview-pane .mermaid .edgeLabel tspan {
+  fill: #1f2937 !important; /* gray-800 */
+  font-weight: 600 !important;
+}
+.preview-pane .mermaid text { 
+  font-size: 14px !important; 
+}
+html:not(.dark) .preview-pane .mermaid text { 
+  fill: #1f2937 !important; /* gray-800 */
+}
+.dark .preview-pane .mermaid text { 
+  fill: #e5e7eb !important; /* gray-200 */
+}
+
 /* cmdk keyboard navigation styles - CRITICAL for up/down arrow navigation */
 [cmdk-item] {
   outline: none;

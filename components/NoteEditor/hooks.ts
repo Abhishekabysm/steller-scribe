@@ -21,6 +21,7 @@ import {
 } from "./utils";
 
 declare const hljs: any;
+declare const mermaid: any;
 
 const MAX_HISTORY_LENGTH = 100;
 
@@ -438,6 +439,74 @@ export const useMarkdownProcessing = (
 
     processLinks(previewPane);
 
+    // Render Mermaid diagrams from fenced code blocks
+    try {
+      if (typeof mermaid !== "undefined") {
+        const isDark = document.documentElement.classList.contains("dark");
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDark ? "dark" : "default",
+          themeVariables: isDark
+            ? {
+                primaryColor: '#111827',
+                primaryTextColor: '#e5e7eb',
+                textColor: '#e5e7eb',
+                nodeTextColor: '#e5e7eb',
+                lineColor: '#e5e7eb',
+                secondaryColor: '#374151',
+                tertiaryColor: '#1f2937',
+              }
+            : {
+                primaryColor: '#ffffff',
+                primaryTextColor: '#1f2937',
+                textColor: '#1f2937',
+                nodeTextColor: '#1f2937',
+                lineColor: '#374151',
+                secondaryColor: '#f3f4f6',
+                tertiaryColor: '#e5e7eb',
+              },
+          flowchart: { curve: 'basis', htmlLabels: false, useMaxWidth: true },
+          sequence: { mirrorActors: false },
+        });
+
+        const mermaidCodeBlocks = previewPane.querySelectorAll("pre code.language-mermaid");
+        mermaidCodeBlocks.forEach((codeEl) => {
+          const pre = codeEl.parentElement as HTMLElement | null;
+          if (!pre) return;
+          if (pre.dataset.mermaidProcessed === "true") return;
+
+          // Decode HTML entities to raw mermaid text
+          const raw = (codeEl as HTMLElement).textContent || "";
+
+          const container = document.createElement("div");
+          container.className = "mermaid";
+          container.textContent = raw;
+
+          // Replace the <pre> with mermaid container
+          pre.replaceWith(container);
+          pre.dataset.mermaidProcessed = "true";
+        });
+
+        // Render all mermaid diagrams inside preview
+        const mermaidBlocks = previewPane.querySelectorAll(".mermaid");
+        if (mermaidBlocks.length > 0) {
+          try {
+            // v10 supports init; run as fallback
+            if (typeof mermaid.init === "function") {
+              mermaid.init(undefined, mermaidBlocks as any);
+            } else if (typeof mermaid.run === "function") {
+              mermaid.run({ querySelector: ".mermaid" });
+            }
+          } catch (err) {
+            console.warn("Mermaid render failed:", err);
+          }
+        }
+      }
+    } catch (err) {
+      // Non-fatal; continue other processing
+      console.warn("Mermaid processing error:", err);
+    }
+
     // Handle multi-line code blocks
     const codeBlocks = previewPane.querySelectorAll("pre");
     codeBlocks.forEach((preBlock) => {
@@ -590,9 +659,34 @@ export const useMarkdownProcessing = (
     
     window.addEventListener("preview-mounted", handlePreviewMount, { passive: true });
 
+    // Re-render mermaid when theme toggles (dark class changes)
+    const themeObserver = new MutationObserver(() => {
+      try {
+        if (typeof mermaid !== 'undefined') {
+          const container = previewPaneRef.current || document.querySelector(".preview-pane");
+          if (!container) return;
+          const isDark = document.documentElement.classList.contains("dark");
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: isDark ? 'dark' : 'default',
+          });
+          const blocks = container.querySelectorAll('.mermaid');
+          if (blocks.length > 0) {
+            if (typeof mermaid.init === 'function') {
+              mermaid.init(undefined, blocks as any);
+            } else if (typeof mermaid.run === 'function') {
+              mermaid.run({ querySelector: '.mermaid' });
+            }
+          }
+        }
+      } catch {}
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
     return () => {
       window.removeEventListener("focus", tryProcess);
       window.removeEventListener("preview-mounted", handlePreviewMount);
+      themeObserver.disconnect();
       if (cleanup && typeof cleanup === 'function') {
         cleanup();
       }

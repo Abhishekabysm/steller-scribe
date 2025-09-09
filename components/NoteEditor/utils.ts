@@ -2,6 +2,7 @@ import { ScrollSyncOptions } from "./types";
 
 declare const marked: any;
 declare const hljs: any;
+declare const mermaid: any;
 
 /**
  * Initialize Marked and Highlight.js with configuration
@@ -18,6 +19,39 @@ export const initializeMarkdownProcessing = () => {
       breaks: true, // Treat single newlines as <br>
       linkify: true, // Automatically convert URLs to links
     });
+  }
+  // Initialize Mermaid with theme alignment
+  try {
+    if (typeof mermaid !== "undefined") {
+      const isDark = document.documentElement.classList.contains("dark");
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: isDark ? "dark" : "default",
+        themeVariables: isDark
+          ? {
+              primaryColor: '#111827',
+              primaryTextColor: '#e5e7eb',
+              textColor: '#e5e7eb',
+              nodeTextColor: '#e5e7eb',
+              lineColor: '#e5e7eb',
+              secondaryColor: '#374151',
+              tertiaryColor: '#1f2937',
+            }
+          : {
+              primaryColor: '#ffffff',
+              primaryTextColor: '#1f2937',
+              textColor: '#1f2937',
+              nodeTextColor: '#1f2937',
+              lineColor: '#374151',
+              secondaryColor: '#f3f4f6',
+              tertiaryColor: '#e5e7eb',
+            },
+        flowchart: { curve: 'basis', htmlLabels: false, useMaxWidth: true },
+        sequence: { mirrorActors: false },
+      });
+    }
+  } catch (e) {
+    // Non-fatal if mermaid missing
   }
 };
 

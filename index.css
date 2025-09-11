@@ -520,3 +520,49 @@ html:not(.dark) .preview-pane .mermaid text {
 }
 
 
+
+/* Mermaid fullscreen overlay */
+.mermaid-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease-in-out;
+}
+
+.mermaid-fullscreen-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mermaid-fullscreen-inner {
+  max-width: min(96vw, 1400px);
+  max-height: 90vh;
+  width: 96vw;
+  background: var(--overlay-bg, #fff);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+html.dark .mermaid-fullscreen-inner {
+  --overlay-bg: #111827;
+}
+
+.mermaid-fullscreen-inner svg {
+  display: block;
+}
+
+/* Prevent body scroll when overlay open */
+.body.mermaid-overlay-open,
+html.mermaid-overlay-open,
+.mermaid-overlay-open body {
+  overflow: hidden !important;
+}
+
+

@@ -501,6 +501,73 @@ export const useMarkdownProcessing = (
             console.warn("Mermaid render failed:", err);
           }
         }
+
+        // Attach fullscreen click handlers to rendered mermaid diagrams
+        const ensureOverlay = () => {
+          let overlay = document.getElementById('mermaid-fullscreen-overlay') as HTMLDivElement | null;
+          if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'mermaid-fullscreen-overlay';
+            overlay.className = 'mermaid-fullscreen-overlay';
+            const inner = document.createElement('div');
+            inner.className = 'mermaid-fullscreen-inner';
+            overlay.appendChild(inner);
+            document.body.appendChild(overlay);
+
+            const close = () => {
+              overlay!.classList.remove('visible');
+              // Clear previous content after transition
+              setTimeout(() => {
+                const innerEl = overlay!.querySelector('.mermaid-fullscreen-inner');
+                if (innerEl) innerEl.innerHTML = '';
+                document.body.classList.remove('mermaid-overlay-open');
+              }, 150);
+            };
+
+            overlay.addEventListener('click', (e) => {
+              // close when clicking on background
+              if (e.target === overlay || (e.target as HTMLElement).classList.contains('mermaid-fullscreen-overlay')) {
+                close();
+              }
+            }, { passive: true });
+
+            document.addEventListener('keydown', (e) => {
+              if ((e as KeyboardEvent).key === 'Escape' && overlay!.classList.contains('visible')) {
+                close();
+              }
+            }, { passive: true });
+          }
+          return overlay!;
+        };
+
+        mermaidBlocks.forEach((block) => {
+          const el = block as HTMLElement;
+          if (el.dataset.fullscreenBound === 'true') return;
+          el.style.cursor = 'zoom-in';
+          el.addEventListener('click', (e) => {
+            try {
+              const svg = el.querySelector('svg');
+              if (!svg) return;
+              const overlay = ensureOverlay();
+              const inner = overlay.querySelector('.mermaid-fullscreen-inner') as HTMLDivElement | null;
+              if (!inner) return;
+              // Clone the SVG to avoid moving it
+              const cloned = svg.cloneNode(true) as SVGElement;
+              // Ensure sizing fits viewport
+              cloned.removeAttribute('width');
+              cloned.removeAttribute('height');
+              cloned.style.width = '100%';
+              cloned.style.height = 'auto';
+              inner.innerHTML = '';
+              inner.appendChild(cloned);
+              document.body.classList.add('mermaid-overlay-open');
+              overlay.classList.add('visible');
+            } catch (err) {
+              console.warn('Failed to open mermaid fullscreen:', err);
+            }
+          });
+          el.dataset.fullscreenBound = 'true';
+        });
       }
     } catch (err) {
       // Non-fatal; continue other processing

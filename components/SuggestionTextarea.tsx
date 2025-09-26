@@ -9,6 +9,7 @@ interface SuggestionTextareaProps {
     className?: string;
     placeholder?: string;
     noteTitle?: string;
+    onExtractTitle?: (title: string, newContent?: string) => void;
     suggestionsEnabled?: boolean;
     [key: string]: any; // For other textarea props
 }
@@ -20,7 +21,8 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
         onKeyDown,
         className,
         placeholder,
-        noteTitle,
+    noteTitle,
+    onExtractTitle,
         suggestionsEnabled = true,
         ...otherProps
     },
@@ -129,6 +131,65 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
             requestFromCaret();
         });
     }, [onChange, requestFromCaret]);
+
+    const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        try {
+            const paste = e.clipboardData.getData('text/plain') || '';
+            if (!paste) return;
+
+            // Find first line that is a markdown heading (e.g. '# Title' up to '######')
+            const lines = paste.split(/\r?\n/);
+            let headingText = '';
+            let headingIndex = -1;
+            for (let i = 0; i < lines.length; i++) {
+                const m = lines[i].match(/^\s*#{1,6}\s+(.*)$/);
+                if (m && m[1]) {
+                    headingText = m[1].trim();
+                    headingIndex = i;
+                    break;
+                }
+            }
+
+            if (headingIndex === -1) {
+                // No heading found in pasted text; let default paste happen
+                return;
+            }
+
+            // Remove the heading line from pasted content
+            lines.splice(headingIndex, 1);
+            const pasteWithoutHeading = lines.join('\n');
+
+            const ta = textareaRef.current;
+            const start = ta?.selectionStart ?? 0;
+            const end = ta?.selectionEnd ?? 0;
+
+            const newValue = value.slice(0, start) + pasteWithoutHeading + value.slice(end);
+
+            // Prevent default insertion and update via React state
+            e.preventDefault();
+            onChange(newValue);
+
+            // Notify parent to set the extracted title and new content atomically
+            if (onExtractTitle && headingText) {
+                try { onExtractTitle(headingText, newValue); } catch (err) { /* swallow */ }
+            }
+
+            // Move caret to end of inserted paste
+            const newCursorPos = start + pasteWithoutHeading.length;
+            setTimeout(() => {
+                if (ta) {
+                    ta.focus();
+                    ta.setSelectionRange(newCursorPos, newCursorPos);
+                    setCursorPosition(newCursorPos);
+                    // Re-request suggestions for new caret
+                    requestFromCaret();
+                }
+            }, 0);
+        } catch (err) {
+            // if anything goes wrong, don't block default paste behavior
+            return;
+        }
+    }, [value, onChange, onExtractTitle, requestFromCaret]);
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         // Accept / dismiss
@@ -334,6 +395,7 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
                 ref={textareaRef}
                 value={value}
                 onChange={handleTextareaChange}
+                onPaste={handlePaste}
                 onKeyDown={handleKeyDown}
                 onSelect={handleSelectionChange}
                 className={className}

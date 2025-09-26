@@ -6,7 +6,6 @@ import { LoadingSpinner, Tag } from "./UIElements";
 import EditorToolbar from "../EditorToolbar";
 import SuggestionTextarea from "../SuggestionTextarea";
 import ContextualMenu from "../ContextualMenu";
-import { versionControlService } from "../../services/versionControlService";
 
 const EditorPane: React.FC<EditorPaneProps> = ({
   activeNote,
@@ -222,6 +221,20 @@ const EditorPane: React.FC<EditorPaneProps> = ({
           placeholder="Start writing..."
           suggestionsEnabled={suggestionsEnabled}
           noteTitle={activeNote.title}
+          onExtractTitle={(title: string, newContent?: string) => {
+            // If we have newContent from the paste, update content and title together
+            try {
+              if (newContent !== undefined) {
+                onUpdateNote({ title, content: newContent });
+                // Also update local editor state immediately
+                setCurrentEditorContent(newContent);
+              } else if (title && title !== activeNote.title) {
+                onUpdateNote({ title });
+              }
+            } catch (err) {
+              // swallow errors to avoid blocking paste
+            }
+          }}
         />
       </div>
       

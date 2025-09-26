@@ -12,6 +12,7 @@ import {
 } from "./types";
 import {
   parseMarkdown,
+  parseMarkdownWithDiagrams,
   calculateMenuPosition,
   createSearchPattern,
   normalizeSelectedText,
@@ -403,7 +404,7 @@ export const useMarkdownProcessing = (
   const mutationObserverRef = useRef<MutationObserver | null>(null);
   const previewPaneRef = useRef<HTMLDivElement>(null);
 
-  const renderedMarkdown = parseMarkdown(content);
+  const { html: renderedMarkdown, diagrams: mermaidDiagrams } = parseMarkdownWithDiagrams(content);
 
   const restoreCopyButtons = useCallback(() => {
     const previewPane = previewPaneRef.current || document.querySelector(".preview-pane");
@@ -439,140 +440,7 @@ export const useMarkdownProcessing = (
 
     processLinks(previewPane);
 
-    // Render Mermaid diagrams from fenced code blocks
-    try {
-      if (typeof mermaid !== "undefined") {
-        const isDark = document.documentElement.classList.contains("dark");
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: isDark ? "dark" : "default",
-          themeVariables: isDark
-            ? {
-                primaryColor: '#111827',
-                primaryTextColor: '#e5e7eb',
-                textColor: '#e5e7eb',
-                nodeTextColor: '#e5e7eb',
-                lineColor: '#e5e7eb',
-                secondaryColor: '#374151',
-                tertiaryColor: '#1f2937',
-              }
-            : {
-                primaryColor: '#ffffff',
-                primaryTextColor: '#1f2937',
-                textColor: '#1f2937',
-                nodeTextColor: '#1f2937',
-                lineColor: '#374151',
-                secondaryColor: '#f3f4f6',
-                tertiaryColor: '#e5e7eb',
-              },
-          flowchart: { curve: 'basis', htmlLabels: false, useMaxWidth: true },
-          sequence: { mirrorActors: false },
-        });
-
-        const mermaidCodeBlocks = previewPane.querySelectorAll("pre code.language-mermaid");
-        mermaidCodeBlocks.forEach((codeEl) => {
-          const pre = codeEl.parentElement as HTMLElement | null;
-          if (!pre) return;
-          if (pre.dataset.mermaidProcessed === "true") return;
-
-          // Decode HTML entities to raw mermaid text
-          const raw = (codeEl as HTMLElement).textContent || "";
-
-          const container = document.createElement("div");
-          container.className = "mermaid";
-          container.textContent = raw;
-
-          // Replace the <pre> with mermaid container
-          pre.replaceWith(container);
-          pre.dataset.mermaidProcessed = "true";
-        });
-
-        // Render all mermaid diagrams inside preview
-        const mermaidBlocks = previewPane.querySelectorAll(".mermaid");
-        if (mermaidBlocks.length > 0) {
-          try {
-            // v10 supports init; run as fallback
-            if (typeof mermaid.init === "function") {
-              mermaid.init(undefined, mermaidBlocks as any);
-            } else if (typeof mermaid.run === "function") {
-              mermaid.run({ querySelector: ".mermaid" });
-            }
-          } catch (err) {
-            console.warn("Mermaid render failed:", err);
-          }
-        }
-
-        // Attach fullscreen click handlers to rendered mermaid diagrams
-        const ensureOverlay = () => {
-          let overlay = document.getElementById('mermaid-fullscreen-overlay') as HTMLDivElement | null;
-          if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'mermaid-fullscreen-overlay';
-            overlay.className = 'mermaid-fullscreen-overlay';
-            const inner = document.createElement('div');
-            inner.className = 'mermaid-fullscreen-inner';
-            overlay.appendChild(inner);
-            document.body.appendChild(overlay);
-
-            const close = () => {
-              overlay!.classList.remove('visible');
-              // Clear previous content after transition
-              setTimeout(() => {
-                const innerEl = overlay!.querySelector('.mermaid-fullscreen-inner');
-                if (innerEl) innerEl.innerHTML = '';
-                document.body.classList.remove('mermaid-overlay-open');
-              }, 150);
-            };
-
-            overlay.addEventListener('click', (e) => {
-              // close when clicking on background
-              if (e.target === overlay || (e.target as HTMLElement).classList.contains('mermaid-fullscreen-overlay')) {
-                close();
-              }
-            }, { passive: true });
-
-            document.addEventListener('keydown', (e) => {
-              if ((e as KeyboardEvent).key === 'Escape' && overlay!.classList.contains('visible')) {
-                close();
-              }
-            }, { passive: true });
-          }
-          return overlay!;
-        };
-
-        mermaidBlocks.forEach((block) => {
-          const el = block as HTMLElement;
-          if (el.dataset.fullscreenBound === 'true') return;
-          el.style.cursor = 'zoom-in';
-          el.addEventListener('click', (e) => {
-            try {
-              const svg = el.querySelector('svg');
-              if (!svg) return;
-              const overlay = ensureOverlay();
-              const inner = overlay.querySelector('.mermaid-fullscreen-inner') as HTMLDivElement | null;
-              if (!inner) return;
-              // Clone the SVG to avoid moving it
-              const cloned = svg.cloneNode(true) as SVGElement;
-              // Ensure sizing fits viewport
-              cloned.removeAttribute('width');
-              cloned.removeAttribute('height');
-              cloned.style.width = '100%';
-              cloned.style.height = 'auto';
-              inner.innerHTML = '';
-              inner.appendChild(cloned);
-              document.body.classList.add('mermaid-overlay-open');
-              overlay.classList.add('visible');
-            } catch (err) {
-              console.warn('Failed to open mermaid fullscreen:', err);
-            }
-          });
-          el.dataset.fullscreenBound = 'true';
-        });
-      }
-    } catch (err) {
-      // Non-fatal; continue other processing
-      console.warn("Mermaid processing error:", err);
-    }
+    // Mermaid diagrams are now handled by the enhanced MermaidRenderer component
 
     // Handle multi-line code blocks
     const codeBlocks = previewPane.querySelectorAll("pre");
@@ -726,34 +594,11 @@ export const useMarkdownProcessing = (
     
     window.addEventListener("preview-mounted", handlePreviewMount, { passive: true });
 
-    // Re-render mermaid when theme toggles (dark class changes)
-    const themeObserver = new MutationObserver(() => {
-      try {
-        if (typeof mermaid !== 'undefined') {
-          const container = previewPaneRef.current || document.querySelector(".preview-pane");
-          if (!container) return;
-          const isDark = document.documentElement.classList.contains("dark");
-          mermaid.initialize({
-            startOnLoad: false,
-            theme: isDark ? 'dark' : 'default',
-          });
-          const blocks = container.querySelectorAll('.mermaid');
-          if (blocks.length > 0) {
-            if (typeof mermaid.init === 'function') {
-              mermaid.init(undefined, blocks as any);
-            } else if (typeof mermaid.run === 'function') {
-              mermaid.run({ querySelector: '.mermaid' });
-            }
-          }
-        }
-      } catch {}
-    });
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    // Theme changes are now handled automatically by MermaidRenderer component
 
     return () => {
       window.removeEventListener("focus", tryProcess);
       window.removeEventListener("preview-mounted", handlePreviewMount);
-      themeObserver.disconnect();
       if (cleanup && typeof cleanup === 'function') {
         cleanup();
       }
@@ -791,6 +636,7 @@ export const useMarkdownProcessing = (
 
   return {
     renderedMarkdown,
+    mermaidDiagrams,
     processPreviewContent,
     restoreCopyButtons,
   };

@@ -81,7 +81,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const modalStates = useModalStates();
   const { contextualMenu, setContextualMenu, handleTextSelection } = useContextualMenu();
   const { selectionNavigator, setSelectionNavigator, handlePreviewSelection, navigateMatches } = useSelectionNavigator();
-  const { renderedMarkdown } = useMarkdownProcessing(activeNote?.content || "", addToast);
+  const { renderedMarkdown, mermaidDiagrams } = useMarkdownProcessing(activeNote?.content || "", addToast);
   
   const {
     undoStack,
@@ -682,6 +682,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     <PreviewPane
       activeNote={activeNote}
       renderedMarkdown={renderedMarkdown}
+      mermaidDiagrams={mermaidDiagrams}
       previewRef={previewRef}
       selectionNavigator={selectionNavigator}
       navigateMatches={navigateMatches}

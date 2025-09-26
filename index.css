@@ -420,7 +420,88 @@ html:not(.dark) .prose code:not(pre > code) {
   display: block;
 }
 
-/* Mermaid diagrams: responsive and readable in both themes */
+/* Enhanced Mermaid diagrams: responsive and beautifully styled */
+.mermaid-renderer {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.dark .mermaid-renderer {
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mermaid-container {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.mermaid-svg-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+}
+
+.mermaid-svg-container svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  transition: transform 0.2s ease;
+}
+
+/* Improve node and text readability */
+.mermaid-container .node {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1));
+}
+
+.dark .mermaid-container .node {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+/* Enhanced text styling */
+.mermaid-container text {
+  font-size: 14px !important;
+  font-weight: 500;
+  text-anchor: middle;
+}
+
+/* Node label styling */
+.mermaid-container .nodeLabel {
+  font-weight: 600;
+  font-size: 13px !important;
+}
+
+/* Edge label styling with better backgrounds */
+.mermaid-container .edgeLabel {
+  font-size: 12px !important;
+  font-weight: 500;
+}
+
+.mermaid-container .labelBkg {
+  fill: rgba(255, 255, 255, 0.9) !important;
+  stroke: #d1d5db !important;
+  stroke-width: 1px !important;
+  rx: 4px !important;
+  ry: 4px !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.dark .mermaid-container .labelBkg {
+  fill: rgba(31, 41, 55, 0.9) !important;
+  stroke: #6b7280 !important;
+}
+
+/* Legacy support for existing mermaid blocks */
 .preview-pane .mermaid {
   max-width: 100% !important;
   overflow-x: auto;

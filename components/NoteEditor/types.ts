@@ -36,6 +36,7 @@ export interface EditorPaneProps {
 export interface PreviewPaneProps {
   activeNote: Note;
   renderedMarkdown: string;
+  mermaidDiagrams: MermaidDiagram[];
   previewRef: React.RefObject<HTMLDivElement>;
   selectionNavigator: SelectionNavigatorState | null;
   navigateMatches: (direction: "next" | "prev") => void;
@@ -116,8 +117,15 @@ export interface UseSelectionNavigatorReturn {
   navigateMatches: (direction: "next" | "prev") => void;
 }
 
+export interface MermaidDiagram {
+  id: string;
+  code: string;
+  placeholder: string;
+}
+
 export interface UseMarkdownProcessingReturn {
   renderedMarkdown: string;
+  mermaidDiagrams: MermaidDiagram[];
   processPreviewContent: () => void;
   restoreCopyButtons: () => void;
 }

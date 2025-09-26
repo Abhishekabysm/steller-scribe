@@ -56,6 +56,44 @@ export const initializeMarkdownProcessing = () => {
 };
 
 /**
+ * Extract Mermaid diagrams from markdown content
+ */
+export const extractMermaidDiagrams = (content: string): {
+  content: string;
+  diagrams: Array<{ id: string; code: string; placeholder: string }>;
+} => {
+  const diagrams: Array<{ id: string; code: string; placeholder: string }> = [];
+  let processedContent = content;
+
+  // Find all mermaid code blocks
+  const mermaidRegex = /```mermaid\s*\n([\s\S]*?)\n```/gi;
+  let match;
+  let diagramIndex = 0;
+
+  while ((match = mermaidRegex.exec(content)) !== null) {
+    const fullMatch = match[0];
+    const diagramCode = match[1].trim();
+    const diagramId = `mermaid-diagram-${Date.now()}-${diagramIndex}`;
+    const placeholder = `<div class="mermaid-placeholder" data-diagram-id="${diagramId}"></div>`;
+
+    diagrams.push({
+      id: diagramId,
+      code: diagramCode,
+      placeholder
+    });
+
+    // Replace the mermaid block with a placeholder
+    processedContent = processedContent.replace(fullMatch, placeholder);
+    diagramIndex++;
+  }
+
+  return {
+    content: processedContent,
+    diagrams
+  };
+};
+
+/**
  * Parse markdown content safely
  */
 export const parseMarkdown = (content: string): string => {
@@ -68,6 +106,22 @@ export const parseMarkdown = (content: string): string => {
     }
   }
   return "";
+};
+
+/**
+ * Parse markdown with Mermaid diagram extraction
+ */
+export const parseMarkdownWithDiagrams = (content: string): {
+  html: string;
+  diagrams: Array<{ id: string; code: string; placeholder: string }>;
+} => {
+  const { content: processedContent, diagrams } = extractMermaidDiagrams(content);
+  const html = parseMarkdown(processedContent);
+  
+  return {
+    html,
+    diagrams
+  };
 };
 
 /**

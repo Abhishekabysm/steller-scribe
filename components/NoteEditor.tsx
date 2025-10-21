@@ -171,15 +171,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   // Update editor content when active note changes
   useEffect(() => {
     if (activeNote) {
-      setCurrentEditorContent(activeNote.content);
+      setCurrentEditorContent(activeNote.content || '');
       clearStacks();
     }
   }, [activeNote?.id, clearStacks]);
 
   // Additional effect to ensure editor content stays in sync with note content
   useEffect(() => {
-    if (activeNote && currentEditorContent !== activeNote.content) {
-      setCurrentEditorContent(activeNote.content);
+    if (activeNote && currentEditorContent !== (activeNote.content || '')) {
+      setCurrentEditorContent(activeNote.content || '');
     }
   }, [activeNote?.content, currentEditorContent]);
 
@@ -187,8 +187,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   useEffect(() => {
     if (activeNote && activeNote.lastVersionedAt) {
       // If the note was recently versioned (restored), ensure editor content is in sync
-      if (currentEditorContent !== activeNote.content) {
-        setCurrentEditorContent(activeNote.content);
+      if (currentEditorContent !== (activeNote.content || '')) {
+        setCurrentEditorContent(activeNote.content || '');
       }
     }
   }, [activeNote?.lastVersionedAt, activeNote?.content, currentEditorContent]);
@@ -278,7 +278,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     setSummaryContent("");
 
     try {
-      const summary = await summarizeText(activeNote.content);
+      const summary = await summarizeText(activeNote.content || '');
       setSummaryContent(summary);
     } catch (error) {
       addToast(
@@ -294,13 +294,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const handleAddSummaryToNote = useCallback(() => {
     if (!activeNote || !summaryContent) return;
     const summarySection = `\n\n---\n\n**AI Summary:**\n*${summaryContent}*`;
-    onUpdateNote({ content: activeNote.content + summarySection });
+    onUpdateNote({ content: (activeNote.content || '') + summarySection });
     addToast("Summary added to note!", "success");
   }, [activeNote, summaryContent, onUpdateNote, addToast]);
 
   const handleCopyAll = useCallback(() => {
     if (!activeNote) return;
-    navigator.clipboard.writeText(activeNote.content).then(() => {
+    navigator.clipboard.writeText(activeNote.content || '').then(() => {
       addToast("Copied note content to clipboard!", "success");
     }).catch(() => {
       addToast("Failed to copy content.", "error");
@@ -311,7 +311,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     if (!activeNote) return;
     setIsSuggestingTags(true);
     try {
-      const tags = await suggestTagsForText(activeNote.content);
+      const tags = await suggestTagsForText(activeNote.content || '');
       setSuggestedTags(tags.filter((t) => !activeNote.tags.includes(t)));
     } catch (error) {
       addToast(
@@ -365,14 +365,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
   const handleGenerateTitle = useCallback(async () => {
     if (!activeNote) return;
-    if (activeNote.content.trim().length < 20) {
+    if ((activeNote.content || '').trim().length < 20) {
       addToast("Please write more content before generating a title.", "info");
       return;
     }
 
     setIsGeneratingTitle(true);
     try {
-      const newTitle = await generateTitle(activeNote.content);
+      const newTitle = await generateTitle(activeNote.content || '');
       onUpdateNote({ title: newTitle });
       addToast("Title auto-generated!", "success");
     } catch (error) {

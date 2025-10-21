@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Note, SortOption } from '../types';
-import { FaRegSquarePlus, FaPlus, FaThumbtack, FaXmark, FaRegTrashCan } from 'react-icons/fa6';
+import { FaRegSquarePlus, FaPlus, FaThumbtack, FaXmark, FaRegTrashCan, FaGripVertical } from 'react-icons/fa6';
 import Dropdown from './Dropdown';
 import { MdCloudDownload } from 'react-icons/md';
 
@@ -17,6 +17,8 @@ interface NoteListProps {
   onSortChange: (option: SortOption) => void;
   searchTerm: string;
   onCloseSidebar?: () => void;
+  activeProjectId?: string | null; // Optional: to show project context
+  projectColor?: string; // Optional: project color for visual feedback
 }
 
 
@@ -28,6 +30,7 @@ const Tag: React.FC<{ tag: string }> = ({ tag }) => (
 
 
 const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => void; onTogglePin: (id: string) => void; onDelete: (note: Note) => void; }> = ({ note, isActive, onClick, onTogglePin, onDelete }) => {
+  const [isDragging, setIsDragging] = useState(false);
   const date = new Date(note.updatedAt).toLocaleDateString("en-US", {
     month: 'short',
     day: 'numeric',
@@ -57,11 +60,28 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
     onDelete(note);
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify({ noteIds: [note.id] }));
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
 
   return (
     <li
       onClick={handleClick}
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       className={`group cursor-pointer rounded-lg transition-all duration-200 ease-in-out relative mb-2 border shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:focus:ring-dark-accent/30 ${
+        isDragging
+          ? 'opacity-50 scale-95'
+          : ''
+      } ${
         isActive
           ? 'bg-blue-50 dark:bg-dark-accent/15 border-blue-300 dark:border-dark-accent'
           : 'bg-white/70 dark:bg-dark-surface border-gray-200 dark:border-dark-border-color hover:bg-gray-50 dark:hover:bg-dark-surface-hover'
@@ -74,6 +94,11 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
       <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg transition-opacity ${
         isActive ? 'bg-blue-500 dark:bg-dark-accent opacity-100' : 'bg-blue-500/60 dark:bg-dark-accent/60 opacity-0 group-hover:opacity-100'
       }`} />
+
+      {/* Drag handle */}
+      <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+        <FaGripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+      </div>
 
       <div className="absolute top-2 right-2 flex items-center gap-1">
         <button 
@@ -92,7 +117,7 @@ const NoteListItem: React.FC<{ note: Note; isActive: boolean; onClick: () => voi
         </button>
       </div>
 
-      <div className="px-3 py-3 pr-20 sm:pr-24">
+      <div className="px-3 py-3 pr-20 sm:pr-24 pl-8">
         <h3 className={`font-semibold truncate flex items-center gap-2 ${
           isActive 
             ? 'text-blue-800 dark:text-dark-text-primary' 

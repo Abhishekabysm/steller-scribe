@@ -9,6 +9,7 @@ export interface Note {
   isPinned: boolean;
   isImported?: boolean; // Optional flag to indicate if note was imported from a shared link
   importedAt?: number; // Optional timestamp when the note was imported
+  projectId?: string | null; // Project this note belongs to (null = unorganized)
   lastTransaction?: {
     from: number;
     to: number;
@@ -19,6 +20,32 @@ export interface Note {
   // Version control fields
   version?: number; // Current version number
   lastVersionedAt?: number; // Timestamp of last version creation
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  description?: string;
+  color: string; // Hex color for visual identification
+  icon?: string; // Optional emoji or icon
+  createdAt: number;
+  updatedAt: number;
+  isPinned: boolean;
+  isArchived: boolean;
+  settings: {
+    defaultTags?: string[];
+    defaultSorting?: SortOption;
+    defaultView?: 'grid' | 'list';
+  };
+  noteCount: number; // Cached count for performance
+  lastActivityAt: number; // Last time a note was modified in this project
+}
+
+export interface ProjectStats {
+  totalNotes: number;
+  pinnedNotes: number;
+  lastActivity: number;
+  tags: string[];
 }
 
 export interface NoteVersion {

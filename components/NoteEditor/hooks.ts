@@ -310,7 +310,7 @@ export const useSelectionNavigator = (): UseSelectionNavigatorReturn => {
     const editorTextarea = editorRef.current;
     if (!editorTextarea) return;
 
-    const originalContent = activeNote.content;
+    const originalContent = activeNote.content || '';
     const searchPattern = createSearchPattern(normalizedSelectedText);
 
     try {

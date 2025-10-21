@@ -67,6 +67,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex-grow flex items-center">
             <input
+              key={activeNote.id}
               type="text"
               value={activeNote.title}
               onChange={handleTitleChange}
@@ -125,6 +126,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
             <Tag key={tag} tag={tag} onRemove={removeTag} />
           ))}
           <input
+            key={`tag-input-${activeNote.id}`}
             type="text"
             onKeyDown={handleTagKeyDown}
             onKeyUp={handleTagKeyUp}
@@ -137,8 +139,8 @@ const EditorPane: React.FC<EditorPaneProps> = ({
       <EditorToolbar
         textareaRef={editorRef as React.RefObject<HTMLTextAreaElement>}
         onUpdate={(v, newCursorPos) => {
-          if (activeNote && v !== activeNote.content) {
-            pushToUndoStack(activeNote.content);
+          if (activeNote && v !== (activeNote.content || '')) {
+            pushToUndoStack(activeNote.content || '');
           }
           setCurrentEditorContent(v);
           onUpdateNote({ content: v });
@@ -241,7 +243,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
       <footer className="flex-shrink-0 p-2 border-t border-gray-200 dark:border-dark-border-color text-xs text-gray-500 dark:text-dark-text-muted flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span>
-            {activeNote.content.split(/\s+/).filter(Boolean).length} words
+            {(activeNote.content || '').split(/\s+/).filter(Boolean).length} words
           </span>
         </div>
         <span>

@@ -1,24 +1,29 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
-import { Note, SortOption } from './types';
+import { Note, SortOption, Project } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTheme } from './hooks/useTheme';
 import { ToastProvider, useToasts } from './hooks/useToasts';
 import { getSharedNoteFromUrl, clearShareFromUrl } from './utils/shareUtils';
 import { useMediaQuery } from './hooks/useMediaQuery';
-import NoteList from './components/NoteList';
+import { useProjects } from './hooks/useProjects';
+import { ProjectService } from './services/projectService';
+import { migrateNotesToProjects, applyDefaultProject } from './utils/projectMigration';
 import NoteEditor from './components/NoteEditor';
+import CombinedSidebar from './components/CombinedSidebar';
+import ProjectModal from './components/ProjectModal';
+import DeleteProjectModal from './components/DeleteProjectModal';
 import ImportModal from './components/ImportModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import SummaryModal from './components/SummaryModal'; 
 import CommandPalette from './components/CommandPalette'; 
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
-import { keyboardShortcutsService } from './services/keyboardShortcutsService';
 import { useEnhancedKeyboardShortcuts } from './hooks/useEnhancedKeyboardShortcuts';
 import VersionHistoryModal from './components/VersionHistory/VersionHistoryModal';
 import FeatureAnnouncementManager from './components/FeatureAnnouncementExample';
 import { summarizeText } from './services/geminiService';
-import { FaBars, FaXmark } from 'react-icons/fa6';
+import { FaXmark } from 'react-icons/fa6';
 import { FaSun, FaMoon, FaSearch, FaStar, FaQuestionCircle } from 'react-icons/fa';
+import { PiSidebarSimpleBold } from 'react-icons/pi';
 import FullScreenLoader from './components/FullScreenLoader';
 
 const AppContent: React.FC = () => {
@@ -27,12 +32,23 @@ const AppContent: React.FC = () => {
   const [notes, setNotes] = useLocalStorage<Note[]>('stellar-scribe-notes-v2', []);
   const [activeNoteId, setActiveNoteId] = useLocalStorage<string | null>('stellar-scribe-active-note-id', null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useLocalStorage('stellar-scribe-sidebar-open', window.innerWidth > 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useLocalStorage('stellar-scribe-sidebar-open', true);
   const [hasMigrated, setHasMigrated] = useLocalStorage<boolean>('stellar-scribe-migrated-v2', false);
+  const [hasProjectMigrated, setHasProjectMigrated] = useLocalStorage<boolean>('stellar-scribe-project-migrated-v1', false);
   const [theme, toggleTheme] = useTheme();
   const [sortOption, setSortOption] = useState<SortOption>('updatedAt');
   const [viewMode, setViewMode] = useState<'split' | 'editor' | 'preview'>('split');
   const [sharedNote, setSharedNote] = useState<any>(null);
+  
+  // Project-related state
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
+  const [projectModalMode, setProjectModalMode] = useState<'create' | 'edit'>('create');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  
+  // Use projects hook
+  const projectsHook = useProjects(notes);
 
   // Helper function to update notes state with de-duplication and sorting
   const updateNotesState = useCallback((newNotes: Note[], currentNotes: Note[]) => {
@@ -78,17 +94,17 @@ const AppContent: React.FC = () => {
       if (searchInput) searchInput.focus();
     },
     nextNote: () => {
-      if (notes.length > 0) {
-        const currentIndex = notes.findIndex(note => note.id === activeNote?.id);
-        const nextIndex = currentIndex < notes.length - 1 ? currentIndex + 1 : 0;
-        selectNote(notes[nextIndex]);
+      if (filteredNotes.length > 0) {
+        const currentIndex = filteredNotes.findIndex(note => note.id === activeNote?.id);
+        const nextIndex = currentIndex < filteredNotes.length - 1 ? currentIndex + 1 : 0;
+        selectNote(filteredNotes[nextIndex].id);
       }
     },
     previousNote: () => {
-      if (notes.length > 0) {
-        const currentIndex = notes.findIndex(note => note.id === activeNote?.id);
-        const prevIndex = currentIndex > 0 ? currentIndex - 1 : notes.length - 1;
-        selectNote(notes[prevIndex]);
+      if (filteredNotes.length > 0) {
+        const currentIndex = filteredNotes.findIndex(note => note.id === activeNote?.id);
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : filteredNotes.length - 1;
+        selectNote(filteredNotes[prevIndex].id);
       }
     },
     goToTop: () => {
@@ -107,11 +123,23 @@ const AppContent: React.FC = () => {
     },
     
     // File Operations
-    newNote: () => createNewNote(),
-    duplicateNote: () => activeNote && duplicateNote(activeNote),
-    deleteNote: () => activeNote && handleDeleteNote(activeNote),
-    saveNote: () => activeNote && saveNote(activeNote),
-    exportNote: () => activeNote && handleExport(activeNote),
+    newNote: () => addNote(),
+    duplicateNote: () => {
+      if (activeNote) {
+        const duplicatedNote = {
+          ...activeNote,
+          id: crypto.randomUUID(),
+          title: `${activeNote.title} (Copy)`,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          isPinned: false,
+        };
+        addNote(duplicatedNote);
+      }
+    },
+    deleteNote: () => activeNote && setIsDeleteModalOpen(true),
+    saveNote: () => {}, // Auto-save is already implemented
+    exportNote: () => {}, // Export is handled via toolbar
     importNotes: () => setIsImportModalOpen(true),
     
     // View & Display
@@ -126,28 +154,28 @@ const AppContent: React.FC = () => {
       }
     },
     zoomIn: () => {
-      const editor = document.querySelector('.note-editor');
+      const editor = document.querySelector('.note-editor') as HTMLElement;
       if (editor) {
         const currentZoom = parseFloat(getComputedStyle(editor).fontSize) || 16;
         editor.style.fontSize = `${Math.min(currentZoom + 2, 24)}px`;
       }
     },
     zoomOut: () => {
-      const editor = document.querySelector('.note-editor');
+      const editor = document.querySelector('.note-editor') as HTMLElement;
       if (editor) {
         const currentZoom = parseFloat(getComputedStyle(editor).fontSize) || 16;
         editor.style.fontSize = `${Math.max(currentZoom - 2, 12)}px`;
       }
     },
     resetZoom: () => {
-      const editor = document.querySelector('.note-editor');
+      const editor = document.querySelector('.note-editor') as HTMLElement;
       if (editor) {
         editor.style.fontSize = '16px';
       }
     },
     
     // AI Features
-    summarizeNote: () => activeNote && handleSummarizeNote(activeNote),
+    summarizeNote: () => activeNote && handleSummarize(),
     improveText: () => {
       // Check if text is selected
       const selection = window.getSelection();
@@ -196,8 +224,8 @@ const AppContent: React.FC = () => {
       });
       document.dispatchEvent(event);
     },
-    generateTitle: () => activeNote && generateTitle(activeNote),
-    suggestTags: () => activeNote && suggestTags(activeNote),
+    generateTitle: () => {}, // Handled in editor toolbar
+    suggestTags: () => {}, // Handled in editor toolbar
     
     // Search & Find
     findInNote: () => {
@@ -224,7 +252,7 @@ const AppContent: React.FC = () => {
     showShortcuts: () => setIsKeyboardShortcutsOpen(true),
     showCommandPalette: () => setIsCommandPaletteOpen(true),
     showVersionHistory: () => setIsVersionHistoryOpen(true),
-    toggleTheme: () => setTheme(theme === 'light' ? 'dark' : 'light')
+    toggleTheme: () => toggleTheme()
   });
 
   // Simulate brief splash loader once
@@ -297,6 +325,34 @@ const AppContent: React.FC = () => {
       setHasMigrated(true); // Mark migration as complete
     }
   }, [hasMigrated, setNotes, addToast, setHasMigrated]);
+
+  // Effect to migrate notes to project system
+  useEffect(() => {
+    if (!hasProjectMigrated && notes.length > 0) {
+      const migrationResult = migrateNotesToProjects(notes, projectsHook.projects, hasProjectMigrated);
+      
+      if (migrationResult.success && migrationResult.defaultProject) {
+        // Create default project
+        const newProject = projectsHook.createProject({
+          title: migrationResult.defaultProject.title,
+          description: migrationResult.defaultProject.description,
+          color: migrationResult.defaultProject.color,
+          icon: migrationResult.defaultProject.icon,
+          isPinned: migrationResult.defaultProject.isPinned,
+          isArchived: migrationResult.defaultProject.isArchived,
+          settings: migrationResult.defaultProject.settings,
+        });
+        
+        // Assign existing notes to this project
+        const updatedNotes = applyDefaultProject(notes, newProject.id);
+        setNotes(updatedNotes);
+        
+        addToast(migrationResult.message, 'success');
+      }
+      
+      setHasProjectMigrated(true);
+    }
+  }, [hasProjectMigrated, notes, projectsHook, setNotes, addToast, setHasProjectMigrated]);
 
   // Effect to set the initial active note
   useEffect(() => {
@@ -373,9 +429,9 @@ const AppContent: React.FC = () => {
     if (window.innerWidth <= 768) {
         setIsSidebarOpen(false);
     }
-  }, []);
+  }, [setActiveNoteId, setIsSidebarOpen]);
 
-  const addNote = useCallback((noteToAdd?: Note) => {
+  const addNote = useCallback((noteToAdd?: Note, projectId?: string | null) => {
     const newNote: Note = noteToAdd || {
       id: crypto.randomUUID(),
       title: 'New Note',
@@ -385,11 +441,37 @@ const AppContent: React.FC = () => {
       tags: [],
       isPinned: false,
       isImported: false, // Ensure this is explicitly set for default notes
+      projectId: projectId ?? projectsHook.activeProjectId ?? null,
     };
-    setNotes(prevNotes => updateNotesState([newNote], prevNotes));
-    selectNote(newNote.id);
+    const noteWithProject = noteToAdd
+      ? { ...noteToAdd, projectId: projectId ?? noteToAdd.projectId ?? projectsHook.activeProjectId ?? null }
+      : newNote;
+
+    // Update notes state with callback to ensure note is added
+    setNotes(prevNotes => {
+      const updatedNotes = updateNotesState([noteWithProject], prevNotes);
+      
+      // After updating notes, schedule note selection
+      // Using setTimeout ensures this runs after React's state update
+      setTimeout(() => {
+        setActiveNoteId(noteWithProject.id);
+        
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+          setIsSidebarOpen(false);
+        }
+      }, 0);
+      
+      return updatedNotes;
+    });
+    
+    // Set the project if needed
+    if (noteWithProject.projectId !== undefined) {
+      projectsHook.setActiveProjectId(noteWithProject.projectId ?? null);
+    }
+    
     addToast(noteToAdd ? 'Note generated successfully!' : 'New note created!', 'success');
-  }, [setNotes, selectNote, addToast]);
+  }, [setNotes, setActiveNoteId, setIsSidebarOpen, addToast, projectsHook, updateNotesState]);
 
   const deleteNote = useCallback((id: string) => {
     const noteToDelete = notes.find(n => n.id === id);
@@ -503,6 +585,92 @@ const AppContent: React.FC = () => {
 
   const activeNote = useMemo(() => notes.find(note => note.id === activeNoteId), [notes, activeNoteId]);
 
+  // Filtered notes based on active project and search
+  const filteredNotes = useMemo(() => {
+    let filtered = ProjectService.getProjectNotes(projectsHook.activeProjectId, notes);
+    
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      filtered = filtered.filter(note =>
+        note.title.toLowerCase().includes(lowerSearch) ||
+        note.content.toLowerCase().includes(lowerSearch) ||
+        note.tags?.some(tag => tag.toLowerCase().includes(lowerSearch))
+      );
+    }
+    
+    return filtered;
+  }, [notes, projectsHook.activeProjectId, searchTerm]);
+
+
+  // Project handlers
+  const handleCreateProject = useCallback(() => {
+    setProjectModalMode('create');
+    setSelectedProject(null);
+    setIsProjectModalOpen(true);
+  }, []);
+
+  const handleEditProject = useCallback((project: Project) => {
+    setProjectModalMode('edit');
+    setSelectedProject(project);
+    setIsProjectModalOpen(true);
+  }, []);
+
+  const handleSaveProject = useCallback((projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'noteCount' | 'lastActivityAt'>) => {
+    if (projectModalMode === 'create') {
+      const newProject = projectsHook.createProject(projectData);
+      addToast(`Created project "${newProject.title}"`, 'success');
+      projectsHook.setActiveProjectId(newProject.id);
+    } else if (selectedProject) {
+      projectsHook.updateProject(selectedProject.id, projectData);
+      addToast(`Updated project "${projectData.title}"`, 'success');
+    }
+    setIsProjectModalOpen(false);
+    setSelectedProject(null);
+  }, [projectModalMode, selectedProject, projectsHook, addToast]);
+
+  const handleDeleteProject = useCallback((project: Project) => {
+    setProjectToDelete(project);
+    setIsDeleteProjectModalOpen(true);
+  }, []);
+
+  const handleConfirmDeleteProject = useCallback((strategy: 'unorganize' | 'delete' | 'move', targetProjectId?: string) => {
+    if (!projectToDelete) return;
+
+    const updatedNotes = ProjectService.deleteProject(
+      projectToDelete.id,
+      notes,
+      strategy,
+      targetProjectId
+    );
+    
+    setNotes(updatedNotes);
+    projectsHook.deleteProject(projectToDelete.id, strategy, targetProjectId);
+    
+    addToast(`Deleted project "${projectToDelete.title}"`, 'info');
+    setIsDeleteProjectModalOpen(false);
+    setProjectToDelete(null);
+  }, [projectToDelete, notes, setNotes, projectsHook, addToast]);
+
+  const handleDuplicateProject = useCallback((project: Project) => {
+    const result = projectsHook.duplicateProject(project.id, true);
+    if (result) {
+      // Add duplicated notes to notes state
+      setNotes(prev => updateNotesState(result.notes, prev));
+      addToast(`Duplicated project "${project.title}"`, 'success');
+    }
+  }, [projectsHook, setNotes, updateNotesState, addToast]);
+
+  const handleDropNoteOnProject = useCallback((projectId: string | null, noteIds: string[]) => {
+    const updatedNotes = ProjectService.moveNotesToProject(notes, noteIds, projectId);
+    setNotes(updatedNotes);
+    
+    // Toast removed - no notification on drag and drop
+    // const projectName = projectId 
+    //   ? projectsHook.getProject(projectId)?.title || 'project'
+    //   : 'Unorganized';
+    // addToast(`Moved ${noteIds.length} ${noteIds.length === 1 ? 'note' : 'notes'} to ${projectName}`, 'success');
+  }, [notes, setNotes, projectsHook]);
+
   const handleSummarize = useCallback(async () => {
     if (!activeNote) return;
     setIsSummarizing(true);
@@ -607,7 +775,7 @@ const AppContent: React.FC = () => {
   if (isAppLoading) return <FullScreenLoader />;
 
   return (
-    <div className="h-screen w-screen flex flex-col font-mono antialiased">
+    <div className="h-screen w-screen flex font-mono antialiased">
 <style>{`
         input[type="search"]::-webkit-search-cancel-button {
           -webkit-appearance: none;
@@ -634,22 +802,70 @@ const AppContent: React.FC = () => {
           }
         }
       `}</style>
-      <header className="flex-shrink-0 bg-header-background dark:bg-dark-header-background border-b border-gray-200 dark:border-dark-border-color px-4 py-3 flex items-center justify-between z-30 shadow-sm">
-        <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className={`p-2 rounded-lg text-text-secondary dark:text-dark-text-secondary hover:text-text-primary dark:hover:text-dark-text-primary hover:bg-bg-secondary dark:hover:bg-dark-bg-secondary transition-all duration-200 ${isSidebarOpen ? 'md:hidden' : ''}`}
-            title="Toggle sidebar"
-          >
-            <FaBars className="w-5 h-5"/>
-          </button>
-          <div className="flex items-center space-x-2 min-w-0">
-            <FaStar className="w-8 h-8 text-accent dark:text-dark-accent flex-shrink-0" />
-            <h1 className="text-lg sm:text-xl font-bold text-text-primary dark:text-dark-text-primary hidden sm:block truncate">
+      
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsSidebarOpen(false);
+            }
+          }}
+        />
+      )}
+
+      {/* Sidebar - Left Side, Full Height */}
+      {isSidebarOpen && (
+        <aside
+          className="fixed md:relative z-50 h-screen w-80 flex-shrink-0 border-r border-gray-200 dark:border-dark-border-color transform transition-transform duration-300 ease-in-out translate-x-0"
+        >
+        <CombinedSidebar
+          projects={projectsHook.activeProjects}
+          notes={notes}
+          activeNoteId={activeNoteId}
+          activeProjectId={projectsHook.activeProjectId}
+          sortOption={sortOption}
+          searchTerm={searchTerm}
+          onSelectNote={selectNote}
+          onSelectProject={projectsHook.setActiveProjectId}
+          onAddNote={addNote}
+          onTogglePinNote={togglePinNote}
+          onDeleteNote={deleteNote}
+          onDeletePinnedNote={handleDeletePinnedNote}
+          onSortChange={setSortOption}
+          onCreateProject={handleCreateProject}
+          onEditProject={handleEditProject}
+          onDeleteProject={handleDeleteProject}
+          onDuplicateProject={handleDuplicateProject}
+          onTogglePinProject={(project) => projectsHook.togglePinProject(project.id)}
+          onToggleArchiveProject={(project) => projectsHook.toggleArchiveProject(project.id)}
+          onDrop={handleDropNoteOnProject}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          onAddNoteToProject={(projectId) => addNote(undefined, projectId)}
+        />
+        </aside>
+      )}
+
+      {/* Right Side Content */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Header for Right Side */}
+        <header className="flex-shrink-0 bg-header-background dark:bg-dark-header-background border-b border-gray-200 dark:border-dark-border-color px-4 py-3 flex items-center justify-between z-30 shadow-sm">
+          <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
+            {!isSidebarOpen && (
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Open sidebar"
+              >
+                <PiSidebarSimpleBold className="w-5 h-5" />
+              </button>
+            )}
+            <FaStar className="w-6 h-6 text-accent dark:text-dark-accent flex-shrink-0" />
+            <h1 className="text-base sm:text-lg font-bold text-text-primary dark:text-dark-text-primary truncate">
               Stellar Scribe
             </h1>
           </div>
-        </div>
         
 <div className="flex items-center space-x-3 flex-grow max-w-sm sm:max-w-md lg:max-w-lg ml-2 sm:ml-4">
   <div className="relative flex-grow">
@@ -812,43 +1028,10 @@ const AppContent: React.FC = () => {
     {theme === 'light' ? <FaMoon className="w-4 h-4" /> : <FaSun className="w-4 h-4" />}
   </button>
 </div>
-      </header>
-      <main className="flex-grow flex overflow-hidden relative bg-gray-100 dark:bg-dark-bg-primary">
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-10 md:hidden animate-fade-in"
-            onClick={(e) => {
-              // Only close if clicking directly on the overlay
-              if (e.target === e.currentTarget) {
-                setIsSidebarOpen(false);
-              }
-            }}
-          />
-        )}
-        
-        {isSidebarOpen && (
-          <aside
-            className={`absolute md:relative z-20 h-full flex-shrink-0 border-r border-border-color dark:border-dark-border-color w-full max-w-xs transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
-          >
-            <NoteList
-              key={notes.length}
-              notes={notes}
-              activeNoteId={activeNoteId}
-              onSelectNote={selectNote}
-              onAddNote={addNote}
-              onTogglePin={togglePinNote}
-              onDeleteNote={deleteNote}
-              onDeletePinnedNote={handleDeletePinnedNote}
-              searchTerm={searchTerm}
-              sortOption={sortOption}
-              onSortChange={setSortOption}
-              onCloseSidebar={() => setIsSidebarOpen(false)}
-            />
-          </aside>
-        )}
+        </header>
 
-        {/* Content section should always be allowed to shrink; prevent overflow */}
-        <section className={`h-full relative transition-all duration-300 ease-in-out flex-1 min-w-0`}>
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-hidden relative bg-gray-100 dark:bg-dark-bg-primary">
           <NoteEditor
             activeNote={activeNote}
             onUpdateNote={updateNote}
@@ -857,8 +1040,8 @@ const AppContent: React.FC = () => {
             viewMode={viewMode}
             onRestoreVersion={handleRestoreVersion}
           />
-        </section>
-      </main>
+        </main>
+      </div>
 
       {sharedNote && (
         <ImportModal
@@ -928,6 +1111,30 @@ const AppContent: React.FC = () => {
             handleRestoreVersion(restoredNote);
           }
         }}
+      />
+
+      {/* Project Modals */}
+      <ProjectModal
+        isOpen={isProjectModalOpen}
+        onClose={() => {
+          setIsProjectModalOpen(false);
+          setSelectedProject(null);
+        }}
+        onSave={handleSaveProject}
+        existingProject={selectedProject}
+        mode={projectModalMode}
+      />
+
+      <DeleteProjectModal
+        isOpen={isDeleteProjectModalOpen}
+        onClose={() => {
+          setIsDeleteProjectModalOpen(false);
+          setProjectToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteProject}
+        project={projectToDelete}
+        noteCount={projectToDelete ? ProjectService.getProjectNotes(projectToDelete.id, notes).length : 0}
+        availableProjects={projectsHook.projects.filter(p => p.id !== projectToDelete?.id)}
       />
 
       {/* Feature Announcements */}

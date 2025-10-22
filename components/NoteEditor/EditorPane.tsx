@@ -170,6 +170,11 @@ const EditorPane: React.FC<EditorPaneProps> = ({
           ref={editorRef}
           value={currentEditorContent}
           onChange={(val: string) => {
+            console.log('🔍 EditorPane: onChange triggered', { 
+              newVal: (val || '').substring(0, 50) + '...', 
+              currentVal: (currentEditorContent || '').substring(0, 50) + '...',
+              isDifferent: val !== currentEditorContent 
+            });
             if (val !== currentEditorContent) {
               pushToUndoStack(currentEditorContent);
             }
@@ -207,6 +212,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
             }
           }}
           onFocus={() => {
+            console.log('🔍 EditorPane: onFocus triggered', { suggestionsEnabled });
             setTimeout(() => {
               if ("ontouchstart" in window) {
                 // Handle mobile selection change if needed

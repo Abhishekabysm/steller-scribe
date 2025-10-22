@@ -432,10 +432,12 @@ const AppContent: React.FC = () => {
   }, [setActiveNoteId, setIsSidebarOpen]);
 
   const addNote = useCallback((noteToAdd?: Note, projectId?: string | null) => {
+    console.log('🔍 addNote called:', { noteToAdd: !!noteToAdd, projectId, source: noteToAdd ? 'modal' : 'button' });
+    
     const newNote: Note = noteToAdd || {
       id: crypto.randomUUID(),
       title: 'New Note',
-      content: '# Welcome to your new note!\n\nStart typing here.',
+      content: '',
       createdAt: Date.now(),
       updatedAt: Date.now(),
       tags: [],
@@ -447,28 +449,38 @@ const AppContent: React.FC = () => {
       ? { ...noteToAdd, projectId: projectId ?? noteToAdd.projectId ?? projectsHook.activeProjectId ?? null }
       : newNote;
 
-    // Update notes state with callback to ensure note is added
+    console.log('🔍 Created note:', { id: noteWithProject.id, title: noteWithProject.title, content: (noteWithProject.content || '').substring(0, 50) + '...' });
+
+    // Update notes state and set active note synchronously
     setNotes(prevNotes => {
       const updatedNotes = updateNotesState([noteWithProject], prevNotes);
-      
-      // After updating notes, schedule note selection
-      // Using setTimeout ensures this runs after React's state update
-      setTimeout(() => {
-        setActiveNoteId(noteWithProject.id);
-        
-        // Close sidebar on mobile
-        if (window.innerWidth <= 768) {
-          setIsSidebarOpen(false);
-        }
-      }, 0);
-      
+      console.log('🔍 Notes updated, count:', updatedNotes.length);
       return updatedNotes;
     });
+    
+    // Set active note immediately after state update
+    console.log('🔍 Setting active note ID:', noteWithProject.id);
+    setActiveNoteId(noteWithProject.id);
     
     // Set the project if needed
     if (noteWithProject.projectId !== undefined) {
       projectsHook.setActiveProjectId(noteWithProject.projectId ?? null);
     }
+    
+    // Close sidebar on mobile
+    if (window.innerWidth <= 768) {
+      setIsSidebarOpen(false);
+    }
+    
+    // Force focus to editor after note creation (same as command palette)
+    setTimeout(() => {
+      const editor = document.querySelector('.note-editor textarea, .note-editor [contenteditable]') as HTMLTextAreaElement;
+      if (editor) {
+        console.log('🔍 App: Focusing editor after note creation');
+        editor.focus();
+        editor.setSelectionRange(editor.value.length, editor.value.length);
+      }
+    }, 150);
     
     addToast(noteToAdd ? 'Note generated successfully!' : 'New note created!', 'success');
   }, [setNotes, setActiveNoteId, setIsSidebarOpen, addToast, projectsHook, updateNotesState]);

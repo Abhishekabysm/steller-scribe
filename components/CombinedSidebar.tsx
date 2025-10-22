@@ -610,7 +610,23 @@ const CombinedSidebar: React.FC<CombinedSidebarProps> = ({
         {/* Action Buttons */}
         <div className="flex space-x-2">
           <button
-            onClick={onAddNote}
+            onClick={async () => {
+              console.log('🔍 Sidebar Note button clicked');
+              try {
+                await onAddNote();
+                // Force focus to editor after note creation
+                setTimeout(() => {
+                  const editor = document.querySelector('.note-editor textarea, .note-editor [contenteditable]') as HTMLTextAreaElement;
+                  if (editor) {
+                    console.log('🔍 Focusing editor after note creation');
+                    editor.focus();
+                    editor.setSelectionRange(editor.value.length, editor.value.length);
+                  }
+                }, 100);
+              } catch (error) {
+                console.error('Error creating note:', error);
+              }
+            }}
             className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-600 dark:bg-blue-500 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-200 text-sm font-medium shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 border border-blue-400/20 backdrop-blur-sm"
           >
             <FaPlus className="w-4 h-4" />

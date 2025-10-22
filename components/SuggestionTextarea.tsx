@@ -23,7 +23,7 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
         placeholder,
     noteTitle,
     onExtractTitle,
-        suggestionsEnabled = true,
+        suggestionsEnabled = false,
         ...otherProps
     },
     ref
@@ -88,6 +88,15 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
     }, []);
 
     useEffect(() => {
+        // Only start watchdog if suggestions are enabled
+        if (!suggestionsEnabled) {
+            if (watchdogRef.current) {
+                cancelAnimationFrame(watchdogRef.current);
+                watchdogRef.current = null;
+            }
+            return;
+        }
+
         // start watchdog
         if (watchdogRef.current) cancelAnimationFrame(watchdogRef.current);
         const tick = () => {
@@ -125,12 +134,19 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
     }, [value, requestSuggestion]);
 
     const handleTextareaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        onChange(e.target.value);
-        // After value updates, re-request at next frame to pick up new caret
-        requestAnimationFrame(() => {
-            requestFromCaret();
+        console.log('🔍 SuggestionTextarea: onChange triggered', { 
+            newValue: (e.target.value || '').substring(0, 50) + '...', 
+            suggestionsEnabled,
+            cursorPos: e.target.selectionStart 
         });
-    }, [onChange, requestFromCaret]);
+        onChange(e.target.value);
+        // Only request suggestions if enabled and not in the middle of other operations
+        if (suggestionsEnabled) {
+            requestAnimationFrame(() => {
+                requestFromCaret();
+            });
+        }
+    }, [onChange, requestFromCaret, suggestionsEnabled]);
 
     const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
         try {
@@ -198,21 +214,27 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
                 e.preventDefault();
                 acceptSuggestion(currentSuggestion);
                 // After accept, re-request to continue flow
-                requestAnimationFrame(requestFromCaret);
+                if (suggestionsEnabled) {
+                    requestAnimationFrame(requestFromCaret);
+                }
                 return;
             }
             if (e.key === 'Escape') {
                 e.preventDefault();
                 dismissSuggestion();
                 // After dismiss, re-request for the new context
-                requestAnimationFrame(requestFromCaret);
+                if (suggestionsEnabled) {
+                    requestAnimationFrame(requestFromCaret);
+                }
                 return;
             }
             if (e.key === 'ArrowRight' && e.ctrlKey) {
                 e.preventDefault();
                 const [first] = currentSuggestion.split(' ');
                 acceptSuggestion(first ? first + ' ' : currentSuggestion);
-                requestAnimationFrame(requestFromCaret);
+                if (suggestionsEnabled) {
+                    requestAnimationFrame(requestFromCaret);
+                }
                 return;
             }
         }
@@ -220,22 +242,24 @@ const SuggestionTextarea = React.forwardRef<HTMLTextAreaElement, SuggestionTexta
         // Keep parent handling
         if (onKeyDown) onKeyDown(e);
 
-        // Always update caret and request on next frame to avoid stale value/caret races
-        requestAnimationFrame(() => {
-            const ta = textareaRef.current;
-            if (!ta) return;
-            setCursorPosition(ta.selectionStart ?? 0);
-            requestFromCaret();
-        });
-    }, [isVisible, currentSuggestion, acceptSuggestion, dismissSuggestion, onKeyDown, requestFromCaret]);
+        // Only update caret and request suggestions if enabled
+        if (suggestionsEnabled) {
+            requestAnimationFrame(() => {
+                const ta = textareaRef.current;
+                if (!ta) return;
+                setCursorPosition(ta.selectionStart ?? 0);
+                requestFromCaret();
+            });
+        }
+    }, [isVisible, currentSuggestion, acceptSuggestion, dismissSuggestion, onKeyDown, requestFromCaret, suggestionsEnabled]);
 
     const handleSelectionChange = useCallback(() => {
         // Moving selection should update caret and suggestion position
         const ta = textareaRef.current;
-        if (!ta) return;
+        if (!ta || !suggestionsEnabled) return;
         setCursorPosition(ta.selectionStart ?? 0);
         requestFromCaret();
-    }, [requestFromCaret]);
+    }, [requestFromCaret, suggestionsEnabled]);
 
     // Keep overlay scroll in sync
     useEffect(() => {

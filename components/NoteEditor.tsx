@@ -170,9 +170,25 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
   // Update editor content when active note changes
   useEffect(() => {
+    console.log('🔍 NoteEditor: activeNote changed:', { 
+      id: activeNote?.id, 
+      title: activeNote?.title, 
+      content: (activeNote?.content || '').substring(0, 50) + '...',
+      hasContent: !!activeNote?.content 
+    });
     if (activeNote) {
       setCurrentEditorContent(activeNote.content || '');
       clearStacks();
+      
+      // Force focus to editor when new note is created
+      setTimeout(() => {
+        const editor = editorRef.current;
+        if (editor) {
+          console.log('🔍 NoteEditor: Focusing editor for new note');
+          editor.focus();
+          editor.setSelectionRange(editor.value.length, editor.value.length);
+        }
+      }, 200);
     }
   }, [activeNote?.id, clearStacks]);
 

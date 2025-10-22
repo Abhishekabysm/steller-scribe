@@ -87,13 +87,23 @@ const MarkdownWithDiagrams: React.FC<{
       // Process each diagram
       for (const diagram of mermaidDiagrams) {
         const placeholder = containerRef.current!.querySelector(`[data-diagram-id="${diagram.id}"]`);
-        if (placeholder && placeholder.parentNode) {
+        
+        // Store parent reference before async operations to avoid null reference
+        const placeholderParent = placeholder?.parentNode;
+        
+        if (placeholder && placeholderParent) {
           try {
             // Create unique ID for mermaid
             const uniqueId = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             
             // Render the diagram
             const { svg } = await mermaid.render(uniqueId, diagram.code.trim());
+            
+            // Check if placeholder is still in DOM after async operation
+            if (!placeholderParent.contains(placeholder)) {
+              console.warn(`Placeholder for diagram ${diagram.id} was removed during async processing`);
+              continue;
+            }
             
             // Create container
             const mermaidContainer = document.createElement('div');
@@ -262,19 +272,23 @@ const MarkdownWithDiagrams: React.FC<{
               svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
             }
             
-            // Replace placeholder
-            placeholder.parentNode.replaceChild(mermaidContainer, placeholder);
+            // Final check before replacing - ensure parent still has placeholder
+            if (placeholderParent.contains(placeholder)) {
+              placeholderParent.replaceChild(mermaidContainer, placeholder);
+            }
             
           } catch (error) {
             console.warn(`Failed to render Mermaid diagram ${diagram.id}:`, error);
-            // Show error message in place of diagram
-            const errorContainer = document.createElement('div');
-            errorContainer.className = 'my-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg';
-            errorContainer.innerHTML = `
-              <div class="text-red-700 dark:text-red-300 font-medium mb-2">Failed to render Mermaid diagram</div>
-              <div class="text-sm text-red-600 dark:text-red-400 font-mono">${error instanceof Error ? error.message : 'Unknown error'}</div>
-            `;
-            placeholder.parentNode.replaceChild(errorContainer, placeholder);
+            // Show error message in place of diagram - only if placeholder still exists
+            if (placeholderParent.contains(placeholder)) {
+              const errorContainer = document.createElement('div');
+              errorContainer.className = 'my-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg';
+              errorContainer.innerHTML = `
+                <div class="text-red-700 dark:text-red-300 font-medium mb-2">Failed to render Mermaid diagram</div>
+                <div class="text-sm text-red-600 dark:text-red-400 font-mono">${error instanceof Error ? error.message : 'Unknown error'}</div>
+              `;
+              placeholderParent.replaceChild(errorContainer, placeholder);
+            }
           }
         }
       }
